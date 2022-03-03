@@ -19,17 +19,65 @@ constexpr size_t to_size_t( std::string_view integer_token )
     return sum;
 }
 
+template< auto ValueParameterConstant >
+struct ValueContainer {
+    constinit static auto ValueConstant = ValueParameterConstant;
+};
+
+template< auto SearchParameterConstant, auto CurrentTermParameterConstant, auto... TapeParameterConstants >
+struct IsInTemplate {
+    constexpr static bool IsInCollectionConstant = IsInTemplate< SearchParameterConstant, TapeParameterConstants... >::IsInCollectionConstant;
+};
+
+template< auto SearchParameterConstant, auto... TapeParameterConstants >
+struct IsInTemplate< SearchParameterConstant, SearchParameterConstant, TapeParameterConstants... > {
+    constexpr static bool IsInCollectionConstant = true;
+};
+
+template< auto SearchParameterConstant, auto CurrentTermParameterConstant >
+struct IsInTemplate< SearchParameterConstant, CurrentTermParameterConstant > {
+    constexpr static bool IsInCollectionConstant = false;
+};
+
+template< auto... TermParameterConstants >
+struct TermBuffer
+{
+    template< 
+            template< auto... > typename TermBufferParameterType, 
+            auto... ExtractedParameterConstants 
+        >
+    constexpr static auto Append( TermBufferParameterType< ExtractedParameterConstants... > ) {
+        return TermBuffer< TermParameterConstants..., ExtractedParameterConstants... >{};
+    }
+    constexpr static auto ToTerms( auto... other_terms ) {
+        return ctpg::terms( TermParameterConstants..., other_terms... );
+    }
+    template< auto TermParameterConstant >
+    constexpr static auto GetTerm() {
+            static_assert( IsInTemplate< TermParameterConstant, TermParameterConstants... >::IsInCollectionConstant );
+            return TermParameterConstant;
+    }
+
+};
+
+constexpr TermBuffer< '/', '*' > factor_operators;
+constexpr TermBuffer< '+', '-' > sum_operators;
+constexpr TermBuffer< '^' > exponent_operators;
+constexpr auto expression_operators = factor_operators.Append( sum_operators ).Append( exponent_operators );
+
+
 constexpr ctpg::parser factor_parser( 
         factor, 
-        ctpg::terms( '*', '/', natural_number_term ), 
+        // ctpg::terms( '*', '/', natural_number_term ), 
+        expression_operators.ToTerms( natural_number_term ), 
         ctpg::nterms( factor ), 
         ctpg::rules(
                 factor( natural_number_term ) >= to_size_t, 
-                factor( factor, '*', natural_number_term ) 
+                factor( factor, expression_operators.GetTerm< '*' >(), natural_number_term ) 
                         >= []( size_t sum, auto factor_operator, const auto& next_token ) { // This lambda also yoikned. //
                                 return sum * to_size_t( next_token ); 
                             }, 
-                factor( factor, '/', natural_number_term ) 
+                factor( factor, expression_operators.GetTerm< '/' >(), natural_number_term ) 
                         >= []( size_t sum, auto factor_operator, const auto& next_token ) { // This lambda also yoikned. //
                                 return sum / to_size_t( next_token ); 
                             }
@@ -38,6 +86,7 @@ constexpr ctpg::parser factor_parser(
 
 int main( int argc, char** args )
 {
+
     auto parse_result = factor_parser.parse( 
             ctpg::buffers::string_buffer( args[ 1 ] ), std::cerr 
         );
