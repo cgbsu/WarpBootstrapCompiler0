@@ -70,6 +70,14 @@ constexpr ctpg::parser factor_parser(
                 parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
                         >= [] ( auto, auto factor, auto ) { return factor; }, 
                 factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
+                factor( factor, multiply_term, parenthesis_scope ) 
+                        >= []( auto factor, auto, auto parenthesis_scope ) { 
+                                return factor * parenthesis_scope; 
+                            }, 
+                factor( factor, divide_term, parenthesis_scope ) 
+                        >= []( auto factor, auto, auto parenthesis_scope ) { 
+                                return factor / parenthesis_scope; 
+                            }, 
                 factor( sum ) >= []( auto sum ) { return sum; }, 
                 sum( factor, plus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token ) {
@@ -85,7 +93,7 @@ constexpr ctpg::parser factor_parser(
 int main( int argc, char** args )
 {
     std::cout << "Hello world! Please enter your expression: ";
-    for( std::string input = "4*10+2"; input != "end"; std::getline( std::cin, input ) )
+    for( std::string input = "4*10+2"; input != "thanks :)"; std::getline( std::cin, input ) )
     {
         std::cout << "Got: " << input << "\n";
         if( auto parse_result = factor_parser.parse( 
