@@ -1,31 +1,21 @@
 #include <iostream>
+#include <functional>
 #include <ctpg.hpp>
 #include <Warp/SanityCheck.hpp>
 
-constexpr char star_token = '*';
-constexpr char forward_slash_token = '/';
-constexpr char plus_token = '+';
-constexpr char minus_token = '+';
-constexpr char caret_token = '^';
-
-enum class ExpressionOperators : char 
-{
-    FactorMultiply = star_token, 
-    FactorDivide = forward_slash_token, 
-    SumAdd = plus_token, 
-    SumSubtract = minus_token, 
-    ExponentRaise = caret_token 
-    // ExponentSquareRoot = ;
-    // Factorial = 
-};
+// template< typename OperhandParameterType >
+// using BinaryOperationType = std::function< OperhandParameterType( OperhandParameterType, OperhandParameterType ) >;
 
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
 constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
 
+// No unicode support :(
+constexpr char identifier_regex[] = "[a-zA-Z\\_][a-zA-Z0-9\\_]*";
+constexpr ctpg::regex_term< identifier_regex > identifier( "Identifier" );
+
 constexpr ctpg::nterm< size_t > factor( "Factor" );
 constexpr ctpg::nterm< size_t > sum( "Sum" );
 constexpr ctpg::nterm< size_t > parenthesis_scope( "ParenthesisScope" );
-
 
 // This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
 constexpr size_t to_size_t( std::string_view integer_token )
@@ -42,8 +32,14 @@ constexpr ctpg::char_term multiply_term( '*', 2, ctpg::associativity::ltor );
 constexpr ctpg::char_term divide_term( '/', 2, ctpg::associativity::ltor );
 constexpr ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::ltor );
 constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
+// constexpr ctpg::char_ter m geq( ">=", 1, ctpg::associativity::ltor );
 
 
+constexpr ctpg::string_term plus_eq_term( "+=", 1, ctpg::associativity::ltor );
+
+// TermBuffer< '+', '-' 
+
+constexpr ctpg::string_term plus_equals_term( "+=", 1, ctpg::associativity::ltor );
 
 constexpr ctpg::parser factor_parser( 
         factor, 
@@ -54,13 +50,15 @@ constexpr ctpg::parser factor_parser(
                 minus_term, 
                 natural_number_term, 
                 left_parenthesis_term, 
-                right_parenthesis_term 
+                right_parenthesis_term, 
+                identifier, 
+                plus_eq_term
             ), 
         ctpg::nterms( factor, sum, parenthesis_scope ), 
         ctpg::rules( 
                 factor( natural_number_term ) >= to_size_t, 
                 factor( factor, multiply_term, natural_number_term ) 
-                        >= []( size_t current_factor, auto, const auto& next_token ) {
+                        >= []( size_t current_factor, auto, const auto& next_token ) {  
                                 return current_factor * to_size_t( next_token ); 
                             }, 
                 factor( factor, divide_term, natural_number_term ) 
@@ -83,10 +81,15 @@ constexpr ctpg::parser factor_parser(
                         >= []( auto current_sum, auto, const auto& next_token ) {
                                 return  current_sum + next_token; 
                             }, 
+                sum( factor, plus_eq_term, factor ) 
+                        >= []( auto current_sum, auto, const auto& next_token ) {
+                            std::cout << "PLUS EQ\n";
+                                return  current_sum + next_token; 
+                            }, 
                 sum( factor, minus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token ) {
                                 return current_sum - next_token; 
-                            }
+                            } 
            )
 );
 

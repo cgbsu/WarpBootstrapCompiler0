@@ -31,14 +31,39 @@ struct TermBuffer
     constexpr static auto Append( TermBufferParameterType< ExtractedParameterConstants... > ) {
         return TermBuffer< TermParameterConstants..., ExtractedParameterConstants... >{};
     }
-    constexpr static auto ToTerms( auto... other_terms ) {
+    constexpr static auto to_terms( auto... other_terms ) {
         return ctpg::terms( TermParameterConstants..., other_terms... );
     }
     template< auto TermParameterConstant >
-    constexpr static auto GetTerm() {
+    constexpr static auto get_term() {
             static_assert( IsInTemplate< TermParameterConstant, TermParameterConstants... >::IsInCollectionConstant );
             return TermParameterConstant;
     }
+    template< auto TermParameterConstant, auto... CheckTermParameterConstants >
+    constexpr static bool check_terms_in_collection()
+    {
+        constexpr bool is_in_collection 
+                = IsInTemplate< TermParameterConstant, TermParameterConstants... >::IsInCollectionConstant;
+        static_assert( is_in_collection );
+        return is_in_collection && check_terms_in_collection< CheckTermParameterConstants... >();
+    }
+
+    template< 
+            auto TransformOperationParameterConstant, 
+            auto TransformDataParameterConstant, 
+            auto... ToTransformParameterConstants 
+        >
+    constexpr static auto transform_terms()
+    {
+        static_assert( check_terms_in_collection< ToTransformParameterConstants... >() );
+        return TermBuffer< TermParameterConstants..., 
+                TransformOperationParameterConstant( 
+                        TransformDataParameterConstant, 
+                        ToTransformParameterConstants 
+                    )... 
+            >{};
+    }
+
 
 };
 
