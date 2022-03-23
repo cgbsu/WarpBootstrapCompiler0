@@ -16,10 +16,12 @@ struct TemplateNonTypeParameterTakeOne {
 template< auto SearchParameterConstant, auto... TapeParameterConstants >
 struct IsInTemplate
 {
-    constexpr static bool is_in_collection = false;
 
-    // using test = typename TemplateNonTypeParameterTakeOne< TapeParameterConstants... >
-    //                 ::InjectType< IsInTemplate, SearchParameterConstant >;
+    // constexpr static bool is_in_collection = false;
+
+    using test = typename TemplateNonTypeParameterTakeOne< TapeParameterConstants... >
+                    ::InjectType< IsInTemplate, SearchParameterConstant >;
+    constexpr static bool is_in_collection = test::is_in_collection;
 };
 
 template< auto SearchParameterConstant, auto... TapeParameterConstants >
@@ -27,16 +29,15 @@ struct IsInTemplate< SearchParameterConstant, SearchParameterConstant, TapeParam
     constexpr static bool is_in_collection = true;
 };
 
-template< auto SearchParameterConstant, auto CurrentTermParameterConstant >
-struct IsInTemplate< SearchParameterConstant, CurrentTermParameterConstant > {
+template< auto SearchParameterConstant >
+struct IsInTemplate< SearchParameterConstant > {
     constexpr static bool is_in_collection = false;
 };
 
-
-template< auto SearchParameterConstant >
-struct IsInTemplate< SearchParameterConstant, SearchParameterConstant > {
-    constexpr static bool is_in_collection = true;
-};
+// template< auto SearchParameterConstant, auto CurrentTermParameterConstant >
+// struct IsInTemplate< SearchParameterConstant, CurrentTermParameterConstant > {
+//     constexpr static bool is_in_collection = false;
+// };
 
 
 template< auto... TermParameterConstants >
@@ -69,8 +70,8 @@ struct CheckTermsInCollection
         constexpr bool this_in_collection 
                 = IsInTemplate< CurrentCheckTermParameterConstant, CollectionParameterConstants... >::is_in_collection;
         static_assert( this_in_collection );
-        auto next_in_collection = CheckTermsInCollection< CollectionParameterConstants... >
-                ::template check_terms_in_collection< CheckTermParameterConstants... >();
+        auto next_in_collection = CheckTermsInCollection< CheckTermParameterConstants... >
+                ::template check_terms_in_collection< CollectionParameterConstants... >();
         return this_in_collection && next_in_collection;
     }
 };
@@ -78,7 +79,7 @@ struct CheckTermsInCollection
 template< auto CurrentCheckTermParameterConstant >
 struct CheckTermsInCollection< CurrentCheckTermParameterConstant >
 {
-    template< auto... CollectionParameterConstants >
+        template< auto... CollectionParameterConstants >
     constexpr static bool check_terms_in_collection()
     {   
         constexpr bool this_in_collection 
