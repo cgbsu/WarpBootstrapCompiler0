@@ -7,21 +7,48 @@ struct ValueContainer {
 };
 
 template< auto FirstParameterConstant, auto... TapeParameterConstants >
-struct TemplateNonTypeParameterTakeOne {
+struct TemplateNonTypeParameterTakeOne
+{
     constexpr static auto first = FirstParameterConstant;
     template< template< auto... > typename RecipticalParameterType, auto... PartialSpecializationParameterConstants >
     using InjectType = RecipticalParameterType< PartialSpecializationParameterConstants..., TapeParameterConstants... >;
 };
 
+template< auto... ElementParameterConstants >
+struct RawTemplateArray
+{
+    constexpr auto static first_element = TemplateNonTypeParameterTakeOne< ElementParameterConstants... >::first;
+    using ElementType = decltype( 
+                 first_element
+            );
+    constexpr static ElementType array[ sizeof...( ElementParameterConstants ) ] = { ElementParameterConstants... };
+};
+
+template< auto... PostfixParameterConstant >
+struct PrependArray
+{
+    template< auto... PrefixParameterConstant >
+    struct Functor {
+        constexpr static const auto* value = RawTemplateArray< PrefixParameterConstant..., PostfixParameterConstant... >::array;
+    };
+};
+
+template< char... PostfixParameterConstant >
+struct PrependArray< PostfixParameterConstant... >
+{
+    template< auto... PrefixParameterConstant >
+    struct Functor {
+        constexpr static const char* value = RawTemplateArray< PrefixParameterConstant..., PostfixParameterConstant..., '\0' >::array;
+    };
+};
+
+
 template< auto SearchParameterConstant, auto... TapeParameterConstants >
 struct IsInTemplate
 {
-
-    // constexpr static bool is_in_collection = false;
-
-    using test = typename TemplateNonTypeParameterTakeOne< TapeParameterConstants... >
+    using NextType = typename TemplateNonTypeParameterTakeOne< TapeParameterConstants... >
                     ::InjectType< IsInTemplate, SearchParameterConstant >;
-    constexpr static bool is_in_collection = test::is_in_collection;
+    constexpr static bool is_in_collection = NextType::is_in_collection;
 };
 
 template< auto SearchParameterConstant, auto... TapeParameterConstants >
@@ -33,12 +60,6 @@ template< auto SearchParameterConstant >
 struct IsInTemplate< SearchParameterConstant > {
     constexpr static bool is_in_collection = false;
 };
-
-// template< auto SearchParameterConstant, auto CurrentTermParameterConstant >
-// struct IsInTemplate< SearchParameterConstant, CurrentTermParameterConstant > {
-//     constexpr static bool is_in_collection = false;
-// };
-
 
 template< auto... TermParameterConstants >
 struct TermBuffer
@@ -118,7 +139,7 @@ struct OperatorBuffer : public TermBuffer< OperatorParameterConstants... >
 
 
     template< 
-            auto TransformOperationParameterConstant, 
+            template< auto > typename TransformOperationParameterConstant, 
             auto... ToTransformParameterConstants 
         >
     constexpr static auto transform_terms()
@@ -129,9 +150,9 @@ struct OperatorBuffer : public TermBuffer< OperatorParameterConstants... >
                 PrecedenceParameterConstant, 
                 AssociativityParameterConstant, 
                 OperatorParameterConstants..., 
-                TransformOperationParameterConstant( 
-                        ToTransformParameterConstants 
-                    )... 
+                ( TransformOperationParameterConstant< 
+                       ToTransformParameterConstants 
+                   >::value )...
             >{};
     }
 

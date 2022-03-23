@@ -37,13 +37,21 @@ constexpr ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::lt
 constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
 // constexpr ctpg::char_ter m geq( ">=", 1, ctpg::associativity::ltor );
 
-
-const auto thing = decltype( OperatorBuffer< 1, ctpg::associativity::ltor, '+', '-' >
-        ::transform_terms< 
-                []( auto prefix ) -> std::array< char, 3 > { return std::array< char, 3 >{ prefix, '=', '\0' }; }, 
+using AddAlgebraType = decltype( OperatorBuffer< 1, ctpg::associativity::ltor, '+', '-' >
+        ::template transform_terms< 
+                PrependArray< '=' >::Functor, 
                 '+', '-'
-            >() )
-        ::derive< ctpg::associativity::ltor, '*', '/' >();
+            >() );
+
+using MultiplyAlgebraType = decltype( decltype( AddAlgebraType
+        ::template derive< ctpg::associativity::ltor, '*', '/' >() )
+                ::template transform_terms< 
+                        PrependArray< '=' >::Functor, 
+                        '*', '/' 
+                >() );
+
+using ExpressionOperatorsType = decltype( AddAlgebraType
+        ::template derive< ctpg::associativity::ltor, '(', ')' >() );
 
 constexpr ctpg::string_term plus_equals_term( "+=", 1, ctpg::associativity::ltor );
 
