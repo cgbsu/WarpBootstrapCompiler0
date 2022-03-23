@@ -1,6 +1,9 @@
 #include <iostream>
 #include <functional>
+#include <array>
+
 #include <ctpg.hpp>
+
 #include <Warp/SanityCheck.hpp>
 
 // template< typename OperhandParameterType >
@@ -22,7 +25,7 @@ constexpr size_t to_size_t( std::string_view integer_token )
 {
     size_t sum = 0;
     for( auto digit : integer_token )
-        sum = ( sum * 10 ) + digit - '0';
+        sum = ( sum * 10 ) + digit - '0';   
     return sum;
 }
 
@@ -35,9 +38,12 @@ constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::l
 // constexpr ctpg::char_ter m geq( ">=", 1, ctpg::associativity::ltor );
 
 
-constexpr ctpg::string_term plus_eq_term( "+=", 1, ctpg::associativity::ltor );
-
-// TermBuffer< '+', '-' 
+const auto thing = decltype( OperatorBuffer< 1, ctpg::associativity::ltor, '+', '-' >
+        ::transform_terms< 
+                []( auto prefix ) -> std::array< char, 3 > { return std::array< char, 3 >{ prefix, '=', '\0' }; }, 
+                '+', '-'
+            >() )
+        ::derive< ctpg::associativity::ltor, '*', '/' >();
 
 constexpr ctpg::string_term plus_equals_term( "+=", 1, ctpg::associativity::ltor );
 
@@ -51,8 +57,7 @@ constexpr ctpg::parser factor_parser(
                 natural_number_term, 
                 left_parenthesis_term, 
                 right_parenthesis_term, 
-                identifier, 
-                plus_eq_term
+                identifier 
             ), 
         ctpg::nterms( factor, sum, parenthesis_scope ), 
         ctpg::rules( 
@@ -79,11 +84,6 @@ constexpr ctpg::parser factor_parser(
                 factor( sum ) >= []( auto sum ) { return sum; }, 
                 sum( factor, plus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token ) {
-                                return  current_sum + next_token; 
-                            }, 
-                sum( factor, plus_eq_term, factor ) 
-                        >= []( auto current_sum, auto, const auto& next_token ) {
-                            std::cout << "PLUS EQ\n";
                                 return  current_sum + next_token; 
                             }, 
                 sum( factor, minus_term, factor ) 
