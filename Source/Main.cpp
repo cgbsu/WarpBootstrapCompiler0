@@ -1,105 +1,13 @@
-#include <iostream>
-#include <functional>
-#include <array>
+#include <Warp/Expression.hpp>
 
-#include <ctpg.hpp>
-
-#include <Warp/SanityCheck.hpp>
-
-// template< typename OperhandParameterType >
-// using BinaryOperationType = std::function< OperhandParameterType( OperhandParameterType, OperhandParameterType ) >;
-
-constexpr char natural_number_regex[] = "[0-9][0-9]*";
-constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
-
-// No unicode support :(
-constexpr char identifier_regex[] = "[a-zA-Z\\_][a-zA-Z0-9\\_]*";
-constexpr ctpg::regex_term< identifier_regex > identifier( "Identifier" );
-
-constexpr ctpg::nterm< size_t > factor( "Factor" );
-constexpr ctpg::nterm< size_t > sum( "Sum" );
-constexpr ctpg::nterm< size_t > parenthesis_scope( "ParenthesisScope" );
-
-// This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
-constexpr size_t to_size_t( std::string_view integer_token )
-{
-    size_t sum = 0;
-    for( auto digit : integer_token )
-        sum = ( sum * 10 ) + digit - '0';   
-    return sum;
-}
-
-constexpr ctpg::char_term plus_term( '+', 1, ctpg::associativity::ltor );
-constexpr ctpg::char_term minus_term( '-', 1, ctpg::associativity::ltor );
-constexpr ctpg::char_term multiply_term( '*', 2, ctpg::associativity::ltor );
-constexpr ctpg::char_term divide_term( '/', 2, ctpg::associativity::ltor );
-constexpr ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::ltor );
-constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
-// constexpr ctpg::char_ter m geq( ">=", 1, ctpg::associativity::ltor );
-
-using AddAlgebraType = decltype( OperatorBuffer< 1, ctpg::associativity::ltor, '+', '-' >
-        ::template transform_terms< 
-                PrependArray< '=' >::Functor, 
-                '+', '-'
-            >() );
-
-using MultiplyAlgebraType = decltype( decltype( AddAlgebraType
-        ::template derive< ctpg::associativity::ltor, '*', '/' >() )
-                ::template transform_terms< 
-                        PrependArray< '=' >::Functor, 
-                        '*', '/' 
-                >() );
-
-using ExpressionOperatorsType = decltype( AddAlgebraType
-        ::template derive< ctpg::associativity::ltor, '(', ')' >() );
-
-constexpr ctpg::string_term plus_equals_term( "+=", 1, ctpg::associativity::ltor );
+using NaturalNumberConstantExpression = ConstantExpression< to_size_t, size_t, defualt_constant_expression_data_type_name >;
 
 constexpr ctpg::parser factor_parser( 
-        factor, 
-        ctpg::terms( 
-                multiply_term, 
-                divide_term, 
-                plus_term, 
-                minus_term, 
-                natural_number_term, 
-                left_parenthesis_term, 
-                right_parenthesis_term, 
-                identifier 
-            ), 
-        ctpg::nterms( factor, sum, parenthesis_scope ), 
-        ctpg::rules( 
-                factor( natural_number_term ) >= to_size_t, 
-                factor( factor, multiply_term, natural_number_term ) 
-                        >= []( size_t current_factor, auto, const auto& next_token ) {  
-                                return current_factor * to_size_t( next_token ); 
-                            }, 
-                factor( factor, divide_term, natural_number_term ) 
-                        >= []( size_t current_factor, auto, const auto& next_token ) {
-                                return current_factor / to_size_t( next_token ); 
-                            },
-                parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
-                        >= [] ( auto, auto factor, auto ) { return factor; }, 
-                factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
-                factor( factor, multiply_term, parenthesis_scope ) 
-                        >= []( auto factor, auto, auto parenthesis_scope ) { 
-                                return factor * parenthesis_scope; 
-                            }, 
-                factor( factor, divide_term, parenthesis_scope ) 
-                        >= []( auto factor, auto, auto parenthesis_scope ) { 
-                                return factor / parenthesis_scope; 
-                            }, 
-                factor( sum ) >= []( auto sum ) { return sum; }, 
-                sum( factor, plus_term, factor ) 
-                        >= []( auto current_sum, auto, const auto& next_token ) {
-                                return  current_sum + next_token; 
-                            }, 
-                sum( factor, minus_term, factor ) 
-                        >= []( auto current_sum, auto, const auto& next_token ) {
-                                return current_sum - next_token; 
-                            } 
-           )
-);
+        NaturalNumberConstantExpression::factor, 
+        NaturalNumberConstantExpression::terms, 
+        NaturalNumberConstantExpression::nterms, 
+        NaturalNumberConstantExpression::rules
+    );
 
 int main( int argc, char** args )
 {
