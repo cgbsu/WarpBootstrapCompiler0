@@ -2,7 +2,7 @@
 #include <functional>
 #include <array>
 #include <ctpg.hpp>
-/*
+
 template< auto FirstConstantParameter, auto... SeriesConstantParameters >
 struct TakeOneFromTemplateSeries {
     constexpr static auto first = FirstConstantParameter;
@@ -60,7 +60,7 @@ struct ToRawTemplateArray
             ArrayParameterConstant, 
             0, 
             // 2
-            std::array< decltype  ArrayParameterConstant ) 
+            std::array< decltype( ArrayParameterConstant[ 0 ] ), sizeof( ArrayParameterConstant ) >{}.size() ) 
         >::ResultType;
 };
 
@@ -93,18 +93,18 @@ constexpr static const char natural_number_name_string[] = "NaturalNumber";
 constexpr static const char factor_name_string[] = "Factor";
 constexpr static const char sum_name_string[] = "Sum";
 
-constexpr static auto natural_number_regex = std::array< const char, sizeof( natural_number_regex_string ) >{ natur`al_number_regex_string };  // = ToRawTemplateArray< natural_number_regex_string >::ResultType{};
-constexpr static auto identifier_regex = std::array< const char, sizeof( identifier_regex_string ) >{ identifier_regex_string };  // = ToRawTemplateArray< identifier_regex_string >::ResultType{};
-constexpr static auto parenthesis_scope_nterm_name = std::array< const char, sizeof( parenthesis_scope_name_string ) >{ parenthesis_scope_name_string };  // = ToRawTemplateArray< parenthesis_scope_name_string >::ResultType{};
+constexpr static auto natural_number_regex = ToRawTemplateArray< natural_number_regex_string >::ResultType{};
+constexpr static auto identifier_regex = ToRawTemplateArray< identifier_regex_string >::ResultType{};
+constexpr static auto parenthesis_scope_nterm_name = ToRawTemplateArray< parenthesis_scope_name_string >::ResultType{};
 constexpr static auto identifier_term_name = std::array< const char, sizeof( identifier_name_string ) >{ identifier_name_string };  // = ToRawTemplateArray< identifier_name_string >::ResultType{};
 
 using DefaultConstantExpressionConstantAlgebraicType = size_t;
-constexpr static auto defualt_constant_expression_data_type_name = std::array< const char, sizeof( natural_number_name_string ) >{ natural_number_name_string }; // = ToRawTemplateArray< natural_number_name_string >::ResultType{};
+constexpr static auto defualt_constant_expression_data_type_name = ToRawTemplateArray< natural_number_name_string >::ResultType{};
 constexpr static auto defualt_constant_expression_literal_regex = natural_number_regex;
 constexpr static auto defualt_constant_expression_identifier_regex = identifier_regex;
 
-constexpr static auto defualt_constant_expression_factor_nterm_name = std::array< const char, sizeof( factor_name_string ) >{ factor_name_string }; // = ToRawTemplateArray< factor_name_string >::ResultType{};
-constexpr static auto defualt_constant_expression_sum_nterm_name = std::array< const char, sizeof( sum_name_string ) >{ sum_name_string }; // = ToRawTemplateArray< sum_name_string >::ResultType{};
+constexpr static auto defualt_constant_expression_factor_nterm_name = ToRawTemplateArray< factor_name_string >::ResultType{};
+constexpr static auto defualt_constant_expression_sum_nterm_name = ToRawTemplateArray< sum_name_string >::ResultType{};
 constexpr static auto defualt_constant_expression_parenthesis_scope_nterm_name = parenthesis_scope_nterm_name;
 constexpr static auto defualt_constant_expression_identifier_term_name = identifier_term_name;
 
