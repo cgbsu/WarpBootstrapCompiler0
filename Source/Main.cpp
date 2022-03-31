@@ -1,13 +1,30 @@
 #include <Warp/Expression.hpp>
 
-using NaturalNumberConstantExpression = ConstantExpression< to_size_t, size_t, defualt_constant_expression_data_type_name >;
+using NaturalNumberConstantExpression = ConstantExpression< 
+        to_size_t, 
+        size_t 
+    >;
 
-constexpr ctpg::parser factor_parser( 
+
+/*constexpr static auto plus_term = ctpg::char_term{ 
+        '+', 
+        1, 
+        ctpg::associativity::ltor 
+    };
+*/
+constexpr static auto factor_parser = ctpg::parser{ 
         NaturalNumberConstantExpression::factor, 
+        // ctpg::terms(plus_term), 
         NaturalNumberConstantExpression::terms, 
+        // ctpg::nterms(NaturalNumberConstantExpression::factor), 
         NaturalNumberConstantExpression::nterms, 
+        // ctpg::rules()// 
         NaturalNumberConstantExpression::rules
-    );
+        // ctpg::rules( 
+        //     NaturalNumberConstantExpression::factor(NaturalNumberConstantExpression::plus_term ) >= [](auto){ return 1; }, 
+        //     NaturalNumberConstantExpression::factor(NaturalNumberConstantExpression::literal_term, NaturalNumberConstantExpression::plus_term ) >= [](auto ,auto){ return 2; }
+        //  )
+    };
 
 int main( int argc, char** args )
 {
