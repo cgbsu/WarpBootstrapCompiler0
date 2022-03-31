@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include <ctpg.hpp>
-
+/*
 template< auto FirstConstantParameter, auto... SeriesConstantParameters >
 struct TakeOneFromTemplateSeries {
     constexpr static auto first = FirstConstantParameter;
@@ -69,7 +69,7 @@ struct ToRawTemplateArray
             // std::strlen( ArrayParameterConstant ) 
             ctpg::utils::str_len( ArrayParameterConstant ) + 1
         >::ResultType;
-};
+};*/
 
 
 // This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
@@ -81,49 +81,71 @@ constexpr size_t to_size_t( std::string_view integer_token )
     return sum;
 }
 
-/*template< typename CanidateTypeParameter >
-concept ConstantAlgebraicConcept = 
-        requires( CanidateTypeParameter left, CanidateTypeParameter right ) 
-        {
-                { left + right } -> CanidateTypeParameter;
-                { left - right } -> CanidateTypeParameter;
-                { left * right } -> CanidateTypeParameter;
-                { left / right } -> CanidateTypeParameter;
-        };*/
-
-constexpr static const char natural_number_regex_string[] = "[0-9][0-9]*";
-constexpr static const char identifier_regex_string[] = "[a-zA-Z\\_][a-zA-Z0-9\\_]*";
 constexpr static const char parenthesis_scope_name_string[] = "ParenthesisScope";
-constexpr static const char identifier_name_string[] = "Identifier";
-constexpr static const char natural_number_name_string[] = "NaturalNumber";
 constexpr static const char factor_name_string[] = "Factor";
 constexpr static const char sum_name_string[] = "Sum";
 
+enum class RegexLiteralTerms {
+    NaturalNumber = 0, 
+    Identifier = 1
+};
 
-constexpr static auto natural_number_regex = ToRawTemplateArray< natural_number_regex_string >::ResultType{};
-constexpr static auto identifier_regex = ToRawTemplateArray< identifier_regex_string >::ResultType{};
-constexpr static auto parenthesis_scope_nterm_name = ToRawTemplateArray< parenthesis_scope_name_string >::ResultType{};
-constexpr static auto identifier_term_name = ToRawTemplateArray< identifier_name_string >::ResultType{};
+template< auto LiteralParameterType >
+struct LiteralTerm
+{
+    static_assert( true, "Error::Unkown literal type -- no valid specification" );
+    constexpr const static char regex[] = "";
+    constexpr const static char name[] = "Nothing";
+    constexpr const static auto term = ctpg::regex_term< regex >{ name };
+    constexpr const static auto literal_type = LiteralParameterType;
+};
 
-using DefaultConstantExpressionConstantAlgebraicType = size_t;
-constexpr static auto defualt_constant_expression_data_type_name = natural_number_regex;
-constexpr static auto defualt_constant_expression_literal_regex = natural_number_regex;
-constexpr static auto defualt_constant_expression_identifier_regex = identifier_regex;
-constexpr static auto defualt_constant_expression_factor_nterm_name = ToRawTemplateArray< factor_name_string >::ResultType{};
-constexpr static auto defualt_constant_expression_sum_nterm_name = ToRawTemplateArray< sum_name_string >::ResultType{};
-constexpr static auto defualt_constant_expression_parenthesis_scope_nterm_name = parenthesis_scope_nterm_name;
-constexpr static auto defualt_constant_expression_identifier_term_name = identifier_term_name;
+template<>
+struct LiteralTerm< RegexLiteralTerms::NaturalNumber >
+{
+    constexpr const static char regex[] = "[0-9][0-9]*";
+    constexpr const static char name[] = "NaturalNumber";
+    constexpr const static auto term = ctpg::regex_term< regex >{ name };
+    constexpr const static auto literal_type = RegexLiteralTerms::NaturalNumber;
+};
+
+template<>
+struct LiteralTerm< RegexLiteralTerms::Identifier >
+{
+    constexpr const static char regex[] = "[a-zA-Z\\_][a-zA-Z0-9\\_]*";
+    constexpr const static char name[] = "Identifier";
+    constexpr const static auto term = ctpg::regex_term< regex >{ name };
+    constexpr const static auto literal_type = RegexLiteralTerms::Identifier;
+};
+
+template< auto TypeParameterConstant 
+        = RegexLiteralTerms::NaturalNumber >
+struct DefaultTypes {
+    using Type = size_t;
+};
+
+template<>
+struct DefaultTypes< RegexLiteralTerms::Identifier > {
+    using Type = std::string;
+};
 
 template< 
-        auto ConvertToTypeConstantParameter, 
+        auto TypeParameterConstant = RegexLiteralTerms::NaturalNumber, 
+        typename CPlusPlusTypeParameterConstant 
+                = DefaultTypes< TypeParameterConstant >::Type 
+    >
+struct Converter {
+    constexpr const static auto converter = to_size_t;
+};
+
+template< 
         typename OperhandTypeParameterType, 
-        auto DataTypeNameParameterConstant = defualt_constant_expression_data_type_name, 
-        auto LiteralRegexParameterConstant = defualt_constant_expression_literal_regex,
-        auto IdentifierRegexParameterConstant = defualt_constant_expression_identifier_regex, 
-        auto IdentifierNameParameterConstant = defualt_constant_expression_identifier_term_name, 
-        auto FactorNameParameterConstant = defualt_constant_expression_factor_nterm_name, 
-        auto SumNameParameterConstant = defualt_constant_expression_sum_nterm_name, 
-        auto ParanthesisScopeParameterConstant = defualt_constant_expression_parenthesis_scope_nterm_name, 
+        auto ConvertToTypeConstantParameter = Converter< RegexLiteralTerms::NaturalNumber >::converter, 
+        typename LiteralRegexTermParameterConstant = LiteralTerm< RegexLiteralTerms::NaturalNumber >,
+        typename IdentifierRegexTermParameterConstant = LiteralTerm< RegexLiteralTerms::Identifier >, 
+        auto FactorNameParameterConstant = parenthesis_scope_name_string, 
+        auto SumNameParameterConstant = factor_name_string, 
+        auto ParanthesisScopeParameterConstant = sum_name_string, 
         auto PlusCharacterParameterConstant = '+', 
         auto MinusCharacterParameterConstant = '-', 
         auto MultiplyCharacterParameterConstant = '*', 
@@ -133,28 +155,10 @@ template<
     >
 struct ConstantExpression
 {
-    using DataType = OperhandTypeParameterType;
-    constexpr static auto data_type_name = DataTypeNameParameterConstant;
 
-    using LiteralRegexArrayType = decltype( LiteralRegexParameterConstant );
-    // constexpr static const char test0[] = "[0-9][0-9]*";
-    constexpr static auto literal_term = ctpg::regex_term< LiteralRegexArrayType::array >{ 
-            // decltype( data_type_name )::pointer 
-            // DataTypeNameParameterConstant
-            "num"
-        };
-
-    using IdentifierRegexArrayType =  decltype( IdentifierRegexParameterConstant );
-    // constexpr static const char test1[] = "[a-zA-Z]+";
-    constexpr static auto identifier = ctpg::regex_term< IdentifierRegexArrayType::array >{ 
-            // decltype( IdentifierNameParameterConstant )::array 
-            // IdentifierNameParameterConstant
-            "id"
-        };
-
-    constexpr static auto factor = ctpg::nterm< OperhandTypeParameterType >{ "Factor" };//decltype( FactorNameParameterConstant )::pointer };
-    constexpr static auto sum = ctpg::nterm< OperhandTypeParameterType >{ "Sum" };//decltype( SumNameParameterConstant )::pointer };
-    constexpr static auto parenthesis_scope = ctpg::nterm< OperhandTypeParameterType >{ "ParenthesisScope" };//decltype( ParanthesisScopeParameterConstant )::pointer };
+    constexpr static auto factor = ctpg::nterm< OperhandTypeParameterType >{ FactorNameParameterConstant };
+    constexpr static auto sum = ctpg::nterm< OperhandTypeParameterType >{ SumNameParameterConstant };
+    constexpr static auto parenthesis_scope = ctpg::nterm< OperhandTypeParameterType >{ ParanthesisScopeParameterConstant };
 
     constexpr static auto nterms = ctpg::nterms( 
             factor, sum, parenthesis_scope 
@@ -201,12 +205,12 @@ struct ConstantExpression
         );
 
     constexpr static auto rules = ctpg::rules( 
-            factor( literal_term ) >= ConvertToTypeConstantParameter, 
-            factor( factor, multiply_term, literal_term ) 
+            factor( LiteralRegexTermParameterConstant::term ) >= ConvertToTypeConstantParameter, 
+            factor( factor, multiply_term, IdentifierRegexTermParameterConstant::term ) 
                 >= []( size_t current_factor, auto, const auto& next_token ) {  
                         return current_factor * ConvertToTypeConstantParameter( next_token ); 
                     }, 
-            factor( factor, divide_term, literal_term ) 
+            factor( factor, divide_term, IdentifierRegexTermParameterConstant::term ) 
                 >= []( size_t current_factor, auto, const auto& next_token ) {
                         return current_factor / ConvertToTypeConstantParameter( next_token ); 
                     },
@@ -231,13 +235,4 @@ struct ConstantExpression
                         return current_sum - next_token; 
                     } 
         );
-
-        /*constexpr static auto factor_parser = ctpg::parser{ 
-                factor, 
-                terms, 
-                nterms, 
-                // rules
-                ctpg::rules( factor( plus_term ) >= [](auto){ return 1; } )
-            };*/
-
 };

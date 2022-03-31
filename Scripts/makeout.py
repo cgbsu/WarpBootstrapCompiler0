@@ -1,16 +1,32 @@
+#! /bin/python3
+
 from pathlib import Path
 import re
 import subprocess
 
-def read_make_output( path : Path = Path( "/tmp/makeout" ) ) -> [ str ]: 
+DEFAULT_MAKE_OUTPUT_PATH = Path( "/tmp/makeout" )
+DEFAULT_FORMATTED_MAKE_OUTPUT_BUFFER_PATH = Path( "/tmp/makeoutbuffer" )
+DEFAULT_FIND_CODE_REGEX = r".+[0-9]+:[0-9]+:([^'.]|'constexpr')+['‘]"
+DEFAULT_BUILD_COMMAND = [ "make" ]
+
+def run_make( 
+            output_path : Path = DEFAULT_MAKE_OUTPUT_PATH, 
+            build_command : [ str ] = DEFAULT_BUILD_COMMAND ): 
+    with open( str( output_path ), 'wb' ) as output_buffer: 
+        result = subprocess.run( build_command, 
+                stdout = output_buffer, 
+                stderr = output_buffer, 
+            )
+
+def read_make_output( path : Path = DEFAULT_MAKE_OUTPUT_PATH ) -> [ str ]: 
     make_output = []
     with open( str( path ), 'r' ) as file_stream: 
-        make_output = file_stream.read_lines()
+        make_output = file_stream.readlines()
     return make_output
 
 def format_lines( lines : [ str ], 
-            find_code_regex : str = r".+[0-9]+:[0-9]+:([^'.]|'constexpr')+'", 
-            format_buffer_file : Path = Path( "/tmp/makeoutbuffer" ) ) -> [ str ]: 
+            find_code_regex : str = DEFAULT_FIND_CODE_REGEX, 
+            format_buffer_file : Path = DEFAULT_FORMATTED_MAKE_OUTPUT_BUFFER_PATH ) -> [ str ]: 
     find_code_regex = re.compile( find_code_regex )
     format_buffer_file = str( format_buffer_file )
     for line in lines: 
@@ -24,16 +40,29 @@ def format_lines( lines : [ str ],
                             format_buffer_file, 
                     ], 
                     capture_output=True 
-                 ).stdout.decode( "utf-8" )
+                 ).stdout.decode()
             yield line.replace( 
                     code, 
                     '\n' + formatted_code
                 )
-        #]
+        else: 
+            yield line
+
+def format_output( 
+        output_path : Path = DEFAULT_MAKE_OUTPUT_PATH, 
+        build_command : [ str ] = DEFAULT_BUILD_COMMAND, 
+        find_code_regex : str = DEFAULT_FIND_CODE_REGEX, 
+        format_buffer_file : Path = DEFAULT_FORMATTED_MAKE_OUTPUT_BUFFER_PATH ) -> [ str ]: 
+    run_make( output_path, build_command )
+    return [ line for line in format_lines( 
+            read_make_output( output_path ), 
+            find_code_regex, 
+            format_buffer_file 
+        ) ]
 
 def main(): 
-    test_string = "/root/workdir/Source/Main.cpp:28:5:   in 'constexpr' expansion of 'ctpg::parser<ctpg::nterm<long unsigned int>, std::tuple<ctpg::char_term, ctpg::char_term, ctpg::char_term, ctpg::char_term, ctpg::char_term, ctpg::char_term>, std::tuple<ctpg::nterm<long unsigned int>, ctpg::nterm<long unsigned int>, ctpg::nterm<long unsigned int> >, std::tuple<ctpg::detail::rule<<lambda(auto:65)>, ctpg::nterm<long unsigned int>, ctpg::char_term>, ctpg::detail::rule<<lambda(auto:66, auto:67)>, ctpg::nterm<long unsigned int>, ctpg::regex_term<RawTemplateArray<'[', '0', '-', '9', ']', '[', '0', '-', '9', ']', '*', '\000'>::array>, ctpg::char_term> >, ctpg::use_generated_lexer>(ConstantExpression<to_size_t, long unsigned int, RawTemplateArray<'N', 'a', 't', 'u', 'r', 'a', 'l', 'N', 'u', 'm', 'b', 'e', 'r', '\000'>()>::factor, ConstantExpression<to_size_t, long unsigned int, RawTemplateArray<'N', 'a', 't', 'u', 'r', 'a', 'l', 'N', 'u', 'm', 'b', 'e', 'r', '\000'>()>::terms, ConstantExpression<to_size_t, long unsigned int, RawTemplateArray<'N', 'a', 't', 'u', 'r', 'a', 'l', 'N', 'u', 'm', 'b', 'e', 'r', '\000'>()>::nterms, ctpg::rules(Rules&& ...) [with Rules = {ctpg::detail::rule<<lambda(auto:65)>, ctpg::nterm<long unsigned int>, ctpg::char_term>, ctpg::detail::rule<<lambda(auto:66, auto:67)>, ctpg::nterm<long unsigned int>, ctpg::regex_term<RawTemplateArray<'[', '0', '-', '9', ']', '[', '0', '-', '9', ']', '*', '\000'>::array>, ctpg::char_term>}](ctpg::detail::rule<F, L, R>::operator>=(F1&&) [with F1 = <lambda(auto:66, auto:67)>; F = std::nullptr_t; L = ctpg::nterm<long unsigned int>; R = {ctpg::regex_term<RawTemplateArray<'[', '0', '-', '9', ']', '[', '0', '-', '9', ']', '*', '\000'>::array>, ctpg::char_term}](<lambda closure object><lambda(auto:66, auto:67)>{})))'"
-    print( [ i for i in format_lines( [ test_string ] ) ][ 0 ] )
+    for line in format_output(): 
+        print( line )
 
 if __name__ == "__main__": 
     main()
