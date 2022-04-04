@@ -8,69 +8,6 @@
 #include <string.h>
 
 #include <ctpg.hpp>
-/*
-template< auto FirstConstantParameter, auto... SeriesConstantParameters >
-struct TakeOneFromTemplateSeries {
-    constexpr static auto first = FirstConstantParameter;
-    using NextType = TakeOneFromTemplateSeries< SeriesConstantParameters... >;
-};
-
-template< auto... ElementParameterConstants >
-struct RawTemplateArray
-{
-    using ElementType = decltype( 
-            TakeOneFromTemplateSeries< ElementParameterConstants... >::first 
-        );
-    constexpr static auto size = sizeof...( ElementParameterConstants );
-    constexpr static ElementType array[ size ] = { ElementParameterConstants... };
-    constexpr static ElementType* pointer = array;
-};
-
-template< 
-        auto ArrayParameterConstant, 
-        size_t IndexParameterConstant, 
-        size_t ArrayLengthParameterConstant, 
-        auto... ElementParameterConstants 
-    >
-struct ToRawTemplateArrayImplementation
-{
-    using ResultType = typename ToRawTemplateArrayImplementation< 
-            ArrayParameterConstant, 
-            IndexParameterConstant + 1, 
-            ArrayLengthParameterConstant, 
-            ElementParameterConstants..., 
-            ArrayParameterConstant[ IndexParameterConstant % ArrayLengthParameterConstant ] 
-        >::ResultType;
-};
-
-template< 
-        auto ArrayParameterConstant, 
-        size_t IndexParameterConstant, 
-        auto... ElementParameterConstants 
-    >
-struct ToRawTemplateArrayImplementation< 
-        ArrayParameterConstant, 
-        IndexParameterConstant, 
-        IndexParameterConstant, 
-        ElementParameterConstants... 
-    >
-{
-    using ResultType = RawTemplateArray< 
-            ElementParameterConstants... 
-        >;
-};
-
-template< auto ArrayParameterConstant >
-struct ToRawTemplateArray
-{
-    using ResultType = typename ToRawTemplateArrayImplementation< 
-            ArrayParameterConstant, 
-            0, 
-            // std::strlen( ArrayParameterConstant ) 
-            ctpg::utils::str_len( ArrayParameterConstant ) + 1
-        >::ResultType;
-};*/
-
 
 // This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
 constexpr size_t to_size_t( std::string_view integer_token )
@@ -138,16 +75,6 @@ struct Converter {
     constexpr const static auto converter = to_size_t;
 };
 
-/*    constexpr const static char LiteralRegexTermParameterConstant[] = "[0-9][0-9]*";
-    constexpr const static char LiteralRegexTermParameterConstantName[] = "NaturalNumber";
-
-    constexpr const static char IdentifierRegexTermParameterConstant[] = "[a-zA-Z\\_][a-zA-Z0-9\\_]*";
-    constexpr const static char IdentifierRegexTermParameterConstantName[] = "Identifier";
-
-    constexpr const static auto LiteralRegexTermParameterConstantTerm = ctpg::regex_term< LiteralRegexTermParameterConstant >{ LiteralRegexTermParameterConstantName };
-    // constexpr const static auto IdentifierRegexTermParameterConstantTerm = ctpg::regex_term< IdentifierRegexTermParameterConstant >{ IdentifierRegexTermParameterConstantName };
-
-*/
 template< 
         typename OperhandTypeParameterType, 
         auto ConvertToTypeConstantParameter = Converter< RegexLiteralTerms::NaturalNumber >::converter, 
@@ -166,16 +93,13 @@ template<
 struct ConstantExpression
 {
 
-
-
-
     constexpr static auto factor = ctpg::nterm< OperhandTypeParameterType >{ FactorNameParameterConstant };
     constexpr static auto sum = ctpg::nterm< OperhandTypeParameterType >{ SumNameParameterConstant };
     constexpr static auto parenthesis_scope = ctpg::nterm< OperhandTypeParameterType >{ ParanthesisScopeParameterConstant };
 
-    /*constexpr static auto nterms = ctpg::nterms( 
+    constexpr static auto nterms = ctpg::nterms( 
             factor, sum, parenthesis_scope 
-        );*/
+        );
 
     constexpr static auto plus_term = ctpg::char_term{ 
             PlusCharacterParameterConstant, 
@@ -208,19 +132,7 @@ struct ConstantExpression
             ctpg::associativity::ltor 
         };
 
-    /*constexpr static auto terms = ctpg::terms(
-            plus_term, 
-            minus_term, 
-            multiply_term, 
-            divide_term, 
-            left_parenthesis_term, 
-            right_parenthesis_term 
-        );*/
-
-    // constexpr static auto rules = 
-    constexpr const static auto factor_parser = ctpg::parser { 
-        factor, 
-        ctpg::terms(
+    constexpr static auto terms = ctpg::terms(
             plus_term, 
             minus_term, 
             multiply_term, 
@@ -229,40 +141,64 @@ struct ConstantExpression
             right_parenthesis_term, 
             LiteralRegexTermParameterConstant::term, 
             IdentifierRegexTermParameterConstant::term 
-        ), 
-        ctpg::nterms( 
-            factor, sum, parenthesis_scope 
-        ), 
-        ctpg::rules( 
-                factor( LiteralRegexTermParameterConstant::term ) >= ConvertToTypeConstantParameter, 
-                factor( factor, multiply_term, IdentifierRegexTermParameterConstant::term ) 
-                    >= []( size_t current_factor, auto, const auto& next_token ) {  
-                            return current_factor * ConvertToTypeConstantParameter( next_token ); 
-                        }, 
-                factor( factor, divide_term, IdentifierRegexTermParameterConstant::term ) 
-                    >= []( size_t current_factor, auto, const auto& next_token ) {
-                            return current_factor / ConvertToTypeConstantParameter( next_token ); 
-                        },
-                parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
-                        >= [] ( auto, auto factor, auto ) { return factor; }, 
-                factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
-                factor( factor, multiply_term, parenthesis_scope ) 
-                    >= []( auto factor, auto, auto parenthesis_scope ) { 
-                            return factor * parenthesis_scope; 
-                        }, 
-                factor( factor, divide_term, parenthesis_scope ) 
-                    >= []( auto factor, auto, auto parenthesis_scope ) { 
-                            return factor / parenthesis_scope; 
-                        }, 
-                factor( sum ) >= []( auto sum ) { return sum; }, 
-                sum( factor, plus_term, factor ) 
-                    >= []( auto current_sum, auto, const auto& next_token ) {
-                            return  current_sum + next_token; 
-                        }, 
-                sum( factor, minus_term, factor ) 
-                    >= []( auto current_sum, auto, const auto& next_token ) {
-                            return current_sum - next_token; 
-                        } 
-            )
-    };
+        );
+
+    constexpr static auto rules = ctpg::rules( 
+            factor( LiteralRegexTermParameterConstant::term ) >= ConvertToTypeConstantParameter, 
+            factor( factor, multiply_term, IdentifierRegexTermParameterConstant::term ) 
+                >= []( size_t current_factor, auto, const auto& next_token ) {  
+                        return current_factor * ConvertToTypeConstantParameter( next_token ); 
+                    }, 
+            factor( factor, divide_term, IdentifierRegexTermParameterConstant::term ) 
+                >= []( size_t current_factor, auto, const auto& next_token ) {
+                        return current_factor / ConvertToTypeConstantParameter( next_token ); 
+                    },
+            parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
+                    >= [] ( auto, auto factor, auto ) { return factor; }, 
+            factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
+            factor( factor, multiply_term, parenthesis_scope ) 
+                >= []( auto factor, auto, auto parenthesis_scope ) { 
+                        return factor * parenthesis_scope; 
+                    }, 
+            factor( factor, divide_term, parenthesis_scope ) 
+                >= []( auto factor, auto, auto parenthesis_scope ) { 
+                        return factor / parenthesis_scope; 
+                    }, 
+            factor( sum ) >= []( auto sum ) { return sum; }, 
+            sum( factor, plus_term, factor ) 
+                >= []( auto current_sum, auto, const auto& next_token ) {
+                        return  current_sum + next_token; 
+                    }, 
+            sum( factor, minus_term, factor ) 
+                >= []( auto current_sum, auto, const auto& next_token ) {
+                        return current_sum - next_token; 
+                    } 
+        );
+
+    constexpr const static auto parser = ctpg::parser< 
+            decltype( factor ), 
+            decltype( terms ), 
+            decltype( nterms ), 
+            decltype( rules ), 
+            ctpg::use_generated_lexer 
+        >{ 
+            factor, 
+            terms, 
+            nterms, 
+            rules 
+        };
+
+    /*constexpr const static auto parser = dectype( ParserInjector{ 
+            Specify
+            factor, 
+            terms, 
+            nterms, 
+            rules, 
+        } )::ParserType{ 
+            factor, 
+            terms, 
+            nterms, 
+            rules, 
+            ctpg::use_generated_lexer
+        };*/
 };

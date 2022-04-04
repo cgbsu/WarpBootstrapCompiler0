@@ -7,11 +7,11 @@ using NaturalNumberConstantExpression = ConstantExpression< size_t >;
         NaturalNumberConstantExpression::terms, 
         NaturalNumberConstantExpression::nterms, 
         NaturalNumberConstantExpression::rules
-    };
-*/
+    };*/
+
 int main( int argc, char** args )
 {
-    auto& factor_parser = NaturalNumberConstantExpression::factor_parser;
+    const auto& factor_parser = NaturalNumberConstantExpression::parser;
     std::cout << "Hello world! Please enter your expression: ";
     for( std::string input = "4*10+2"; input != "thanks :)"; std::getline( std::cin, input ) )
     {
