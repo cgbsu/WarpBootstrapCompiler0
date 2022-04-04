@@ -2,15 +2,16 @@
 
 using NaturalNumberConstantExpression = ConstantExpression< size_t >;
 
-constexpr static auto factor_parser = ctpg::parser{ 
+/*constexpr static auto factor_parser = ctpg::parser{ 
         NaturalNumberConstantExpression::factor, 
         NaturalNumberConstantExpression::terms, 
         NaturalNumberConstantExpression::nterms, 
         NaturalNumberConstantExpression::rules
     };
-
+*/
 int main( int argc, char** args )
 {
+    auto& factor_parser = NaturalNumberConstantExpression::factor_parser;
     std::cout << "Hello world! Please enter your expression: ";
     for( std::string input = "4*10+2"; input != "thanks :)"; std::getline( std::cin, input ) )
     {
