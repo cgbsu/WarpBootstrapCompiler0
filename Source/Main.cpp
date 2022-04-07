@@ -1,10 +1,11 @@
 #include <iostream>
+#include <string>
+#include <sstream>
 #include <concepts>
 #include <variant>
 #include <type_traits>
 #include <utility>
 #include <memory>
-
 #include <ctpg.hpp>
 
 constexpr char star_token = '*';
@@ -68,6 +69,7 @@ struct StrongFactor
     FactorType factor;
     
     constexpr StrongFactor( FactorType factor ) : factor( factor ) {}
+    constexpr StrongFactor( auto factor ) : factor( factor ) {}
 
     constexpr ThisType operator*( const auto other ) {
         return ThisType{ *std::get_if< decltype( other ) >( &factor ) * other };
@@ -115,58 +117,81 @@ struct WeakFactor
 
 using FactorType = StrongFactor< size_t, int, float, double >;
 
-struct BaseNode
+struct ToString
+{
+    virtual std::string to_string() const = 0;
+    operator std::string() const {
+        return to_string();
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct BaseNode : public ToString
 {
     using ThisType = BaseNode;
-    using BaseNodeType = std::unique_ptr< BaseNode >;
+    using BaseNodeType = BaseNode;
     // Sweet sweet OOP, oh how I have missed you. //////
     // Im sorry I left you baby. Except Im not I just //
     // Gadda learn data oriented programming, but //////
     // Oh sweet sweet OOP, dynamic dispatch, Im gunna //
     // cry my eyes out later. //////////////////////////
-    constexpr virtual BaseNodeType multiply( BaseNodeType&& other ) = 0;
-    constexpr virtual BaseNodeType divide( BaseNodeType&& other ) = 0;
-    constexpr virtual BaseNodeType add( BaseNodeType&& other ) = 0;
-    constexpr virtual BaseNodeType subtract( BaseNodeType&& other ) = 0;
-    BaseNodeType operator*( BaseNodeType&& other ) {
-        return multiply( std::move( other ) );
+    constexpr virtual BaseNodeType& multiply( BaseNodeType const& other ) = 0;
+    constexpr virtual BaseNodeType& divide( BaseNodeType const& other ) = 0;
+    constexpr virtual BaseNodeType& add( BaseNodeType const& other ) = 0;
+    constexpr virtual BaseNodeType& subtract( BaseNodeType const& other ) = 0;
+    BaseNodeType& operator*( BaseNodeType const& other ) {
+        return multiply( other );
     }
-    BaseNodeType operator/( BaseNodeType&& other ) {
-        return divide( std::move( other ) );
+    BaseNodeType& operator/( BaseNodeType const& other ) {
+        return divide( other );
     }
-    BaseNodeType operator+( BaseNodeType&& other ) {
-        return add( std::move( other ) );
+    BaseNodeType& operator+( BaseNodeType const& other ) {
+        return add( other );
     }
-    BaseNodeType operator-( BaseNodeType&& other ) {
-        return subtract( std::move( other ) );
+    BaseNodeType& operator-( BaseNodeType const& other ) {
+        return subtract( other );
+    }
+    friend std::ostream& operator<<( std::ostream& output_media, const BaseNode& node ) {
+        output_media << node.to_string();
+        return output_media;
     }
 };
 
-using BaseNodeType = std::unique_ptr< BaseNode >;
+
+using BaseNodeType = BaseNode;
 
 template< typename ThisParameterType, template< ExpressionOperator > typename ExpressionParameterType >
 struct MakeSuper : public BaseNode
 {
     template< ExpressionOperator SuperOperationParameterConstant >
-    BaseNodeType Super( BaseNodeType const& other )
-    {
-        return std::make_unique< ExpressionParameterType< SuperOperationParameterConstant > >( 
-                std::unique_ptr< ThisType >( this ), 
-                std::move( other ) 
-            );
+    BaseNodeType& Super( BaseNodeType const& other ) {
+        BaseNodeType pointer = ExpressionParameterType< SuperOperationParameterConstant >( *this, other );
+        return pointer;
     }
 
-    constexpr virtual BaseNodeType multiply( BaseNodeType&& other ) override final {
-        return std::move( Super< ExpressionOperator::FactorMultiply >( other ) );
+    constexpr virtual BaseNodeType& multiply( BaseNodeType const& other ) override final {
+        return Super< ExpressionOperator::FactorMultiply >( other );
     }
-    constexpr virtual BaseNodeType divide( BaseNodeType&& other ) override final {
-        return std::move( Super< ExpressionOperator::FactorDivide >( other ) );
+    constexpr virtual BaseNodeType& divide( BaseNodeType const& other ) override final {
+        return Super< ExpressionOperator::FactorDivide >( other );
     }
-    constexpr virtual BaseNodeType add( BaseNodeType&& other ) override final {
-        return std::move( Super< ExpressionOperator::SumAdd >( other ) );
+    constexpr virtual BaseNodeType& add( BaseNodeType const& other ) override final {
+        return Super< ExpressionOperator::SumAdd >( other );
     }
-    constexpr virtual BaseNodeType subtract( BaseNodeType&& other ) override final {
-        return std::move( Super< ExpressionOperator::SumSubtract >( other ) );
+    constexpr virtual BaseNodeType& subtract( BaseNodeType const& other ) override final {
+        return Super< ExpressionOperator::SumSubtract >( other );
     }
 };
 
@@ -179,14 +204,28 @@ struct ExpressionNode : public MakeSuper< ExpressionNode< OperationParameterCons
     using ThisType = ExpressionNode< OperationParameterConstant >;
 
     constexpr ExpressionNode( 
-                    BaseNodeType&& left, 
-                    BaseNodeType&& right 
+                    BaseNodeType& left, 
+                    BaseNodeType& right 
             ) : 
             left( left ), 
             right( right )
         {}
     constexpr ExpressionNode( ThisType const& other ) = default;
     constexpr ExpressionNode( ThisType&& other ) = default;
+    virtual std::string to_string() const override
+    {
+        std::stringstream stream;
+        std::string arguments = left.to_string() + ", " + right.to_string();
+        if constexpr( OperationParameterConstant == ExpressionOperator::FactorMultiply )
+            stream << "Multiply(" << arguments << ")";
+        if constexpr( OperationParameterConstant == ExpressionOperator::FactorDivide )
+            stream << "Divide(" << arguments << ")";
+        if constexpr( OperationParameterConstant == ExpressionOperator::SumAdd )
+            stream << "Add(" << arguments << ")";
+        if constexpr( OperationParameterConstant == ExpressionOperator::SumSubtract )
+            stream << "Subtract(" << arguments << ")";
+        return stream.str();
+    }
 };
 
 struct FactorStem : public MakeSuper< FactorStem, ExpressionNode >
@@ -196,9 +235,15 @@ struct FactorStem : public MakeSuper< FactorStem, ExpressionNode >
     constexpr FactorStem( const FactorType literal ) : literal( literal ) {}
     constexpr FactorStem( ThisType const& other ) = default;
     constexpr FactorStem( ThisType&& other ) = default;
+    virtual std::string to_string() const override
+    {
+        std::stringstream stream;
+        std::visit( [ & ]( auto data ){ 
+                stream << "{" << data << "}"; 
+            }, literal.factor );
+        return stream.str();
+    }
 };
-
-
 
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
 constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
@@ -251,38 +296,37 @@ constexpr ctpg::parser factor_parser(
         ctpg::rules( 
                 factor( natural_number_term ) 
                         >= []( auto token ) {
-                            return new FactorStem{ 
-                                    FactorType{ to_size_t( token ) }
-                                };
+                                return new FactorType{ to_size_t( token ) };
                             }, 
                 factor( factor, multiply_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token ) {
-                                return current_factor * to_size_t( next_token ); 
+                                return current_factor * new FactorStem{ to_size_t( next_token ) };
                             }, 
                 factor( factor, divide_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token ) {
-                                return current_factor / to_size_t( next_token ); 
-                            },
-                parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
-                        >= [] ( auto, auto factor, auto ) { return factor; }, 
-                factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
-                factor( factor, multiply_term, parenthesis_scope ) 
-                        >= []( auto factor, auto, auto parenthesis_scope ) { 
-                                return factor * parenthesis_scope; 
-                            }, 
-                factor( factor, divide_term, parenthesis_scope ) 
-                        >= []( auto factor, auto, auto parenthesis_scope ) { 
-                                return factor / parenthesis_scope; 
-                            }, 
-                factor( sum ) >= []( auto sum ) { return sum; }, 
-                sum( factor, plus_term, factor ) 
-                        >= []( auto current_sum, auto, const auto& next_token ) {
-                                return  current_sum + next_token; 
-                            }, 
-                sum( factor, minus_term, factor ) 
-                        >= []( auto current_sum, auto, const auto& next_token ) {
-                                return current_sum - next_token; 
-                            }
+                                return current_factor / new FactorStem{ to_size_t( next_token ) };
+                            }//,
+                // parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
+                        // >= [] ( auto, auto factor, auto ) { return factor; }, 
+                // factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
+                // factor( factor, multiply_term, parenthesis_scope ) 
+                //         >= []( auto factor, auto, auto parenthesis_scope ) { 
+                //                 return factor * parenthesis_scope; 
+                //             }, 
+                // factor( factor, divide_term, parenthesis_scope ) 
+                //         >= []( auto factor, auto, auto parenthesis_scope ) { 
+                //                 return factor / parenthesis_scope; 
+                //             }, 
+
+                // factor( sum ) >= []( auto sum ) { return sum; }, 
+                // sum( factor, plus_term, factor ) 
+                //         >= []( auto current_sum, auto, const auto& next_token ) {
+                //                 return  current_sum->add( std::move( next_token ) ); 
+                //             }, 
+                // sum( factor, minus_term, factor ) 
+                //         >= []( auto current_sum, auto, const auto& next_token ) {
+                //                 return current_sum->subtract( std::move( next_token ) ); 
+                //             }
            )
 );
 
@@ -298,7 +342,7 @@ int main( int argc, char** args )
                     ); 
                     parse_result.has_value() == true 
                 )
-            std::cout << "Result: " << std::get< size_t >( parse_result.value().factor ) << "\n";
+            std::cout << "Result: " << parse_result.value()->to_string() << "\n";
         else
             std::cerr << "Error failed to parse!\n";
         std::cout << "Enter prompt please: ";
