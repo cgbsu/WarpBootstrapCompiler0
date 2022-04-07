@@ -1,4 +1,4 @@
-#include <iostream>
+/*#include <iostream>
 #include <functional>
 #include <array>
 #include <string>
@@ -187,7 +187,7 @@ struct ConstantExpression
             nterms, 
             rules 
         };
-
+*/
     /*constexpr const static auto parser = dectype( ParserInjector{ 
             Specify
             factor, 
@@ -201,4 +201,4 @@ struct ConstantExpression
             rules, 
             ctpg::use_generated_lexer
         };*/
-};
+// };
