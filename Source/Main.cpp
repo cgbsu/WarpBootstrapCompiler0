@@ -115,108 +115,87 @@ struct WeakFactor
 
 using FactorType = StrongFactor< size_t, int, float, double >;
 
-struct BaseNodeType
+struct BaseNode
 {
-    using ThisType = BaseNodeType;
+    using ThisType = BaseNode;
+    using BaseNodeType = std::unique_ptr< BaseNode >;
     // Sweet sweet OOP, oh how I have missed you. //////
     // Im sorry I left you baby. Except Im not I just //
     // Gadda learn data oriented programming, but //////
     // Oh sweet sweet OOP, dynamic dispatch, Im gunna //
     // cry my eyes out later. //////////////////////////
-    constexpr virtual BaseNodeType const& multiply( BaseNodeType const& other ) = 0;
-    constexpr virtual BaseNodeType const& divide( BaseNodeType const& other ) = 0;
-    constexpr virtual BaseNodeType const& add( BaseNodeType const& other ) = 0;
-    constexpr virtual BaseNodeType const& subtract( BaseNodeType const& other ) = 0;
-    BaseNodeType const& operator*( BaseNodeType const& other ) {
-        return multiply( other );
+    constexpr virtual BaseNodeType multiply( BaseNodeType&& other ) = 0;
+    constexpr virtual BaseNodeType divide( BaseNodeType&& other ) = 0;
+    constexpr virtual BaseNodeType add( BaseNodeType&& other ) = 0;
+    constexpr virtual BaseNodeType subtract( BaseNodeType&& other ) = 0;
+    BaseNodeType operator*( BaseNodeType&& other ) {
+        return multiply( std::move( other ) );
     }
-    BaseNodeType const& operator/( BaseNodeType const& other ) {
-        return divide( other );
+    BaseNodeType operator/( BaseNodeType&& other ) {
+        return divide( std::move( other ) );
     }
-    BaseNodeType const& operator+( BaseNodeType const& other ) {
-        return add( other );
+    BaseNodeType operator+( BaseNodeType&& other ) {
+        return add( std::move( other ) );
     }
-    BaseNodeType const& operator-( BaseNodeType const& other ) {
-        return subtract( other );
+    BaseNodeType operator-( BaseNodeType&& other ) {
+        return subtract( std::move( other ) );
+    }
+};
+
+using BaseNodeType = std::unique_ptr< BaseNode >;
+
+template< typename ThisParameterType, template< ExpressionOperator > typename ExpressionParameterType >
+struct MakeSuper : public BaseNode
+{
+    template< ExpressionOperator SuperOperationParameterConstant >
+    BaseNodeType Super( BaseNodeType const& other )
+    {
+        return std::make_unique< ExpressionParameterType< SuperOperationParameterConstant > >( 
+                std::unique_ptr< ThisType >( this ), 
+                std::move( other ) 
+            );
+    }
+
+    constexpr virtual BaseNodeType multiply( BaseNodeType&& other ) override final {
+        return std::move( Super< ExpressionOperator::FactorMultiply >( other ) );
+    }
+    constexpr virtual BaseNodeType divide( BaseNodeType&& other ) override final {
+        return std::move( Super< ExpressionOperator::FactorDivide >( other ) );
+    }
+    constexpr virtual BaseNodeType add( BaseNodeType&& other ) override final {
+        return std::move( Super< ExpressionOperator::SumAdd >( other ) );
+    }
+    constexpr virtual BaseNodeType subtract( BaseNodeType&& other ) override final {
+        return std::move( Super< ExpressionOperator::SumSubtract >( other ) );
     }
 };
 
 template< ExpressionOperator OperationParameterConstant >
-struct ExpressionNode : public BaseNodeType
+struct ExpressionNode : public MakeSuper< ExpressionNode< OperationParameterConstant >, ExpressionNode >
 {
     constexpr static const ExpressionOperator operation = OperationParameterConstant;
-    BaseNodeType const& left;
-    BaseNodeType const& right;
+    BaseNodeType left;
+    BaseNodeType right;
     using ThisType = ExpressionNode< OperationParameterConstant >;
 
     constexpr ExpressionNode( 
-                    BaseNodeType const& left, 
-                    BaseNodeType const& right 
+                    BaseNodeType&& left, 
+                    BaseNodeType&& right 
             ) : 
             left( left ), 
             right( right )
         {}
     constexpr ExpressionNode( ThisType const& other ) = default;
     constexpr ExpressionNode( ThisType&& other ) = default;
-    
-    constexpr virtual BaseNodeType const& multiply( BaseNodeType const& other ) override final
-    {
-        return *( new ExpressionNode< 
-                ExpressionOperator::FactorMultiply 
-            >{ *this, other } );
-    }
-    constexpr virtual BaseNodeType const& divide( BaseNodeType const& other ) override final
-    {
-        return *( new ExpressionNode< 
-                ExpressionOperator::FactorDivide 
-            >{ *this, other } );
-    }
-    constexpr virtual BaseNodeType const& add( BaseNodeType const& other ) override final
-    {
-        return *( new ExpressionNode< 
-                ExpressionOperator::SumAdd 
-            >{ *this, other } );
-    }
-    constexpr virtual BaseNodeType const& subtract( BaseNodeType const& other ) override final
-    {
-        return *( new ExpressionNode< 
-                ExpressionOperator::SumSubtract 
-            >{ *this, other } );
-    }
 };
 
-struct FactorStem : public BaseNodeType
+struct FactorStem : public MakeSuper< FactorStem, ExpressionNode >
 {
     FactorType literal;
     using ThisType = FactorStem;
     constexpr FactorStem( const FactorType literal ) : literal( literal ) {}
     constexpr FactorStem( ThisType const& other ) = default;
     constexpr FactorStem( ThisType&& other ) = default;
-
-    constexpr virtual BaseNodeType const& multiply( BaseNodeType const& other ) override final
-    {
-        return *( new ExpressionNode< 
-                ExpressionOperator::FactorMultiply 
-            >{ *this, other } );
-    }
-    constexpr virtual BaseNodeType const& divide( BaseNodeType const& other ) override final
-    {
-        return *( new ExpressionNode< 
-                ExpressionOperator::FactorDivide 
-            >{ *this, other } );
-    }
-    constexpr virtual BaseNodeType const& add( BaseNodeType const& other ) override final
-    {
-        return *( new ExpressionNode< 
-                ExpressionOperator::SumAdd 
-            >{ *this, other } );
-    }
-    constexpr virtual BaseNodeType const& subtract( BaseNodeType const& other ) override final
-    {
-        return *( new ExpressionNode< 
-                ExpressionOperator::SumSubtract 
-            >{ *this, other } );
-    }
 };
 
 
