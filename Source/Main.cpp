@@ -72,12 +72,14 @@ struct StrongFactor
 {
     using FactorType = std::variant< ArithmaticParameterTypes... >;
     using ThisType = StrongFactor< ArithmaticParameterTypes... >;
-    const FactorType factor;
+    FactorType factor;
     
     StrongFactor() = default;
-    explicit constexpr StrongFactor( FactorType factor ) : factor( factor ) {}
-    constexpr StrongFactor( const ThisType& other ) = default;
-    constexpr StrongFactor( ThisType&& other ) = default;
+    StrongFactor( FactorType factor ) : factor( factor ) {}
+    StrongFactor( const ThisType& other ) = default;
+    StrongFactor( ThisType&& other ) = default;
+    ThisType& operator=( const ThisType& other ) = default;
+    ThisType& operator=( ThisType&& other ) = default;
 
     constexpr ThisType operator*( const auto other ) {
         return ThisType{ *std::get_if< decltype( other ) >( &factor ) * other };
@@ -102,12 +104,14 @@ struct WeakFactor
 {
     using FactorType = std::variant< ArithmaticParameterTypes... >;
     using ThisType = WeakFactor< ArithmaticParameterTypes... >;
-    const FactorType factor;
+    FactorType factor;
     
     WeakFactor() = default;
-    explicit constexpr WeakFactor( FactorType factor ) : factor( factor ) {}
+    constexpr WeakFactor( FactorType factor ) : factor( factor ) {}
     constexpr WeakFactor( const ThisType& other ) = default;
     constexpr WeakFactor( ThisType&& other ) = default;
+    ThisType& operator=( const ThisType& other ) = default;
+    ThisType& operator=( ThisType&& other ) = default;
 
     constexpr ThisType operator*( const auto other ) {
         return ThisType{ std::visit( [ & ]( auto value ) { return value * other; }, factor ) };
@@ -128,7 +132,7 @@ struct WeakFactor
 
 using FactorType = StrongFactor< size_t, int, float, double >;
 
-template< auto, auto... >
+template< auto >
 struct ExpressionNode
 {
     using VariantType = void;
@@ -137,16 +141,17 @@ struct ExpressionNode
 };
 
 template<>
-struct ExpressionNode< OtherNodeType::FactorStem, OtherNodeType::FactorStem >
+struct ExpressionNode< OtherNodeType::FactorStem >
 {
     FactorType literal;
-    using VariantType = std::variant< ExpressionNode< OtherNodeType::FactorStem, OtherNodeType::FactorStem > >;
-    using ThisType = ExpressionNode< OtherNodeType::FactorStem, OtherNodeType::FactorStem >;
-    // ExpressionNode() = default;
-    explicit ExpressionNode( const FactorType literal ) : literal( literal ) {}
-    // ExpressionNode( const ThisType& other ) = default;
-    // ExpressionNode( ThisType&& other ) = default;
-
+    using VariantType = std::variant< ExpressionNode< OtherNodeType::FactorStem > >;
+    using ThisType = ExpressionNode< OtherNodeType::FactorStem >;
+    ExpressionNode() = default;// : literal( FactorType{ static_cast< size_t >( 0 ) } ) {}
+    ExpressionNode( const FactorType literal ) : literal( literal ) {}
+    ExpressionNode( const ThisType& other ) = default;// : literal( other.literal ) {}
+    ExpressionNode( ThisType&& other ) = default;// : literal( other.literal ) {}
+    ThisType& operator=( const ThisType& other ) = default;
+    ThisType& operator=( ThisType&& other ) = default;
 
     constexpr auto operator*( auto other )
     {
@@ -175,43 +180,31 @@ struct ExpressionNode< OtherNodeType::FactorStem, OtherNodeType::FactorStem >
 };
 
 template< ExpressionOperator OperationParameterConstant >
-struct ExpressionNode< 
-        OperationParameterConstant, 
-        OtherNodeType::FactorStem, 
-        ExpressionOperator::FactorMultiply, 
-        ExpressionOperator::FactorDivide, 
-        ExpressionOperator::SumAdd, 
-        ExpressionOperator::SumSubtract 
-    >
+struct ExpressionNode< OperationParameterConstant >
 {
     constexpr static const ExpressionOperator operation = OperationParameterConstant;
-    template< auto SubOperationParameterConstant >
-    using VariantAlternativeType = ExpressionNode< 
-            SubOperationParameterConstant, 
-            OtherNodeType::FactorStem, 
-            ExpressionOperator::FactorMultiply, 
-            ExpressionOperator::FactorDivide, 
-            ExpressionOperator::SumAdd, 
-            ExpressionOperator::SumSubtract 
-        >;
     using VariantType = std::variant< 
-            VariantAlternativeType< OtherNodeType::FactorStem >, 
-            VariantAlternativeType< ExpressionOperator::FactorMultiply >, 
-            VariantAlternativeType< ExpressionOperator::FactorDivide >, 
-            VariantAlternativeType< ExpressionOperator::SumAdd >, 
-            VariantAlternativeType< ExpressionOperator::SumSubtract > 
+            ExpressionNode< OtherNodeType::FactorStem >, 
+            ExpressionNode< ExpressionOperator::FactorMultiply >, 
+            ExpressionNode< ExpressionOperator::FactorDivide >, 
+            ExpressionNode< ExpressionOperator::SumAdd >, 
+            ExpressionNode< ExpressionOperator::SumSubtract > 
         >;
-    const VariantType left;
-    const VariantType right;
-    using ThisType = VariantAlternativeType< OperationParameterConstant >;
+    VariantType left;
+    VariantType right;
+    using ThisType = ExpressionNode< OperationParameterConstant >;
 
-    // ExpressionNode() = default;
-    explicit ExpressionNode( 
+    ExpressionNode() = default; //: 
+            // left( VariantType{ ExrpressionNode< OtherNodeType::FactorStem >{ static_cast< size_t >( 0 ) } } ), 
+            // right( VariantType{ ExrpressionNode< OtherNodeType::FactorStem >{ static_cast< size_t >( 0 ) } } ) {}
+    ExpressionNode( 
                     const VariantType left, 
                     const VariantType right 
             ) : left( left ), right( right ) {}
-    // ExpressionNode( const ThisType& other ) = default;
-    // ExpressionNode( ThisType&& other ) = default;
+    ExpressionNode( const ThisType& other ) = default; //: left( other.left ), right( other.right ) {}
+    ExpressionNode( ThisType&& other ) = default; // : left( other.left ), right( other.right ) {}
+    ThisType& operator=( const ThisType& other ) = default;
+    ThisType& operator=( ThisType&& other ) = default;
 
     constexpr auto operator*( auto other )
     {
