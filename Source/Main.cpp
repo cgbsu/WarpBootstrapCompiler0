@@ -2,6 +2,8 @@
 #include <concepts>
 #include <variant>
 #include <type_traits>
+#include <utility>
+#include <memory>
 
 #include <ctpg.hpp>
 
@@ -58,15 +60,6 @@ enum class OtherNodeType : size_t
     FactorStem = 0 
 };
 
-// template< typename CanidateType >
-// concept typename /*ArithmaticConcept*/ = requires( const CanidateType canidate )
-// {
-//     { canidate * canidate } -> std::convertible_to< CanidateType >;
-//     { canidate / canidate } -> std::convertible_to< CanidateType >;
-//     { canidate - canidate } -> std::convertible_to< CanidateType >;
-//     { canidate + canidate } -> std::convertible_to< CanidateType >;
-// };
-
 template< typename... ArithmaticParameterTypes >
 struct StrongFactor
 {
@@ -74,12 +67,7 @@ struct StrongFactor
     using ThisType = StrongFactor< ArithmaticParameterTypes... >;
     FactorType factor;
     
-    StrongFactor() = default;
     StrongFactor( FactorType factor ) : factor( factor ) {}
-    StrongFactor( const ThisType& other ) = default;
-    StrongFactor( ThisType&& other ) = default;
-    ThisType& operator=( const ThisType& other ) = default;
-    ThisType& operator=( ThisType&& other ) = default;
 
     constexpr ThisType operator*( const auto other ) {
         return ThisType{ *std::get_if< decltype( other ) >( &factor ) * other };
@@ -106,12 +94,7 @@ struct WeakFactor
     using ThisType = WeakFactor< ArithmaticParameterTypes... >;
     FactorType factor;
     
-    WeakFactor() = default;
-    constexpr WeakFactor( FactorType factor ) : factor( factor ) {}
-    constexpr WeakFactor( const ThisType& other ) = default;
-    constexpr WeakFactor( ThisType&& other ) = default;
-    ThisType& operator=( const ThisType& other ) = default;
-    ThisType& operator=( ThisType&& other ) = default;
+    WeakFactor( FactorType factor ) : factor( factor ) {}
 
     constexpr ThisType operator*( const auto other ) {
         return ThisType{ std::visit( [ & ]( auto value ) { return value * other; }, factor ) };
@@ -132,99 +115,72 @@ struct WeakFactor
 
 using FactorType = StrongFactor< size_t, int, float, double >;
 
-template< auto >
-struct ExpressionNode
+struct BaseNodeType
 {
-    using VariantType = void;
-    using ThisType = void;
-    static_assert( "Error::Attempt to instantiate unconstrained expression" );
-};
-
-template<>
-struct ExpressionNode< OtherNodeType::FactorStem >
-{
-    FactorType literal;
-    using VariantType = std::variant< ExpressionNode< OtherNodeType::FactorStem > >;
-    using ThisType = ExpressionNode< OtherNodeType::FactorStem >;
-    ExpressionNode() = default;// : literal( FactorType{ static_cast< size_t >( 0 ) } ) {}
-    ExpressionNode( const FactorType literal ) : literal( literal ) {}
-    ExpressionNode( const ThisType& other ) = default;// : literal( other.literal ) {}
-    ExpressionNode( ThisType&& other ) = default;// : literal( other.literal ) {}
-    ThisType& operator=( const ThisType& other ) = default;
-    ThisType& operator=( ThisType&& other ) = default;
-
-    constexpr auto operator*( auto other )
-    {
-        return ExpressionNode< 
-                ExpressionOperator::FactorMultiply 
-            >{ ThisType{ literal }, other };
+    using ThisType = BaseNodeType;
+    using RootPointerType = std::unique_ptr< ThisType >;
+    // Sweet sweet OOP, oh how I have missed you. //////
+    // Im sorry I left you baby. Except Im not I just //
+    // Gadda learn data oriented programming, but //////
+    // Oh sweet sweet OOP, dynamic dispatch, Im gunna //
+    // cry my eyes out later. //////////////////////////
+    constexpr virtual ThisType&& multiply( RootPointerType other ) = 0;
+    constexpr virtual ThisType&& divide( RootPointerType other ) = 0;
+    constexpr virtual ThisType&& add( RootPointerType other ) = 0;
+    constexpr virtual ThisType&& subtract( RootPointerType other ) = 0;
+    ThisType&& operator*( RootPointerType other ) {
+        return multiply( std::move( other ) );
     }
-    constexpr auto operator/( const auto& other )
-    {
-        return ExpressionNode< 
-                ExpressionOperator::FactorDivide 
-            >{ ThisType{ literal }, other };
+    ThisType&& operator/( RootPointerType other ) {
+        return divide( std::move( other ) );
     }
-    constexpr auto operator+( const auto& other )
-    {
-        return ExpressionNode< 
-                ExpressionOperator::SumAdd 
-            >{ ThisType{ literal }, other };
+    ThisType&& operator+( RootPointerType other ) {
+        return add( std::move( other ) );
     }
-    constexpr auto operator*( const auto& other )
-    {
-        return ExpressionNode< 
-                ExpressionOperator::SumSubtract 
-            >{ ThisType{ literal }, other };
+    ThisType&& operator-( RootPointerType other ) {
+        return subtract( std::move( other ) );
     }
 };
 
+using RootNodeType = BaseNodeType;
+using RootPointerType = std::unique_ptr< RootNodeType >;
 template< ExpressionOperator OperationParameterConstant >
-struct ExpressionNode< OperationParameterConstant >
+struct ExpressionNode : public RootNodeType
 {
     constexpr static const ExpressionOperator operation = OperationParameterConstant;
-    using VariantType = std::variant< 
-            ExpressionNode< OtherNodeType::FactorStem >, 
-            ExpressionNode< ExpressionOperator::FactorMultiply >, 
-            ExpressionNode< ExpressionOperator::FactorDivide >, 
-            ExpressionNode< ExpressionOperator::SumAdd >, 
-            ExpressionNode< ExpressionOperator::SumSubtract > 
-        >;
-    VariantType left;
-    VariantType right;
+    const RootPointerType left;
+    const RootPointerType right;
     using ThisType = ExpressionNode< OperationParameterConstant >;
 
-    ExpressionNode() = default; //: 
-            // left( VariantType{ ExrpressionNode< OtherNodeType::FactorStem >{ static_cast< size_t >( 0 ) } } ), 
-            // right( VariantType{ ExrpressionNode< OtherNodeType::FactorStem >{ static_cast< size_t >( 0 ) } } ) {}
     ExpressionNode( 
-                    const VariantType left, 
-                    const VariantType right 
-            ) : left( left ), right( right ) {}
-    ExpressionNode( const ThisType& other ) = default; //: left( other.left ), right( other.right ) {}
-    ExpressionNode( ThisType&& other ) = default; // : left( other.left ), right( other.right ) {}
-    ThisType& operator=( const ThisType& other ) = default;
-    ThisType& operator=( ThisType&& other ) = default;
-
-    constexpr auto operator*( auto other )
+                    const auto left, 
+                    const auto right 
+            ) : 
+            left( std::make_unique< decltype( left ) >( left ) ), 
+            right( std::make_unique< decltype( right ) >( right ) )
+        {}
+    ExpressionNode( ThisType const& other ) = default;
+    ExpressionNode( ThisType&& other ) = default;
+    
+    constexpr virtual ThisType&& multiply( RootPointerType other ) final
     {
         return ExpressionNode< 
                 ExpressionOperator::FactorMultiply 
-            >{ ThisType{ left, right }, other };
+            >{ ThisType{ left, right }, std::move( other ) };
     }
-    constexpr auto operator/( const auto& other )
+    constexpr virtual ThisType&& divide( RootPointerType& other ) final
     {
         return ExpressionNode< 
                 ExpressionOperator::FactorDivide 
             >{ ThisType{ left, right }, other };
     }
-    constexpr auto operator+( const auto& other )
+    constexpr virtual ThisType&& add( RootPointerType& other ) final
     {
         return ExpressionNode< 
                 ExpressionOperator::SumAdd 
             >{ ThisType{ left, right }, other };
     }
-    constexpr auto operator*( const auto& other )
+    constexpr virtual ThisType&& subtract( RootPointerType& other ) final
     {
         return ExpressionNode< 
                 ExpressionOperator::SumSubtract 
@@ -232,21 +188,48 @@ struct ExpressionNode< OperationParameterConstant >
     }
 };
 
-using ArithmaticVaraintType = WeakFactor< 
-        ExpressionNode< OtherNodeType::FactorStem >, 
-        ExpressionNode< ExpressionOperator::FactorMultiply >, 
-        ExpressionNode< ExpressionOperator::FactorDivide >, 
-        ExpressionNode< ExpressionOperator::SumAdd >, 
-        ExpressionNode< ExpressionOperator::SumSubtract > 
-    >;
+struct FactorStem : public RootNodeType
+{
+    FactorType literal;
+    using ThisType = FactorStem;
+    FactorStem( const FactorType literal ) : literal( literal ) {}
+    FactorStem( ThisType const& other ) = default;
+    FactorStem( ThisType&& other ) = default;
+
+    constexpr virtual ThisType&& multiply( RootPointerType& other ) final
+    {
+        return ExpressionNode< 
+                ExpressionOperator::FactorMultiply 
+            >{ std::make_unique< ThisType >( literal ), std::move( other ) };
+    }
+    constexpr virtual ThisType&& divide( RootPointerType& other ) final
+    {
+        return ExpressionNode< 
+                ExpressionOperator::FactorDivide 
+            >{ ThisType{ literal }, other };
+    }
+    constexpr virtual ThisType&& add( RootPointerType& other ) final
+    {
+        return ExpressionNode< 
+                ExpressionOperator::SumAdd 
+            >{ ThisType{ literal }, other };
+    }
+    constexpr virtual ThisType&& subtract( RootPointerType& other ) final
+    {
+        return ExpressionNode< 
+                ExpressionOperator::SumSubtract 
+            >{ ThisType{ literal }, other };
+    }
+};
+
 
 
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
 constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
 
-constexpr ctpg::nterm< ArithmaticVaraintType > factor( "Factor" );
-constexpr ctpg::nterm< ArithmaticVaraintType > sum( "Sum" );
-constexpr ctpg::nterm< ArithmaticVaraintType > parenthesis_scope( "ParenthesisScope" );
+constexpr ctpg::nterm< RootNodeType > factor( "Factor" );
+constexpr ctpg::nterm< RootNodeType > sum( "Sum" );
+constexpr ctpg::nterm< RootNodeType > parenthesis_scope( "ParenthesisScope" );
 
 // This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
 constexpr size_t to_size_t( std::string_view integer_token )
