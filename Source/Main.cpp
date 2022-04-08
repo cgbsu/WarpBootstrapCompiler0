@@ -125,19 +125,6 @@ struct ToString
     }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 struct BaseNode : public ToString
 {
     using ThisType = BaseNode;
@@ -175,23 +162,23 @@ using BaseNodeType = BaseNode;
 template< typename ThisParameterType, template< ExpressionOperator > typename ExpressionParameterType >
 struct MakeSuper : public BaseNode
 {
-    template< ExpressionOperator SuperOperationParameterConstant >
-    BaseNodeType& Super( BaseNodeType const& other ) {
-        BaseNodeType pointer = ExpressionParameterType< SuperOperationParameterConstant >( *this, other );
+    template< ExpressionOperator make_super_expressionOperationParameterConstant >
+    BaseNodeType& make_super_expression( BaseNodeType const& other ) {
+        BaseNodeType pointer = ExpressionParameterType< make_super_expressionOperationParameterConstant >( *this, other );
         return pointer;
     }
 
     constexpr virtual BaseNodeType& multiply( BaseNodeType const& other ) override final {
-        return Super< ExpressionOperator::FactorMultiply >( other );
+        return make_super_expression< ExpressionOperator::FactorMultiply >( other );
     }
     constexpr virtual BaseNodeType& divide( BaseNodeType const& other ) override final {
-        return Super< ExpressionOperator::FactorDivide >( other );
+        return make_super_expression< ExpressionOperator::FactorDivide >( other );
     }
     constexpr virtual BaseNodeType& add( BaseNodeType const& other ) override final {
-        return Super< ExpressionOperator::SumAdd >( other );
+        return make_super_expression< ExpressionOperator::SumAdd >( other );
     }
     constexpr virtual BaseNodeType& subtract( BaseNodeType const& other ) override final {
-        return Super< ExpressionOperator::SumSubtract >( other );
+        return make_super_expression< ExpressionOperator::SumSubtract >( other );
     }
 };
 
@@ -199,8 +186,8 @@ template< ExpressionOperator OperationParameterConstant >
 struct ExpressionNode : public MakeSuper< ExpressionNode< OperationParameterConstant >, ExpressionNode >
 {
     constexpr static const ExpressionOperator operation = OperationParameterConstant;
-    BaseNodeType left;
-    BaseNodeType right;
+    BaseNodeType& left;
+    BaseNodeType& right;
     using ThisType = ExpressionNode< OperationParameterConstant >;
 
     constexpr ExpressionNode( 
@@ -248,9 +235,21 @@ struct FactorStem : public MakeSuper< FactorStem, ExpressionNode >
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
 constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
 
-constexpr ctpg::nterm< BaseNodeType > factor( "Factor" );
-constexpr ctpg::nterm< BaseNodeType > sum( "Sum" );
-constexpr ctpg::nterm< BaseNodeType > parenthesis_scope( "ParenthesisScope" );
+
+using FactorVariantType = std::variant< 
+        ExpressionNode< ExpressionOperator::FactorMultiply >, 
+        ExpressionNode< ExpressionOperator::FactorDivide >, 
+        FactorStem 
+    >;
+
+using SumVariantType = std::variant< 
+        ExpressionNode< ExpressionOperator::SumAdd >, 
+        ExpressionNode< ExpressionOperator::SumSubtract >
+    >;
+
+constexpr ctpg::nterm< FactorVariantType > factor( "Factor" );
+constexpr ctpg::nterm< SumVariantType > sum( "Sum" );
+// constexpr ctpg::nterm< BaseNodeType& > parenthesis_scope( "ParenthesisScope" );
 
 // This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
 constexpr size_t to_size_t( std::string_view integer_token )
@@ -292,19 +291,28 @@ constexpr ctpg::parser factor_parser(
                 left_parenthesis_term, 
                 right_parenthesis_term 
             ), 
-        ctpg::nterms( factor, sum, parenthesis_scope ), 
+        ctpg::nterms( 
+                factor, 
+                sum
+                //parenthesis_scope 
+            ), 
         ctpg::rules( 
                 factor( natural_number_term ) 
                         >= []( auto token ) {
-                                return new FactorType{ to_size_t( token ) };
+                                return FactorType{ to_size_t( token ) };
                             }, 
                 factor( factor, multiply_term, natural_number_term ) 
-                        >= []( auto current_factor, auto, const auto& next_token ) {
-                                return current_factor * new FactorStem{ to_size_t( next_token ) };
+                        >= []( auto current_factor, auto, const auto& next_token )
+                            {
+                                return std::visit( [ & ]( auto data ) {
+                                        return data.multiply( *( new FactorStem{ to_size_t( next_token ) } ) );
+                                    }, current_factor );
                             }, 
                 factor( factor, divide_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token ) {
-                                return current_factor / new FactorStem{ to_size_t( next_token ) };
+                                return std::visit( [ & ]( auto data ) {
+                                        return data.divide( *( new FactorStem{ to_size_t( next_token ) } ) );
+                                    }, current_factor );
                             }//,
                 // parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
                         // >= [] ( auto, auto factor, auto ) { return factor; }, 
@@ -342,7 +350,7 @@ int main( int argc, char** args )
                     ); 
                     parse_result.has_value() == true 
                 )
-            std::cout << "Result: " << parse_result.value()->to_string() << "\n";
+            std::cout << "Result: " << std::visit( []( auto data ) { return data.to_string(); }, parse_result.value() ) << "\n";
         else
             std::cerr << "Error failed to parse!\n";
         std::cout << "Enter prompt please: ";
