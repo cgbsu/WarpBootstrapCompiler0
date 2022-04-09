@@ -82,72 +82,141 @@ enum class NodeType
     Literal 
 };
 
+struct ConstexprStringable
+{
+    constexpr virtual const char* to_string() const = 0;
+    constexpr operator const char*() const {
+        return to_string();
+    }
+};
+
 template< auto >
 struct Node {};
 
 // I dont remember this being such a problem https://stackoverflow.com/questions/652155/invalid-use-of-incomplete-type
 
-template< typename VariantParameterType >
-struct LeftRight
+struct Node< NodeType::Factor >;
+struct Node< NodeType::Sum >;
+struct Node< NodeType::Literal >;
+
+
+struct VariantTypeHolder
 {
-    using VariantType = VariantParameterType;
+    using VariantType = std::variant< 
+        const Node< NodeType::Factor >*, 
+        const Node< NodeType::Sum >*, 
+        const Node< NodeType::Literal >* 
+    >;
+};
+
+struct Duplicator : public VariantTypeHolder {
+    using VariantType = VariantTypeHolder::VariantType;
+    constexpr virtual const VariantType duplicate() = 0;
+};
+
+struct Owner {
+    // constexpr virtual bool deallocate() = 0;
+};
+
+struct LeftRight : public Duplicator, public Owner, public ConstexprStringable
+{
+    using VariantType = Duplicator::VariantType;
     const VariantType left;
     const VariantType right;
-    LeftRight( const VariantType left, const VariantType right ) 
+    constexpr LeftRight( const VariantType left, const VariantType right ) 
             : left( left ), right( right ) {}
+    // constexpr virtual bool deallocate() override final
+    // {
+    //     auto allocated = [ & ]( auto side ) {
+    //             return std::holds_alternative< Owner >( side ); //Node< NodeType::Factor >* >( left ) 
+    //                     // || std::holds_alternative< Node< NodeType::Sum >* >( left );
+    //         };
+    //     if( allocated( left ) == true )
+    //     {
+    //         std::visit( []( LeftRight* left_data ) {
+    //                 // static_cast< LeftRight* >( left_data )->deallocate();
+    //                 // delete left_data;
+    //                 // return nullptr;
+    //             }, left );
+    //     }
+    //     if( allocated( right ) == true )
+    //     {
+    //         std::visit( []( LeftRight* right_data ) {
+    //                 // static_cast< LeftRight* >( right_data )->deallocate();
+    //                 // delete left_data;
+    //                 // return nullptr;
+    //             }, right );
+    //     }
+    //     return true;
+    // }
 };
 
 template<>
-struct Node< NodeType::Literal >
+struct Node< NodeType::Literal > : public Duplicator, public Owner, public ConstexprStringable
 {
+    using VariantType = Duplicator::VariantType;
     const LiteralType value;
-    Node( LiteralType value ) : value( value ) {}
-    Node( auto value ) : value( LiteralType{ value } ) {}
+    constexpr Node( LiteralType value ) : value( value ) {}
+    constexpr Node( auto value ) : value( LiteralType{ value } ) {}
+    constexpr Node( Node< NodeType::Literal > const& other ) : value( other.value ) {}
+    constexpr virtual const VariantType duplicate() override final {
+        return VariantType{ new const Node< NodeType::Literal >{ value } };
+    }
+        constexpr static const char* debug = "Literal";
+    constexpr virtual const char* to_string() const override final {
+        return debug;
+    }
+    // constexpr virtual bool deallocate() override final {
+    //     return true;
+    // }
 };
 
-template< auto... VariantAlternativeParameterConstants >
-struct Node< NodeType::Factor > : public LeftRight< 
-        std::variant< Node< VariantAlternativeParameterConstants >... > 
-    >
+template<>
+struct Node< NodeType::Factor > : public LeftRight
 {
-    using BaseType = LeftRight< 
-            std::variant< Node< VariantAlternativeParameterConstants >... > 
-        >
+    using BaseType = LeftRight;
+    using VariantType = BaseType::VariantType;
     const ExpressionOperator operation;
-    Node( 
-            const BaseType::VariantType left, 
+    constexpr Node( 
+            const VariantType left, 
             const ExpressionOperator operation, 
-            const BaseType::VariantType right 
+            const VariantType right 
         ) : BaseType( left, right ), operation( operation ) {}
-    // Node( Node< NodeType::Factor > const& other ) : left( other.left ), right( other.right ) {}
-    
-
-};
-
-template< auto... VariantAlternativeParameterConstants >
-struct Node< NodeType::Sum > : public LeftRight< 
-        std::variant< Node< VariantAlternativeParameterConstants >... > 
-    >
-{
-    using BaseType = LeftRight< 
-            std::variant< Node< VariantAlternativeParameterConstants >... > 
-        >
-    const ExpressionOperator operation;
-    Node( 
-            const BaseType::VariantType left, 
-            const ExpressionOperator operation, 
-            const BaseType::VariantType right 
-        ) : BaseType( left, right ), operation( operation ) {}
-
-    constexpr operator Node< NodeType::Factor, DerivedParameterType >()
-    {
-        const BaseType* base = static_cast< BaseType* >( this );
-        return Node< NodeType::Factor, DerivedParameterType >( base->left, base->right, operation );
+    constexpr Node( Node< NodeType::Factor > const& other ) 
+            : BaseType( other.left, other.right ), 
+                    operation( other.operation ) {}
+    constexpr virtual const VariantType duplicate() override final {
+        return VariantType{ new const Node< NodeType::Factor >{ left, operation, right } };
+    }
+        constexpr static const char* debug = "Factor";
+    constexpr virtual const char* to_string() const override final {
+        return debug;
     }
 };
 
+template<>
+struct Node< NodeType::Sum > : public LeftRight
+{
+    using BaseType = LeftRight;
+    const ExpressionOperator operation;
+    using VariantType = BaseType::VariantType;
+    constexpr Node( 
+            const VariantType left, 
+            const ExpressionOperator operation, 
+            const VariantType right 
+        ) : BaseType( left, right ), operation( operation ) {}
+    constexpr Node( Node< NodeType::Sum > const& other ) 
+            : BaseType( other.left, other.right ), 
+                    operation( other.operation ) {}
+    constexpr virtual const VariantType duplicate() override final {
+        return VariantType{ new const Node< NodeType::Sum >{ left, operation, right } };
+    }
+        constexpr static const char* debug = "Sum";
+    constexpr virtual const char* to_string() const override final {
+        return debug;
+    }
 
-MulE() <- MulX( x ) <- Mul( x, y )
+};
 
 // This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
 constexpr size_t to_size_t( std::string_view integer_token )
@@ -162,9 +231,11 @@ constexpr char char_cast( ExpressionOperator operation ) {
     return static_cast< char >( operation );
 }
 
-constexpr ctpg::nterm< Node< NodeType::Factor > > factor( "Factor" );
-constexpr ctpg::nterm< Node< NodeType::Sum > > sum( "Sum" );
-constexpr ctpg::nterm< Node< NodeType::Literal > > literal( "Literal" );
+using VariantType = Node< NodeType::Factor >::VariantType;
+
+constexpr ctpg::nterm< VariantType > factor( "Factor" );
+constexpr ctpg::nterm< VariantType > sum( "Sum" );
+constexpr ctpg::nterm< VariantType > literal( "Literal" );
 
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
 constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
@@ -205,16 +276,28 @@ constexpr ctpg::parser factor_parser(
         ctpg::rules( 
                 literal( natural_number_term ) 
                         >= []( auto token ) {
-                                return Node< NodeType::Literal >{ to_size_t( token ) };
+                                return VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } };
                             }, 
-                factor( factor, multiply_term, natural_number_term ) 
-                        >= []( auto current_factor, auto, const auto& next_token ) {
-                                return Node< NodeType::Factor >{ current_factor, ExpressionOperator::FactorMultiply, next_token };
+                factor( factor, multiply_term, literal ) 
+                        >= []( auto current_factor, auto, const auto& next_token )
+                            {
+                                using Type = Node< NodeType::Factor >;
+                                return VariantType{ new Type { 
+                                        current_factor, 
+                                        ExpressionOperator::FactorMultiply, 
+                                        next_token 
+                                    } };
                             }, 
-                factor( factor, divide_term, natural_number_term ) 
-                        >= []( auto current_factor, auto, const auto& next_token ) {
-                                return Node< NodeType::Factor >{ current_factor, ExpressionOperator::FactorDivide, next_token };
-                            }//,
+                factor( factor, divide_term, literal ) 
+                        >= []( auto current_factor, auto, const auto& next_token )
+                            {
+                                using Type = Node< NodeType::Factor >;
+                                return VariantType{ new Type { 
+                                        current_factor, 
+                                        ExpressionOperator::FactorMultiply, 
+                                        next_token 
+                                    } };
+                            } //,
                 // parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
                         // >= [] ( auto, auto factor, auto ) { return factor; }, 
                 // factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
@@ -251,7 +334,10 @@ int main( int argc, char** args )
                     ); 
                     parse_result.has_value() == true 
                 )
-            std::cout << "Result: " << std::visit( []( auto data ) { return data.to_string(); }, parse_result.value() ) << "\n";
+        {
+            // char* result;
+            std::cout << "Result: " << std::visit( [ & ]( auto data ) { return data->to_string(); }, parse_result.value() ) << "\n";
+        }
         else
             std::cerr << "Error failed to parse!\n";
         std::cout << "Enter prompt please: ";
