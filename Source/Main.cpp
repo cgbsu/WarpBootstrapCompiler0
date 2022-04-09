@@ -233,10 +233,8 @@ constexpr char char_cast( ExpressionOperator operation ) {
 
 using VariantType = Node< NodeType::Factor >::VariantType;
 
-constexpr ctpg::nterm< VariantType > expression( "Expression" );
 constexpr ctpg::nterm< VariantType > factor( "Factor" );
 constexpr ctpg::nterm< VariantType > sum( "Sum" );
-constexpr ctpg::nterm< VariantType > literal( "Literal" );
 constexpr ctpg::nterm< VariantType > parenthesis_scope( "ParenthesisScope" );
 
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
@@ -272,27 +270,16 @@ constexpr ctpg::parser factor_parser(
         ctpg::nterms( 
                 factor, 
                 sum, 
-                // literal
                 parenthesis_scope 
             ), 
         ctpg::rules( 
                 factor( natural_number_term ) 
                         >= []( auto token ) {
-                            std::cout << "Nat\n";
-                            // {
-                            //     using Type = Node< NodeType::Factor >;
-                            //     return VariantType{ new Type { 
-                            //             VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } }, 
-                            //             ExpressionOperator::FactorMultiply, 
-                            //             VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } } 
-                            //         } };
-                            // }, 
                                 return VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } };
                             }, 
                 factor( factor, multiply_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
-                            std::cout << "Mul\n";
                                 using Type = Node< NodeType::Factor >;
                                 return VariantType{ new Type { 
                                         current_factor, 
@@ -303,7 +290,6 @@ constexpr ctpg::parser factor_parser(
                 factor( factor, divide_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
-                            std::cout << "Div\n";
                                 using Type = Node< NodeType::Factor >;
                                 return VariantType{ new Type { 
                                         current_factor, 
@@ -317,7 +303,6 @@ constexpr ctpg::parser factor_parser(
                 factor( factor, multiply_term, parenthesis_scope ) 
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
-                            std::cout << "Pul\n";
                                 using Type = Node< NodeType::Factor >;
                                 return VariantType{ new Type { 
                                         factor, 
@@ -328,7 +313,6 @@ constexpr ctpg::parser factor_parser(
                 factor( factor, divide_term, parenthesis_scope ) 
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
-                            std::cout << "Piv\n";
                                 using Type = Node< NodeType::Factor >;
                                 return VariantType{ new Type { 
                                         factor, 
@@ -343,7 +327,6 @@ constexpr ctpg::parser factor_parser(
                 sum( factor, plus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token ) 
                             {
-                            std::cout << "Add\n";
                                 using Type = Node< NodeType::Sum >;
                                 return VariantType{ new Type { 
                                         current_sum, 
@@ -354,7 +337,6 @@ constexpr ctpg::parser factor_parser(
                 sum( factor, minus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token )
                             {
-                            std::cout << "Sub\n";
                                 using Type = Node< NodeType::Sum >;
                                 return VariantType{ new Type { 
                                         current_sum, 
@@ -372,7 +354,7 @@ int main( int argc, char** args )
     {
         std::cout << "Got: " << input << "\n";
         if( auto parse_result = factor_parser.parse( 
-                            ctpg::parse_options{}.set_verbose(), 
+                            // ctpg::parse_options{}.set_verbose(), 
                             ctpg::buffers::string_buffer( input.c_str() ), std::cerr 
                     ); 
                     parse_result.has_value() == true 
