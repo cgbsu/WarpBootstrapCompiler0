@@ -233,9 +233,11 @@ constexpr char char_cast( ExpressionOperator operation ) {
 
 using VariantType = Node< NodeType::Factor >::VariantType;
 
+constexpr ctpg::nterm< VariantType > expression( "Expression" );
 constexpr ctpg::nterm< VariantType > factor( "Factor" );
 constexpr ctpg::nterm< VariantType > sum( "Sum" );
 constexpr ctpg::nterm< VariantType > literal( "Literal" );
+constexpr ctpg::nterm< VariantType > parenthesis_scope( "ParenthesisScope" );
 
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
 constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
@@ -270,25 +272,27 @@ constexpr ctpg::parser factor_parser(
         ctpg::nterms( 
                 factor, 
                 sum, 
-                literal
-                //parenthesis_scope 
+                // literal
+                parenthesis_scope 
             ), 
         ctpg::rules( 
                 factor( natural_number_term ) 
-                        >= []( auto token ) // {
-                            {
-                                using Type = Node< NodeType::Factor >;
-                                return VariantType{ new Type { 
-                                        VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } }, 
-                                        ExpressionOperator::FactorMultiply, 
-                                        VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } } 
-                                    } };
+                        >= []( auto token ) {
+                            std::cout << "Nat\n";
+                            // {
+                            //     using Type = Node< NodeType::Factor >;
+                            //     return VariantType{ new Type { 
+                            //             VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } }, 
+                            //             ExpressionOperator::FactorMultiply, 
+                            //             VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } } 
+                            //         } };
+                            // }, 
+                                return VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } };
                             }, 
-                                // return VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } };
-                            // } //, 
                 factor( factor, multiply_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
+                            std::cout << "Mul\n";
                                 using Type = Node< NodeType::Factor >;
                                 return VariantType{ new Type { 
                                         current_factor, 
@@ -299,34 +303,65 @@ constexpr ctpg::parser factor_parser(
                 factor( factor, divide_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
+                            std::cout << "Div\n";
                                 using Type = Node< NodeType::Factor >;
                                 return VariantType{ new Type { 
                                         current_factor, 
-                                        ExpressionOperator::FactorMultiply, 
+                                        ExpressionOperator::FactorDivide, 
                                         VariantType{ new Node< NodeType::Literal >{ to_size_t( next_token ) } } 
                                     } };
-                            } //,
-                // parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
-                        // >= [] ( auto, auto factor, auto ) { return factor; }, 
-                // factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
-                // factor( factor, multiply_term, parenthesis_scope ) 
-                //         >= []( auto factor, auto, auto parenthesis_scope ) { 
-                //                 return factor * parenthesis_scope; 
-                //             }, 
-                // factor( factor, divide_term, parenthesis_scope ) 
-                //         >= []( auto factor, auto, auto parenthesis_scope ) { 
-                //                 return factor / parenthesis_scope; 
-                //             }, 
-
-                // factor( sum ) >= []( auto sum ) { return sum; }, 
-                // sum( factor, plus_term, factor ) 
-                //         >= []( auto current_sum, auto, const auto& next_token ) {
-                //                 return  current_sum->add( std::move( next_token ) ); 
-                //             }, 
-                // sum( factor, minus_term, factor ) 
-                //         >= []( auto current_sum, auto, const auto& next_token ) {
-                //                 return current_sum->subtract( std::move( next_token ) ); 
-                //             }
+                            }, 
+                parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
+                        >= [] ( auto, auto factor, auto ) { return factor; }, 
+                factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
+                factor( factor, multiply_term, parenthesis_scope ) 
+                        >= []( auto factor, auto, auto parenthesis_scope ) 
+                            {
+                            std::cout << "Pul\n";
+                                using Type = Node< NodeType::Factor >;
+                                return VariantType{ new Type { 
+                                        factor, 
+                                        ExpressionOperator::FactorMultiply, 
+                                        parenthesis_scope 
+                                    } };
+                            }, 
+                factor( factor, divide_term, parenthesis_scope ) 
+                        >= []( auto factor, auto, auto parenthesis_scope ) 
+                            {
+                            std::cout << "Piv\n";
+                                using Type = Node< NodeType::Factor >;
+                                return VariantType{ new Type { 
+                                        factor, 
+                                        ExpressionOperator::FactorDivide, 
+                                        parenthesis_scope 
+                                    } };
+                            }, 
+                factor( sum ) 
+                        >= []( auto sum ) {
+                            return VariantType{ sum };
+                        }, 
+                sum( factor, plus_term, factor ) 
+                        >= []( auto current_sum, auto, const auto& next_token ) 
+                            {
+                            std::cout << "Add\n";
+                                using Type = Node< NodeType::Sum >;
+                                return VariantType{ new Type { 
+                                        current_sum, 
+                                        ExpressionOperator::SumAdd, 
+                                        next_token 
+                                    } };
+                            }, 
+                sum( factor, minus_term, factor ) 
+                        >= []( auto current_sum, auto, const auto& next_token )
+                            {
+                            std::cout << "Sub\n";
+                                using Type = Node< NodeType::Sum >;
+                                return VariantType{ new Type { 
+                                        current_sum, 
+                                        ExpressionOperator::SumSubtract, 
+                                        next_token 
+                                    } };
+                            }
            )
 );
 
