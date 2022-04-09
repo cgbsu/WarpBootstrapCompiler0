@@ -90,15 +90,36 @@ struct ConstexprStringable
     }
 };
 
+struct Owner {
+    constexpr virtual bool deallocate() const = 0;
+};
+
+template< typename ParameterType >
+struct OwnerTrait
+{
+    constexpr bool deallocate( const ParameterType* ) const {
+        return false;
+    }
+};
+
 template< auto >
 struct Node {};
 
 // I dont remember this being such a problem https://stackoverflow.com/questions/652155/invalid-use-of-incomplete-type
 
+template<>
 struct Node< NodeType::Factor >;
+template<>
 struct Node< NodeType::Sum >;
+template<>
 struct Node< NodeType::Literal >;
 
+template<>
+struct OwnerTrait< Node< NodeType::Factor > >;
+template<>
+struct OwnerTrait< Node< NodeType::Sum > >;
+template<>
+struct OwnerTrait< Node< NodeType::Literal > >;
 
 struct VariantTypeHolder
 {
@@ -114,10 +135,6 @@ struct Duplicator : public VariantTypeHolder {
     constexpr virtual const VariantType duplicate() = 0;
 };
 
-struct Owner {
-    // constexpr virtual bool deallocate() = 0;
-};
-
 struct LeftRight : public Duplicator, public Owner, public ConstexprStringable
 {
     using VariantType = Duplicator::VariantType;
@@ -125,30 +142,26 @@ struct LeftRight : public Duplicator, public Owner, public ConstexprStringable
     const VariantType right;
     constexpr LeftRight( const VariantType left, const VariantType right ) 
             : left( left ), right( right ) {}
-    // constexpr virtual bool deallocate() override final
-    // {
-    //     auto allocated = [ & ]( auto side ) {
-    //             return std::holds_alternative< Owner >( side ); //Node< NodeType::Factor >* >( left ) 
-    //                     // || std::holds_alternative< Node< NodeType::Sum >* >( left );
-    //         };
-    //     if( allocated( left ) == true )
-    //     {
-    //         std::visit( []( LeftRight* left_data ) {
-    //                 // static_cast< LeftRight* >( left_data )->deallocate();
-    //                 // delete left_data;
-    //                 // return nullptr;
-    //             }, left );
-    //     }
-    //     if( allocated( right ) == true )
-    //     {
-    //         std::visit( []( LeftRight* right_data ) {
-    //                 // static_cast< LeftRight* >( right_data )->deallocate();
-    //                 // delete left_data;
-    //                 // return nullptr;
-    //             }, right );
-    //     }
-    //     return true;
-    // }
+    constexpr virtual bool deallocate() const override final
+    {
+        if( const auto to_delete = std::get_if< 0 >( &left ); 
+                    to_delete != nullptr
+                )
+            factor_deleter->deallocate( *to_delete );
+        if( const auto to_delete = std::get_if< 1 >( &left ); 
+                    to_delete != nullptr
+                )
+            sum_deleter->deallocate( *to_delete );
+        if( const auto to_delete = std::get_if< 2 >( &left ); 
+                    to_delete != nullptr
+                )
+            literal_deleter->deallocate( *to_delete );
+        return true;
+    }
+    protected: 
+        const OwnerTrait< Node< NodeType::Factor > >* factor_deleter;
+        const OwnerTrait< Node< NodeType::Sum > >* sum_deleter;
+        const OwnerTrait< Node< NodeType::Literal > >* literal_deleter;
 };
 
 template<>
@@ -166,9 +179,9 @@ struct Node< NodeType::Literal > : public Duplicator, public Owner, public Const
     constexpr virtual const char* to_string() const override final {
         return debug;
     }
-    // constexpr virtual bool deallocate() override final {
-    //     return true;
-    // }
+    constexpr virtual bool deallocate() const override final {
+        return true;
+    }
 };
 
 template<>
@@ -217,6 +230,31 @@ struct Node< NodeType::Sum > : public LeftRight
     }
 
 };
+
+template<>
+struct OwnerTrait< Node< NodeType::Literal > >
+{
+    constexpr bool deallocate( const Node< NodeType::Literal >* literal ) const {
+        literal->deallocate();
+    }
+};
+
+template<>
+struct OwnerTrait< Node< NodeType::Factor > >
+{
+    constexpr bool deallocate( const Node< NodeType::Factor >* factor ) const {
+        factor->deallocate();
+    }
+};
+
+template<>
+struct OwnerTrait< Node< NodeType::Sum > >
+{
+    constexpr bool deallocate( const Node< NodeType::Sum >* sum ) const {
+        sum->deallocate();
+    }
+};
+
 
 // This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
 constexpr size_t to_size_t( std::string_view integer_token )
