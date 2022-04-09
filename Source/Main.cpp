@@ -257,7 +257,7 @@ constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::l
 
 
 constexpr ctpg::parser factor_parser( 
-        literal, 
+        factor, 
         ctpg::terms( 
                 multiply_term, 
                 divide_term, 
@@ -274,30 +274,38 @@ constexpr ctpg::parser factor_parser(
                 //parenthesis_scope 
             ), 
         ctpg::rules( 
-                literal( natural_number_term ) 
-                        >= []( auto token ) {
-                                return VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } };
-                            } //, 
-                // factor( factor, multiply_term, natural_number_term ) 
-                //         >= []( auto current_factor, auto, const auto& next_token )
-                //             {
-                //                 using Type = Node< NodeType::Factor >;
-                //                 return VariantType{ new Type { 
-                //                         current_factor, 
-                //                         ExpressionOperator::FactorMultiply, 
-                //                         VariantType{ new Node< NodeType::Literal >{ to_size_t( next_token ) } } 
-                //                     } };
-                //             }, 
-                // factor( factor, divide_term, natural_number_term ) 
-                //         >= []( auto current_factor, auto, const auto& next_token )
-                //             {
-                //                 using Type = Node< NodeType::Factor >;
-                //                 return VariantType{ new Type { 
-                //                         current_factor, 
-                //                         ExpressionOperator::FactorMultiply, 
-                //                         VariantType{ new Node< NodeType::Literal >{ to_size_t( next_token ) } } 
-                //                     } };
-                //             } //,
+                factor( natural_number_term ) 
+                        >= []( auto token ) // {
+                            {
+                                using Type = Node< NodeType::Factor >;
+                                return VariantType{ new Type { 
+                                        VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } }, 
+                                        ExpressionOperator::FactorMultiply, 
+                                        VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } } 
+                                    } };
+                            }, 
+                                // return VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } };
+                            // } //, 
+                factor( factor, multiply_term, natural_number_term ) 
+                        >= []( auto current_factor, auto, const auto& next_token )
+                            {
+                                using Type = Node< NodeType::Factor >;
+                                return VariantType{ new Type { 
+                                        current_factor, 
+                                        ExpressionOperator::FactorMultiply, 
+                                        VariantType{ new Node< NodeType::Literal >{ to_size_t( next_token ) } } 
+                                    } };
+                            }, 
+                factor( factor, divide_term, natural_number_term ) 
+                        >= []( auto current_factor, auto, const auto& next_token )
+                            {
+                                using Type = Node< NodeType::Factor >;
+                                return VariantType{ new Type { 
+                                        current_factor, 
+                                        ExpressionOperator::FactorMultiply, 
+                                        VariantType{ new Node< NodeType::Literal >{ to_size_t( next_token ) } } 
+                                    } };
+                            } //,
                 // parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
                         // >= [] ( auto, auto factor, auto ) { return factor; }, 
                 // factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
