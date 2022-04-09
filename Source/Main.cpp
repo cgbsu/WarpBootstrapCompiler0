@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <utility>
 #include <memory>
+#include <any>
 #include <ctpg.hpp>
 
 constexpr char star_token = '*';
@@ -45,22 +46,6 @@ enum class ScopeOperators : char
     CloseAngleBracket = close_angle_bracket 
 };
 
-enum class BooleanOperators : size_t
-{
-    LessThan = 0, 
-    GreaterThan = 1, 
-    EqualTo = 2, 
-    LessThanOrEqualTo = 3, 
-    GreaterThanOrEqualTo = 4, 
-    And = 5, 
-    Or = 6 
-};
-
-enum class OtherNodeType : size_t
-{
-    FactorStem = 0 
-};
-
 template< typename... ArithmaticParameterTypes >
 struct StrongFactor
 {
@@ -88,168 +73,81 @@ struct StrongFactor
     }
 };
 
+using LiteralType = StrongFactor< size_t, long long int, double >;
 
-template< typename... ArithmaticParameterTypes >
-struct WeakFactor
+enum class NodeType
 {
-    using FactorType = std::variant< ArithmaticParameterTypes... >;
-    using ThisType = WeakFactor< ArithmaticParameterTypes... >;
-    FactorType factor;
+    Factor, 
+    Sum, 
+    Literal 
+};
+
+template< auto >
+struct Node {};
+
+// I dont remember this being such a problem https://stackoverflow.com/questions/652155/invalid-use-of-incomplete-type
+
+template< typename VariantParameterType >
+struct LeftRight
+{
+    using VariantType = VariantParameterType;
+    const VariantType left;
+    const VariantType right;
+    LeftRight( const VariantType left, const VariantType right ) 
+            : left( left ), right( right ) {}
+};
+
+template<>
+struct Node< NodeType::Literal >
+{
+    const LiteralType value;
+    Node( LiteralType value ) : value( value ) {}
+    Node( auto value ) : value( LiteralType{ value } ) {}
+};
+
+template< auto... VariantAlternativeParameterConstants >
+struct Node< NodeType::Factor > : public LeftRight< 
+        std::variant< Node< VariantAlternativeParameterConstants >... > 
+    >
+{
+    using BaseType = LeftRight< 
+            std::variant< Node< VariantAlternativeParameterConstants >... > 
+        >
+    const ExpressionOperator operation;
+    Node( 
+            const BaseType::VariantType left, 
+            const ExpressionOperator operation, 
+            const BaseType::VariantType right 
+        ) : BaseType( left, right ), operation( operation ) {}
+    // Node( Node< NodeType::Factor > const& other ) : left( other.left ), right( other.right ) {}
     
-    constexpr WeakFactor( FactorType factor ) : factor( factor ) {}
 
-    constexpr ThisType operator*( const auto other ) {
-        return ThisType{ std::visit( [ & ]( auto value ) { return value * other; }, factor ) };
-    }
-    constexpr ThisType operator/( const auto other ) {
-        return ThisType{ std::visit( [ & ]( auto value ) { return value / other; }, factor ) };
-    }
-    constexpr ThisType operator+( const auto other ) {
-        return ThisType{ std::visit( [ & ]( auto value ) { return value + other; }, factor ) };
-    }
-    constexpr ThisType operator-( const auto other ) {
-        return ThisType{ std::visit( [ & ]( auto value ) { return value - other; }, factor ) };
-    }
-    constexpr bool operator<=>( const auto other ) {
-        return factor.operator<=>( other );
-    }
 };
 
-using FactorType = StrongFactor< size_t, int, float, double >;
-
-struct ToString
+template< auto... VariantAlternativeParameterConstants >
+struct Node< NodeType::Sum > : public LeftRight< 
+        std::variant< Node< VariantAlternativeParameterConstants >... > 
+    >
 {
-    virtual std::string to_string() const = 0;
-    operator std::string() const {
-        return to_string();
-    }
-};
+    using BaseType = LeftRight< 
+            std::variant< Node< VariantAlternativeParameterConstants >... > 
+        >
+    const ExpressionOperator operation;
+    Node( 
+            const BaseType::VariantType left, 
+            const ExpressionOperator operation, 
+            const BaseType::VariantType right 
+        ) : BaseType( left, right ), operation( operation ) {}
 
-struct BaseNode : public ToString
-{
-    using ThisType = BaseNode;
-    using BaseNodeType = BaseNode;
-    // Sweet sweet OOP, oh how I have missed you. //////
-    // Im sorry I left you baby. Except Im not I just //
-    // Gadda learn data oriented programming, but //////
-    // Oh sweet sweet OOP, dynamic dispatch, Im gunna //
-    // cry my eyes out later. //////////////////////////
-    constexpr virtual BaseNodeType& multiply( BaseNodeType const& other ) = 0;
-    constexpr virtual BaseNodeType& divide( BaseNodeType const& other ) = 0;
-    constexpr virtual BaseNodeType& add( BaseNodeType const& other ) = 0;
-    constexpr virtual BaseNodeType& subtract( BaseNodeType const& other ) = 0;
-    BaseNodeType& operator*( BaseNodeType const& other ) {
-        return multiply( other );
-    }
-    BaseNodeType& operator/( BaseNodeType const& other ) {
-        return divide( other );
-    }
-    BaseNodeType& operator+( BaseNodeType const& other ) {
-        return add( other );
-    }
-    BaseNodeType& operator-( BaseNodeType const& other ) {
-        return subtract( other );
-    }
-    friend std::ostream& operator<<( std::ostream& output_media, const BaseNode& node ) {
-        output_media << node.to_string();
-        return output_media;
-    }
-};
-
-
-using BaseNodeType = BaseNode;
-
-template< typename ThisParameterType, template< ExpressionOperator > typename ExpressionParameterType >
-struct MakeSuper : public BaseNode
-{
-    template< ExpressionOperator make_super_expressionOperationParameterConstant >
-    BaseNodeType& make_super_expression( BaseNodeType const& other ) {
-        BaseNodeType pointer = ExpressionParameterType< make_super_expressionOperationParameterConstant >( *this, other );
-        return pointer;
-    }
-
-    constexpr virtual BaseNodeType& multiply( BaseNodeType const& other ) override final {
-        return make_super_expression< ExpressionOperator::FactorMultiply >( other );
-    }
-    constexpr virtual BaseNodeType& divide( BaseNodeType const& other ) override final {
-        return make_super_expression< ExpressionOperator::FactorDivide >( other );
-    }
-    constexpr virtual BaseNodeType& add( BaseNodeType const& other ) override final {
-        return make_super_expression< ExpressionOperator::SumAdd >( other );
-    }
-    constexpr virtual BaseNodeType& subtract( BaseNodeType const& other ) override final {
-        return make_super_expression< ExpressionOperator::SumSubtract >( other );
-    }
-};
-
-template< ExpressionOperator OperationParameterConstant >
-struct ExpressionNode : public MakeSuper< ExpressionNode< OperationParameterConstant >, ExpressionNode >
-{
-    constexpr static const ExpressionOperator operation = OperationParameterConstant;
-    BaseNodeType& left;
-    BaseNodeType& right;
-    using ThisType = ExpressionNode< OperationParameterConstant >;
-
-    constexpr ExpressionNode( 
-                    BaseNodeType& left, 
-                    BaseNodeType& right 
-            ) : 
-            left( left ), 
-            right( right )
-        {}
-    constexpr ExpressionNode( ThisType const& other ) = default;
-    constexpr ExpressionNode( ThisType&& other ) = default;
-    virtual std::string to_string() const override
+    constexpr operator Node< NodeType::Factor, DerivedParameterType >()
     {
-        std::stringstream stream;
-        std::string arguments = left.to_string() + ", " + right.to_string();
-        if constexpr( OperationParameterConstant == ExpressionOperator::FactorMultiply )
-            stream << "Multiply(" << arguments << ")";
-        if constexpr( OperationParameterConstant == ExpressionOperator::FactorDivide )
-            stream << "Divide(" << arguments << ")";
-        if constexpr( OperationParameterConstant == ExpressionOperator::SumAdd )
-            stream << "Add(" << arguments << ")";
-        if constexpr( OperationParameterConstant == ExpressionOperator::SumSubtract )
-            stream << "Subtract(" << arguments << ")";
-        return stream.str();
+        const BaseType* base = static_cast< BaseType* >( this );
+        return Node< NodeType::Factor, DerivedParameterType >( base->left, base->right, operation );
     }
 };
 
-struct FactorStem : public MakeSuper< FactorStem, ExpressionNode >
-{
-    FactorType literal;
-    using ThisType = FactorStem;
-    constexpr FactorStem( const FactorType literal ) : literal( literal ) {}
-    constexpr FactorStem( ThisType const& other ) = default;
-    constexpr FactorStem( ThisType&& other ) = default;
-    virtual std::string to_string() const override
-    {
-        std::stringstream stream;
-        std::visit( [ & ]( auto data ){ 
-                stream << "{" << data << "}"; 
-            }, literal.factor );
-        return stream.str();
-    }
-};
 
-constexpr char natural_number_regex[] = "[0-9][0-9]*";
-constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
-
-
-using FactorVariantType = std::variant< 
-        ExpressionNode< ExpressionOperator::FactorMultiply >, 
-        ExpressionNode< ExpressionOperator::FactorDivide >, 
-        FactorStem 
-    >;
-
-using SumVariantType = std::variant< 
-        ExpressionNode< ExpressionOperator::SumAdd >, 
-        ExpressionNode< ExpressionOperator::SumSubtract >
-    >;
-
-constexpr ctpg::nterm< FactorVariantType > factor( "Factor" );
-constexpr ctpg::nterm< SumVariantType > sum( "Sum" );
-// constexpr ctpg::nterm< BaseNodeType& > parenthesis_scope( "ParenthesisScope" );
+MulE() <- MulX( x ) <- Mul( x, y )
 
 // This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
 constexpr size_t to_size_t( std::string_view integer_token )
@@ -263,6 +161,13 @@ constexpr size_t to_size_t( std::string_view integer_token )
 constexpr char char_cast( ExpressionOperator operation ) {
     return static_cast< char >( operation );
 }
+
+constexpr ctpg::nterm< Node< NodeType::Factor > > factor( "Factor" );
+constexpr ctpg::nterm< Node< NodeType::Sum > > sum( "Sum" );
+constexpr ctpg::nterm< Node< NodeType::Literal > > literal( "Literal" );
+
+constexpr char natural_number_regex[] = "[0-9][0-9]*";
+constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
 
 constexpr ctpg::char_term plus_term( 
         char_cast( ExpressionOperator::SumAdd ), 1, ctpg::associativity::ltor 
@@ -293,26 +198,22 @@ constexpr ctpg::parser factor_parser(
             ), 
         ctpg::nterms( 
                 factor, 
-                sum
+                sum, 
+                literal
                 //parenthesis_scope 
             ), 
         ctpg::rules( 
-                factor( natural_number_term ) 
+                literal( natural_number_term ) 
                         >= []( auto token ) {
-                                return FactorType{ to_size_t( token ) };
+                                return Node< NodeType::Literal >{ to_size_t( token ) };
                             }, 
                 factor( factor, multiply_term, natural_number_term ) 
-                        >= []( auto current_factor, auto, const auto& next_token )
-                            {
-                                return std::visit( [ & ]( auto data ) {
-                                        return data.multiply( *( new FactorStem{ to_size_t( next_token ) } ) );
-                                    }, current_factor );
+                        >= []( auto current_factor, auto, const auto& next_token ) {
+                                return Node< NodeType::Factor >{ current_factor, ExpressionOperator::FactorMultiply, next_token };
                             }, 
                 factor( factor, divide_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token ) {
-                                return std::visit( [ & ]( auto data ) {
-                                        return data.divide( *( new FactorStem{ to_size_t( next_token ) } ) );
-                                    }, current_factor );
+                                return Node< NodeType::Factor >{ current_factor, ExpressionOperator::FactorDivide, next_token };
                             }//,
                 // parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
                         // >= [] ( auto, auto factor, auto ) { return factor; }, 
