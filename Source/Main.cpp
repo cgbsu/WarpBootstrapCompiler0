@@ -90,6 +90,24 @@ struct ConstexprStringable
     }
 };
 
+/*
+template< typename... AlternativeParameterTypes >
+struct PointerVariant
+{
+    using VariantType = std::variant< std::unique_ptr< AlternativeParameterTypes >... >;
+    const VariantType pointer_variant;
+
+    template< typename HeldParameterType >
+    std::unique_ptr< HeldParameterType > pass_through( std::unique_ptr< HeldParameterType > pointer )
+    {
+    }
+
+    PointerVariant( std::unique_ptr< auto > pointer ) : pointer_variant( VariantType{ pointer } ) {}
+    PointerVariant( std::unique_ptr< auto > pointer ) : pointer_variant( VariantType{ pointer } ) {}
+};
+*/
+
+
 template< auto >
 struct Node {};
 
@@ -100,12 +118,31 @@ struct Node< NodeType::Sum >;
 struct Node< NodeType::Literal >;
 
 
+template< auto NodeTypeParameterConstant >
+struct NodePointer
+{
+    using NodeType = Node< NodeTypeParameterConstant >;
+    using PointerType = std::unique_ptr< const NodeType >;
+    using ThisType = NodePointer< NodeTypeParameterConstant >;
+    PointerType pointer;
+    constexpr NodePointer( PointerType pointer ) : pointer( pointer ) {}
+    constexpr NodePointer( NodePointer const& other ) : pointer( other.transfer() ) {}
+    constexpr PointerType transfer() {
+        return pointer;
+    }
+};
+
+template< auto NodeTypeParameterConstant >
+NodePointer< NodeTypeParameterConstant > make_node_pointer( auto... constructor_values ) {
+    return NodePointer{ std::make_unique< const Node< NodeTypeParameterConstant > >( constructor_values... ) };
+}
+
 struct VariantTypeHolder
 {
     using VariantType = std::variant< 
-        const Node< NodeType::Factor >*, 
-        const Node< NodeType::Sum >*, 
-        const Node< NodeType::Literal >* 
+        NodePointer< NodeType::Factor >, 
+        NodePointer< NodeType::Sum >, 
+        NodePointer< NodeType::Literal > 
     >;
 };
 
@@ -117,6 +154,7 @@ struct Duplicator : public VariantTypeHolder {
 struct Owner {
     // constexpr virtual bool deallocate() = 0;
 };
+
 
 struct LeftRight : public Duplicator, public Owner, public ConstexprStringable
 {
@@ -151,7 +189,7 @@ struct LeftRight : public Duplicator, public Owner, public ConstexprStringable
     // }
 };
 
-template<>
+template<> 
 struct Node< NodeType::Literal > : public Duplicator, public Owner, public ConstexprStringable
 {
     using VariantType = Duplicator::VariantType;
@@ -160,7 +198,7 @@ struct Node< NodeType::Literal > : public Duplicator, public Owner, public Const
     constexpr Node( auto value ) : value( LiteralType{ value } ) {}
     constexpr Node( Node< NodeType::Literal > const& other ) : value( other.value ) {}
     constexpr virtual const VariantType duplicate() override final {
-        return VariantType{ new const Node< NodeType::Literal >{ value } };
+        return VariantType{ std::make_unique< const Node< NodeType::Literal > >( value ) };
     }
         constexpr static const char* debug = "Literal";
     constexpr virtual const char* to_string() const override final {
@@ -186,7 +224,7 @@ struct Node< NodeType::Factor > : public LeftRight
             : BaseType( other.left, other.right ), 
                     operation( other.operation ) {}
     constexpr virtual const VariantType duplicate() override final {
-        return VariantType{ new const Node< NodeType::Factor >{ left, operation, right } };
+        return VariantType{ std::make_unique< const Node< NodeType::Factor > >( left, operation, right ) };
     }
         constexpr static const char* debug = "Factor";
     constexpr virtual const char* to_string() const override final {
@@ -209,7 +247,7 @@ struct Node< NodeType::Sum > : public LeftRight
             : BaseType( other.left, other.right ), 
                     operation( other.operation ) {}
     constexpr virtual const VariantType duplicate() override final {
-        return VariantType{ new const Node< NodeType::Sum >{ left, operation, right } };
+        return VariantType{ std::make_unique< const Node< NodeType::Sum > >( left, operation, right ) };
     }
         constexpr static const char* debug = "Sum";
     constexpr virtual const char* to_string() const override final {
@@ -275,27 +313,27 @@ constexpr ctpg::parser factor_parser(
         ctpg::rules( 
                 factor( natural_number_term ) 
                         >= []( auto token ) {
-                                return VariantType{ new Node< NodeType::Literal >{ to_size_t( token ) } };
+                                return VariantType{ std::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) };
                             }, 
                 factor( factor, multiply_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
                                 using Type = Node< NodeType::Factor >;
-                                return VariantType{ new Type { 
+                                return VariantType{ std::make_unique< Type > ( 
                                         current_factor, 
                                         ExpressionOperator::FactorMultiply, 
-                                        VariantType{ new Node< NodeType::Literal >{ to_size_t( next_token ) } } 
-                                    } };
+                                        VariantType{ std::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) } 
+                                    ) };
                             }, 
                 factor( factor, divide_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
                                 using Type = Node< NodeType::Factor >;
-                                return VariantType{ new Type { 
+                                return VariantType{ std::make_unique< Type > ( 
                                         current_factor, 
                                         ExpressionOperator::FactorDivide, 
-                                        VariantType{ new Node< NodeType::Literal >{ to_size_t( next_token ) } } 
-                                    } };
+                                        VariantType{ std::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) } 
+                                    ) };
                             }, 
                 parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
                         >= [] ( auto, auto factor, auto ) { return factor; }, 
@@ -304,21 +342,21 @@ constexpr ctpg::parser factor_parser(
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
                                 using Type = Node< NodeType::Factor >;
-                                return VariantType{ new Type { 
+                                return VariantType{ std::make_unique< Type > ( 
                                         factor, 
                                         ExpressionOperator::FactorMultiply, 
                                         parenthesis_scope 
-                                    } };
+                                    ) };
                             }, 
                 factor( factor, divide_term, parenthesis_scope ) 
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
                                 using Type = Node< NodeType::Factor >;
-                                return VariantType{ new Type { 
-                                        factor, 
+                                 return VariantType{ std::make_unique< Type > ( 
+                                       factor, 
                                         ExpressionOperator::FactorDivide, 
                                         parenthesis_scope 
-                                    } };
+                                    ) };
                             }, 
                 factor( sum ) 
                         >= []( auto sum ) {
@@ -328,21 +366,21 @@ constexpr ctpg::parser factor_parser(
                         >= []( auto current_sum, auto, const auto& next_token ) 
                             {
                                 using Type = Node< NodeType::Sum >;
-                                return VariantType{ new Type { 
+                                return VariantType{ std::make_unique< Type > ( 
                                         current_sum, 
                                         ExpressionOperator::SumAdd, 
                                         next_token 
-                                    } };
+                                    ) };
                             }, 
                 sum( factor, minus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token )
                             {
                                 using Type = Node< NodeType::Sum >;
-                                return VariantType{ new Type { 
+                                return VariantType{ std::make_unique< Type > ( 
                                         current_sum, 
                                         ExpressionOperator::SumSubtract, 
                                         next_token 
-                                    } };
+                                    ) };
                             }
            )
 );
