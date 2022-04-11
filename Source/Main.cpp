@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <concepts>
 #include <variant>
@@ -63,10 +64,13 @@ constexpr std::string_view to_string( ParameterType to_stringify ) {
 template< typename ParameterType >
 concept Enumaration = std::is_enum< ParameterType >::value;
 
-template< Enumaration EnumerationParameterType >
-constexpr std::string_view to_string( EnumerationParameterType to_stringify ) {
-    return std::string_view{ std::string{ std::to_underlying( to_stringify ) } };
-}
+// template< Enumaration EnumerationParameterType >
+// constexpr std::string_view to_string( EnumerationParameterType to_stringify )
+// {
+//     return std::string_view{ std::string{ 
+//             static_cast< std::underlying_type_t( to_stringify ) >( to_stringify ) 
+//         } };
+// }
 
 template< std::integral IntegralParameterType >
 constexpr std::string_view to_string( IntegralParameterType to_stringify ) {
@@ -168,20 +172,14 @@ struct NodePointer
 {
     using PointerType = std::unique_ptr< Node >;
     PointerType pointer;
-    constexpr NodePointer( PointerType pointer ) : pointer( pointer ) {}
-    constexpr NodePointer( NodePointer const& other ) : pointer( other.transfer() ) {}
-    constexpr PointerType transfer() {
-        return pointer;
-    }
-    PointerType operator->() {
-        return pointer;
+    constexpr NodePointer( PointerType& other_pointer )
+            : pointer( std::exchange( other_pointer, nullptr ) ) {}
+    constexpr NodePointer( NodePointer& other ) 
+            : pointer( std::exchange( other.pointer, nullptr ) ) {}
+    auto operator->() const {
+        return pointer.operator->();
     }
 };
-
-template< auto NodeTypeParameterConstant >
-NodePointer&& make_node_pointer( auto... constructor_values ) {
-    return NodePointer{ std::make_unique< const Node< NodeTypeParameterConstant > >( constructor_values... ) };
-}
 
 template< auto NodeTypeParameterConstant >
 struct LeftRightNode : public BaseNode< NodeTypeParameterConstant >
@@ -196,14 +194,14 @@ struct LeftRightNode : public BaseNode< NodeTypeParameterConstant >
     }
 };
 
-struct LiteralNode< NodeType::Literal > : public BaseNode< NodeType::Literal >
+struct LiteralNode : public BaseNode< NodeType::Literal >
 {
     const LiteralType value;
     constexpr Node( LiteralType value ) : value( value ) {}
     constexpr Node( auto value ) : value( LiteralType{ value } ) {}
     constexpr Node( Node< NodeType::Literal > const& other ) : value( other.value ) {}
     constexpr virtual const VariantType duplicate() override final {
-        return VariantType{ std::make_unique< const Node< NodeType::Literal > >( value ) };
+        return NodePointer{ std::make_unique< const Node< NodeType::Literal > >( value ) };
     }
     constexpr virtual bool clean_up() override final {
         return true;
@@ -245,7 +243,7 @@ struct OperationNode : public LeftRightNode< OperationParameterConstant >
                 const NodePointer left, \
                 const NodePointer right \
             ) : public OperationNode< OPERATION_TYPE >( left, right ) {} \
-        constexpr Node( NODE_NAME const& other ) : \
+        constexpr NODE_NAME( NODE_NAME const& other ) : \
                         public OperationNode< OPERATION_TYPE >( other.left, other.right ), \
                         operation( other.operation ) {} \
         constexpr virtual const NodePointer duplicate() override final { \
