@@ -46,6 +46,33 @@ enum class ScopeOperators : char
     CloseAngleBracket = close_angle_bracket 
 };
 
+template< std::integral ParameterType >
+constexpr auto to_integral( std::string_view integer_token )
+{
+    ParameterType sum = 0;
+    for( auto digit : integer_token )
+        sum = ( sum * 10 ) + digit - '0';
+    return sum;
+}
+
+template< typename ParameterType >
+constexpr std::string_view to_string( ParameterType to_stringify ) {
+    return std::string_view{ to_stringify };
+}
+
+template< typename ParameterType >
+concept Enumaration = std::is_enum< ParameterType >::value;
+
+template< Enumaration EnumerationParameterType >
+constexpr std::string_view to_string( EnumerationParameterType to_stringify ) {
+    return std::string_view{ std::string{ std::to_underlying( to_stringify ) } };
+}
+
+template< std::integral IntegralParameterType >
+constexpr std::string_view to_string( IntegralParameterType to_stringify ) {
+    return std::string_view{ std::atoi( to_stringify ) };
+}
+
 template< typename... ArithmaticParameterTypes >
 struct StrongFactor
 {
@@ -73,7 +100,7 @@ struct StrongFactor
     }
 };
 
-using LiteralType = StrongFactor< size_t, long long int, double >;
+using LiteralType = StrongFactor< size_t, long long int >;
 
 enum class NodeType
 {
@@ -84,115 +111,93 @@ enum class NodeType
 
 struct ConstexprStringable
 {
-    constexpr virtual const char* to_string() const = 0;
-    constexpr operator const char*() const {
+    constexpr virtual std::string_view to_string() const = 0;
+    constexpr operator std::string_view() const {
         return to_string();
     }
 };
 
-/*
-template< typename... AlternativeParameterTypes >
-struct PointerVariant
-{
-    using VariantType = std::variant< std::unique_ptr< AlternativeParameterTypes >... >;
-    const VariantType pointer_variant;
+struct NodePointer;
 
-    template< typename HeldParameterType >
-    std::unique_ptr< HeldParameterType > pass_through( std::unique_ptr< HeldParameterType > pointer )
-    {
-    }
-
-    PointerVariant( std::unique_ptr< auto > pointer ) : pointer_variant( VariantType{ pointer } ) {}
-    PointerVariant( std::unique_ptr< auto > pointer ) : pointer_variant( VariantType{ pointer } ) {}
+struct Duplicator {
+    constexpr virtual const NodePointer duplicate() const = 0;
 };
-*/
 
+struct Owner {
+    constexpr virtual bool clean_up() const = 0;
+};
 
-template< auto >
-struct Node {};
+struct Node : public ConstexprStringable, public Duplicator, public Owner
+{
+    template< typename NodeTagTypeParameterType >
+    constexpr const std::optional< NodeTagTypeParameterType > tag_as() const
+    {
+        if constexpr( 
+                    auto result = std::any_cast< NodeTagTypeParameterType >( type_tag ); 
+                    result != nullptr 
+                )
+            return std::optional{ result };
+        return std::nullopt;
+    }
+    // Includes runtime check, cant do it at compile time :( //
+    template< typename NodeTagTypeParameterType >
+    const std::optional< NodeTagTypeParameterType > safe_tag_as() const
+    {
+        if( tag_type_id() == typeid( NodeTagTypeParameterType ).hash_code() )
+            return tag_as< NodeTagTypeParameterType >();
+        return std::nullopt;
+    }
+    // Runtime function //
+    size_t tag_type_id() const {
+        return type_tag().type().hash_code();
+    }
+    protected: 
+        constexpr virtual const std::any type_tag() const = 0;
+};
 
-// I dont remember this being such a problem https://stackoverflow.com/questions/652155/invalid-use-of-incomplete-type
+template< auto TagParameterConstant >
+struct BaseNode : public Node
+{
+    protected: 
+        constexpr virtual const std::any type_tag() const override final {
+            return TagParameterConstant;
+        }
+};
 
-struct Node< NodeType::Factor >;
-struct Node< NodeType::Sum >;
-struct Node< NodeType::Literal >;
-
-
-template< auto NodeTypeParameterConstant >
 struct NodePointer
 {
-    using NodeType = Node< NodeTypeParameterConstant >;
-    using PointerType = std::unique_ptr< const NodeType >;
-    using ThisType = NodePointer< NodeTypeParameterConstant >;
+    using PointerType = std::unique_ptr< Node >;
     PointerType pointer;
     constexpr NodePointer( PointerType pointer ) : pointer( pointer ) {}
     constexpr NodePointer( NodePointer const& other ) : pointer( other.transfer() ) {}
     constexpr PointerType transfer() {
         return pointer;
     }
+    PointerType operator->() {
+        return pointer;
+    }
 };
 
 template< auto NodeTypeParameterConstant >
-NodePointer< NodeTypeParameterConstant > make_node_pointer( auto... constructor_values ) {
+NodePointer&& make_node_pointer( auto... constructor_values ) {
     return NodePointer{ std::make_unique< const Node< NodeTypeParameterConstant > >( constructor_values... ) };
 }
 
-struct VariantTypeHolder
+template< auto NodeTypeParameterConstant >
+struct LeftRightNode : public BaseNode< NodeTypeParameterConstant >
 {
-    using VariantType = std::variant< 
-        NodePointer< NodeType::Factor >, 
-        NodePointer< NodeType::Sum >, 
-        NodePointer< NodeType::Literal > 
-    >;
-};
-
-struct Duplicator : public VariantTypeHolder {
-    using VariantType = VariantTypeHolder::VariantType;
-    constexpr virtual const VariantType duplicate() = 0;
-};
-
-struct Owner {
-    // constexpr virtual bool deallocate() = 0;
-};
-
-
-struct LeftRight : public Duplicator, public Owner, public ConstexprStringable
-{
-    using VariantType = Duplicator::VariantType;
-    const VariantType left;
-    const VariantType right;
-    constexpr LeftRight( const VariantType left, const VariantType right ) 
+    using ThisType = LeftRightNode< NodeTypeParameterConstant >;
+    const NodePointer left;
+    const NodePointer right;
+    constexpr LeftRightNode( const NodePointer left, const NodePointer right ) 
             : left( left ), right( right ) {}
-    // constexpr virtual bool deallocate() override final
-    // {
-    //     auto allocated = [ & ]( auto side ) {
-    //             return std::holds_alternative< Owner >( side ); //Node< NodeType::Factor >* >( left ) 
-    //                     // || std::holds_alternative< Node< NodeType::Sum >* >( left );
-    //         };
-    //     if( allocated( left ) == true )
-    //     {
-    //         std::visit( []( LeftRight* left_data ) {
-    //                 // static_cast< LeftRight* >( left_data )->deallocate();
-    //                 // delete left_data;
-    //                 // return nullptr;
-    //             }, left );
-    //     }
-    //     if( allocated( right ) == true )
-    //     {
-    //         std::visit( []( LeftRight* right_data ) {
-    //                 // static_cast< LeftRight* >( right_data )->deallocate();
-    //                 // delete left_data;
-    //                 // return nullptr;
-    //             }, right );
-    //     }
-    //     return true;
-    // }
+    constexpr virtual bool clean_up() override final {
+        return left->clean_up() && right->clean_up();
+    }
 };
 
-template<> 
-struct Node< NodeType::Literal > : public Duplicator, public Owner, public ConstexprStringable
+struct LiteralNode< NodeType::Literal > : public BaseNode< NodeType::Literal >
 {
-    using VariantType = Duplicator::VariantType;
     const LiteralType value;
     constexpr Node( LiteralType value ) : value( value ) {}
     constexpr Node( auto value ) : value( LiteralType{ value } ) {}
@@ -200,80 +205,70 @@ struct Node< NodeType::Literal > : public Duplicator, public Owner, public Const
     constexpr virtual const VariantType duplicate() override final {
         return VariantType{ std::make_unique< const Node< NodeType::Literal > >( value ) };
     }
-        constexpr static const char* debug = "Literal";
-    constexpr virtual const char* to_string() const override final {
-        return debug;
+    constexpr virtual bool clean_up() override final {
+        return true;
     }
-    // constexpr virtual bool deallocate() override final {
-    //     return true;
-    // }
-};
-
-template<>
-struct Node< NodeType::Factor > : public LeftRight
-{
-    using BaseType = LeftRight;
-    using VariantType = BaseType::VariantType;
-    const ExpressionOperator operation;
-    constexpr Node( 
-            const VariantType left, 
-            const ExpressionOperator operation, 
-            const VariantType right 
-        ) : BaseType( left, right ), operation( operation ) {}
-    constexpr Node( Node< NodeType::Factor > const& other ) 
-            : BaseType( other.left, other.right ), 
-                    operation( other.operation ) {}
-    constexpr virtual const VariantType duplicate() override final {
-        return VariantType{ std::make_unique< const Node< NodeType::Factor > >( left, operation, right ) };
-    }
-        constexpr static const char* debug = "Factor";
-    constexpr virtual const char* to_string() const override final {
-        return debug;
+    constexpr virtual std::string_view to_string() const override final
+    {
+        return std::visit( [ & ]( auto data_value ) { 
+                return to_string< decltype( data_value ) >( data_value );
+            }, value.factor );
     }
 };
 
-template<>
-struct Node< NodeType::Sum > : public LeftRight
+
+template< auto OperationParameterConstant >
+struct OperationNode : public LeftRightNode< OperationParameterConstant >
 {
-    using BaseType = LeftRight;
-    const ExpressionOperator operation;
-    using VariantType = BaseType::VariantType;
-    constexpr Node( 
-            const VariantType left, 
-            const ExpressionOperator operation, 
-            const VariantType right 
-        ) : BaseType( left, right ), operation( operation ) {}
-    constexpr Node( Node< NodeType::Sum > const& other ) 
-            : BaseType( other.left, other.right ), 
-                    operation( other.operation ) {}
-    constexpr virtual const VariantType duplicate() override final {
-        return VariantType{ std::make_unique< const Node< NodeType::Sum > >( left, operation, right ) };
-    }
-        constexpr static const char* debug = "Sum";
-    constexpr virtual const char* to_string() const override final {
-        return debug;
+    constexpr OperationNode( const NodePointer left, const NodePointer right ) : 
+            LeftRightNode< OperationParameterConstant >( left, right ) {}
+    constexpr const auto operation = OperationParameterConstant;
+    using OperationType = decltype( operation );
+    constexpr virtual std::string_view to_string() const override final
+    {
+        std::stringstream buffer;
+        buffer 
+                << left->to_string() 
+                << " " 
+                << to_string< OperationType >( operation ) 
+                << " " 
+                << right->to_string();
+        return std::string_view{ buffer.str() };
     }
 
-};
-
-// This function was "yoiked" directly from https://github.com/peter-winter/ctpg //
-constexpr size_t to_size_t( std::string_view integer_token )
-{
-    size_t sum = 0;
-    for( auto digit : integer_token )
-        sum = ( sum * 10 ) + digit - '0';
-    return sum;
 }
+
+#define DEFINE_OPERATION_NODE( NODE_NAME, OPERATION_TYPE ) \
+    struct NODE_NAME : public OperationNode< OPERATION_TYPE > \
+    { \
+        constexpr NODE_NAME ( \
+                const NodePointer left, \
+                const NodePointer right \
+            ) : public OperationNode< OPERATION_TYPE >( left, right ) {} \
+        constexpr Node( NODE_NAME const& other ) : \
+                        public OperationNode< OPERATION_TYPE >( other.left, other.right ), \
+                        operation( other.operation ) {} \
+        constexpr virtual const NodePointer duplicate() override final { \
+            return NodePointer{ std::make_unique< const NODE_NAME >( left, right ) }; \
+        } \
+    }
+
+DEFINE_OPERATION_NODE( MultiplyNode, ExpressionOperator::FactorMultiply );
+DEFINE_OPERATION_NODE( DivideNode, ExpressionOperator::FactorDivide );
+DEFINE_OPERATION_NODE( AddNode, ExpressionOperator::SumAdd );
+DEFINE_OPERATION_NODE( SubtractNode, ExpressionOperator::SumSubtract );
+
+using FactorNodeType = std::variant< MultiplyNode, DivideNode >;
+using SumNodeType = std::variant< SumNode, SubtractNode >;
+
 
 constexpr char char_cast( ExpressionOperator operation ) {
     return static_cast< char >( operation );
 }
 
-using VariantType = Node< NodeType::Factor >::VariantType;
-
-constexpr ctpg::nterm< VariantType > factor( "Factor" );
-constexpr ctpg::nterm< VariantType > sum( "Sum" );
-constexpr ctpg::nterm< VariantType > parenthesis_scope( "ParenthesisScope" );
+constexpr ctpg::nterm< FactorNodeType > factor( "Factor" );
+constexpr ctpg::nterm< SumNodeType > sum( "Sum" );
+constexpr ctpg::nterm< FactorNodeType > parenthesis_scope( "ParenthesisScope" );
 
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
 constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
@@ -293,7 +288,7 @@ constexpr ctpg::char_term divide_term(
 constexpr ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::ltor );
 constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
 
-
+/*
 constexpr ctpg::parser factor_parser( 
         factor, 
         ctpg::terms( 
@@ -405,5 +400,10 @@ int main( int argc, char** args )
             std::cerr << "Error failed to parse!\n";
         std::cout << "Enter prompt please: ";
     }
+    return 0;
+}
+*/
+
+int main() {
     return 0;
 }
