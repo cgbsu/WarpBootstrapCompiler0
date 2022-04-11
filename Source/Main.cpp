@@ -170,7 +170,7 @@ struct BaseNode : public Node
 
 struct NodePointer
 {
-    using PointerType = std::unique_ptr< Node >;
+    using PointerType = std::unique_ptr< const Node >;
     PointerType pointer;
     constexpr NodePointer( PointerType& other_pointer )
             : pointer( std::exchange( other_pointer, nullptr ) ) {}
@@ -189,7 +189,7 @@ struct LeftRightNode : public BaseNode< NodeTypeParameterConstant >
     const NodePointer right;
     constexpr LeftRightNode( const NodePointer left, const NodePointer right ) 
             : left( left ), right( right ) {}
-    constexpr virtual bool clean_up() override final {
+    constexpr virtual bool clean_up() const override final {
         return left->clean_up() && right->clean_up();
     }
 };
@@ -197,13 +197,18 @@ struct LeftRightNode : public BaseNode< NodeTypeParameterConstant >
 struct LiteralNode : public BaseNode< NodeType::Literal >
 {
     const LiteralType value;
-    constexpr Node( LiteralType value ) : value( value ) {}
-    constexpr Node( auto value ) : value( LiteralType{ value } ) {}
-    constexpr Node( Node< NodeType::Literal > const& other ) : value( other.value ) {}
-    constexpr virtual const VariantType duplicate() override final {
-        return NodePointer{ std::make_unique< const Node< NodeType::Literal > >( value ) };
+    constexpr LiteralNode( const LiteralType& value ) : value( value ) {}
+    // constexpr LiteralNode( auto value ) : value( LiteralType{ value } ) {}
+    constexpr LiteralNode( LiteralNode const& other ) : value( other.value ) {}
+    constexpr virtual const NodePointer duplicate() const override final
+    {
+        // const std::unique_ptr< const Node > new_ptr = std::make_unique< const LiteralNode >( value );
+        return NodePointer{ // static_cast< NodePointer::PointerType >( 
+                std::move( std::make_unique< const LiteralNode >( value ) )//;
+            // ) };
+            };
     }
-    constexpr virtual bool clean_up() override final {
+    constexpr virtual bool clean_up() const override final {
         return true;
     }
     constexpr virtual std::string_view to_string() const override final
@@ -220,7 +225,7 @@ struct OperationNode : public LeftRightNode< OperationParameterConstant >
 {
     constexpr OperationNode( const NodePointer left, const NodePointer right ) : 
             LeftRightNode< OperationParameterConstant >( left, right ) {}
-    constexpr const auto operation = OperationParameterConstant;
+    constexpr static const auto operation = OperationParameterConstant;
     using OperationType = decltype( operation );
     constexpr virtual std::string_view to_string() const override final
     {
@@ -233,8 +238,7 @@ struct OperationNode : public LeftRightNode< OperationParameterConstant >
                 << right->to_string();
         return std::string_view{ buffer.str() };
     }
-
-}
+};
 
 #define DEFINE_OPERATION_NODE( NODE_NAME, OPERATION_TYPE ) \
     struct NODE_NAME : public OperationNode< OPERATION_TYPE > \
@@ -246,8 +250,11 @@ struct OperationNode : public LeftRightNode< OperationParameterConstant >
         constexpr NODE_NAME( NODE_NAME const& other ) : \
                         public OperationNode< OPERATION_TYPE >( other.left, other.right ), \
                         operation( other.operation ) {} \
-        constexpr virtual const NodePointer duplicate() override final { \
-            return NodePointer{ std::make_unique< const NODE_NAME >( left, right ) }; \
+        constexpr virtual const NodePointer duplicate() const override final \
+        { \
+            return NodePointer{ static_cast< NodePointer::PointerType >( \
+                    std::make_unique< const NODE_NAME >( left, right ) \
+                ) }; \
         } \
     }
 
@@ -257,35 +264,35 @@ DEFINE_OPERATION_NODE( AddNode, ExpressionOperator::SumAdd );
 DEFINE_OPERATION_NODE( SubtractNode, ExpressionOperator::SumSubtract );
 
 using FactorNodeType = std::variant< MultiplyNode, DivideNode >;
-using SumNodeType = std::variant< SumNode, SubtractNode >;
+using SumNodeType = std::variant< AddNode, SubtractNode >;
 
 
 constexpr char char_cast( ExpressionOperator operation ) {
     return static_cast< char >( operation );
 }
 
-constexpr ctpg::nterm< FactorNodeType > factor( "Factor" );
-constexpr ctpg::nterm< SumNodeType > sum( "Sum" );
-constexpr ctpg::nterm< FactorNodeType > parenthesis_scope( "ParenthesisScope" );
+constexpr static ctpg::nterm< FactorNodeType > factor{ "Factor" };
+constexpr static ctpg::nterm< SumNodeType > sum{ "Sum" };
+constexpr static ctpg::nterm< FactorNodeType > parenthesis_scope{ "ParenthesisScope" };
 
-constexpr char natural_number_regex[] = "[0-9][0-9]*";
-constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
-
-constexpr ctpg::char_term plus_term( 
-        char_cast( ExpressionOperator::SumAdd ), 1, ctpg::associativity::ltor 
+constexpr static char natural_number_regex[] = "[0-9][0-9]*";
+constexpr static ctpg::regex_term< natural_number_regex > natural_number_term{ "NaturalNumber" };
+/*
+constexpr static ctpg::char_term plus_term( 
+        ExpressionOperator::SumAdd, 1, ctpg::associativity::ltor 
     );
-constexpr ctpg::char_term minus_term( 
-        char_cast( ExpressionOperator::SumSubtract ), 1, ctpg::associativity::ltor 
+constexpr static ctpg::char_term minus_term( 
+        ExpressionOperator::SumSubtract, 1, ctpg::associativity::ltor 
     );
-constexpr ctpg::char_term multiply_term( 
-        char_cast( ExpressionOperator::FactorMultiply ), 2, ctpg::associativity::ltor 
+constexpr static ctpg::char_term multiply_term( 
+        ExpressionOperator::FactorMultiply, 2, ctpg::associativity::ltor 
     );
-constexpr ctpg::char_term divide_term( 
-        char_cast( ExpressionOperator::FactorDivide ), 2, ctpg::associativity::ltor 
+constexpr static ctpg::char_term divide_term( 
+        ExpressionOperator::FactorDivide, 2, ctpg::associativity::ltor 
     );
-constexpr ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::ltor );
-constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
-
+constexpr static ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::ltor );
+constexpr static ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
+*/
 /*
 constexpr ctpg::parser factor_parser( 
         factor, 
