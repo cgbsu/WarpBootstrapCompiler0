@@ -221,31 +221,31 @@ struct BaseNode : public Node
         }
 };
 
-struct NodePointer
+struct NodePointer : public Owner
 {
-    using PointerType = benni::unique_ptr< Node >;
+    using PointerType = const Node*;
     const PointerType pointer;
-    // constexpr NodePointer( PointerType& other_pointer )
-    //         : pointer( exchange( std::move( other_pointer ), nullptr ) ) {}
-    // constexpr NodePointer( const PointerType& other_pointer )
-    //         : pointer( std::move( exchange( std::move( other_pointer ), nullptr ) ) ) {}
-    // constexpr NodePointer( NodePointer& other ) 
-            // : pointer( other.pointer ) {}
-            // : pointer( exchange( other.pointer, nullptr ) ) {}
+    constexpr NodePointer( const PointerType other_pointer ) : pointer( other_pointer ) {}
+    constexpr NodePointer( NodePointer& other ) : pointer( other.pointer ) {}
+
+    template< typename NodeType >
+    constexpr static NodePointer make_pointer( auto... constructor_values ) {
+        return NodePointer( new NodeType{ constructor_values... } );
+    }
 
     auto operator->() const {
-        return pointer.operator->();
+        return pointer;
     }
-    // private: 
-    constexpr NodePointer( PointerType other_pointer )
-            : pointer( other_pointer ) {}
+
+    constexpr virtual bool clean_up() const override final
+    {
+        const bool status = pointer->clean_up();
+        delete pointer;
+        return status;
+    }
+
 };
 
-    // template< typename NodeType >
-    // constexpr static NodePointer make_pointer( auto... constructor_values )
-    // {
-    //     return std::make_unique< 
-    // }
 
 template< auto NodeTypeParameterConstant >
 struct LeftRightNode : public BaseNode< NodeTypeParameterConstant >
@@ -266,13 +266,10 @@ struct LiteralNode : public BaseNode< NodeType::Literal >
     constexpr LiteralNode( const LiteralType& value ) : value( value ) {}
     // constexpr LiteralNode( auto value ) : value( LiteralType{ value } ) {}
     constexpr LiteralNode( LiteralNode const& other ) : value( other.value ) {}
-    constexpr virtual const NodePointer duplicate() const override final
-    {
-        /*NodePointer::PointerType new_ptr = benni::make_unique< LiteralNode >( value );
-        NodePointer node_ptr{ new_ptr };
-        return node_ptr;*/
-        return NodePointer{ .pointer =  benni::make_unique< LiteralNode >( value ) };
-    }
+    // constexpr virtual const NodePointer duplicate() const override final
+    // {
+    //     return NodePointer{ .pointer =  benni::make_unique< LiteralNode >( value ) };
+    // }
     constexpr virtual bool clean_up() const override final {
         return true;
     }
@@ -317,13 +314,14 @@ struct OperationNode : public LeftRightNode< OperationParameterConstant >
         constexpr NODE_NAME( NODE_NAME const& other ) : \
                         public OperationNode< OPERATION_TYPE >( other.left, other.right ), \
                         operation( other.operation ) {} \
-        constexpr virtual const NodePointer duplicate() const override final \
-        { \
-            return NodePointer{ static_cast< NodePointer::PointerType >( \
-                    benni::make_unique< const NODE_NAME >( left, right ) \
-                ) }; \
-        } \
     }
+    //     constexpr virtual const NodePointer duplicate() const override final \
+    //     { \
+    //         return NodePointer{ static_cast< NodePointer::PointerType >( \
+    //                 benni::make_unique< const NODE_NAME >( left, right ) \
+    //             ) }; \
+    //     } \
+    // }
 
 DEFINE_OPERATION_NODE( MultiplyNode, ExpressionOperator::FactorMultiply );
 DEFINE_OPERATION_NODE( DivideNode, ExpressionOperator::FactorDivide );
