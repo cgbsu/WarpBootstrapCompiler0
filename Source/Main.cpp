@@ -33,54 +33,6 @@ constexpr char close_square_bracket = ']';
 constexpr char open_angle_bracket = '<';
 constexpr char close_angle_bracket = '>';
 
-/*
-Starting verison
-template<class T, class U = T>
-constexpr // since C++20
-T exchange(T& obj, U&& new_value)
-    noexcept( // since C++23
-        std::is_nothrow_move_constructible<T>::value &&
-        std::is_nothrow_assignable<T&, U>::value
-    )
-{
-    T old_value = std::move(obj);
-    obj = std::forward<U>(new_value);
-    return old_value;
-}*/
-
-template<class T, class U = T>
-constexpr // since C++20
-T& exchange(T& obj, U&& new_value)
-    noexcept( // since C++23
-        std::is_nothrow_move_constructible<T>::value &&
-        std::is_nothrow_assignable<T&, U>::value
-    )
-{
-    T& old_value = std::move(obj);
-    obj = std::forward<U>(new_value);
-    return old_value;
-}
-
-/*
-  // C++11 version of std::exchange for internal use.
-  template <typename _Tp, typename _Up = _Tp>
-    _GLIBCXX20_CONSTEXPR
-    inline _Tp
-    __exchange(_Tp& __obj, _Up&& __new_val)
-    {
-      _Tp __old_val = std::move(__obj);
-      __obj = std::forward<_Up>(__new_val);
-      return __old_val;
-    }
-
-
-  /// Assign @p __new_val to @p __obj and return its previous value.
-  template <typename _Tp, typename _Up = _Tp>
-    _GLIBCXX20_CONSTEXPR
-    inline _Tp
-    exchange(_Tp& __obj, _Up&& __new_val)
-    { return std::__exchange(__obj, std::forward<_Up>(__new_val)); }
-*/
 enum class ExpressionOperator : char 
 {
     FactorMultiply = star_token, 
@@ -160,70 +112,6 @@ using FunctionResultType = decltype( std::function{ FunctionParameterConstant } 
 
 template< auto FunctionParameterConstant >
 using OptionalFunctionResultType = std::optional< FunctionResultType< FunctionParameterConstant > >;
-
-/*
-template< 
-        typename VariantParameterType, 
-        typename ResultParameterType, 
-        auto OperationParameterConstant, 
-        typename CurrentPossibleParameterType, 
-        typename... PossibleParameterTypes 
-    >
-struct OperateIf
-{
-    using ResultType = ResultParameterType;//FunctionResultType< OperationParameterConstant >;
-    using VariantType = VariantParameterType;
-    using OptionalResultType = std::optional< ResultType >;
-
-    const VariantType* variant;
-    const OptionalResultType result;
-
-    constexpr OperateIf( const VariantType* variant ) : variant( variant ), result( ) {}
-
-    constexpr OptionalResultType operator()()
-    {
-        constexpr const CurrentPossibleParameterType* data = std::get_if< CurrentPossibleParameterType >( variant ); 
-        if constexpr( data != nullptr)
-            return OptionalResultType{ OperationParameterConstant( data ) };
-        else
-        {
-            return OperateIf< 
-                        VariantParameterType, 
-                        ResultParameterType, 
-                        OperationParameterConstant, 
-                        PossibleParameterTypes... 
-                    >( variant );
-        }
-    }
-};
-
-template< 
-        typename VariantParameterType, 
-        typename ResultParameterType, 
-        auto OperationParameterConstant, 
-        typename CurrentPossibleParameterType 
-    >
-struct OperateIf< VariantParameterType, ResultParameterType, OperationParameterConstant, CurrentPossibleParameterType >
-{
-    using ResultType = ResultParameterType;//FunctionResultType< OperationParameterConstant >;
-    using OptionalResultType = std::optional< ResultType >;
-    using VariantType = VariantParameterType;
-    
-    const VariantType* variant;
-    constexpr OperateIf( const VariantType* variant ) : variant( variant ) {}
-
-   constexpr OptionalResultType operator()()
-    {
-        constexpr const CurrentPossibleParameterType* data = std::get_if< CurrentPossibleParameterType >( variant ); 
-        if constexpr( data != nullptr )
-            return OptionalResultType{ OperationParameterConstant( data ) };
-        else
-            return std::nullopt;
-    }
-};*/
-
-
-
 
 template< typename... ArithmaticParameterTypes >
 struct StrongFactor : public ConstexprStringable
@@ -362,23 +250,16 @@ struct LeftRightNode : public BaseNode< NodeTypeParameterConstant >
 struct LiteralNode : public BaseNode< NodeType::Literal >
 {
     const LiteralType value;
+
     constexpr LiteralNode( const LiteralType& value ) : value( value ) {}
-    // constexpr LiteralNode( auto value ) : value( LiteralType{ value } ) {}
     constexpr LiteralNode( LiteralNode const& other ) : value( other.value ) {}
-    // constexpr virtual const NodePointer duplicate() const override final
-    // {
-    //     return NodePointer{ .pointer =  benni::make_unique< LiteralNode >( value ) };
-    // }
+
     constexpr virtual bool clean_up() const override final {
         return true;
     }
-    constexpr static const char* test = "abc";
-    constexpr virtual std::string_view to_string() const override final
-    {
-        /*return std::visit( [ & ]( auto data_value ) { 
-                return to_string< decltype( data_value ) >( data_value );
-            }, value.factor );*/
-        return std::string_view{ test };
+
+    constexpr virtual std::string_view to_string() const override final {
+        return value.to_string();
     }
 };
 
@@ -441,22 +322,22 @@ constexpr static ctpg::nterm< FactorNodeType > parenthesis_scope{ "ParenthesisSc
 
 constexpr static char natural_number_regex[] = "[0-9][0-9]*";
 constexpr static ctpg::regex_term< natural_number_regex > natural_number_term{ "NaturalNumber" };
-/*
+
 constexpr static ctpg::char_term plus_term( 
-        ExpressionOperator::SumAdd, 1, ctpg::associativity::ltor 
+        static_cast< char >( ExpressionOperator::SumAdd ), 1, ctpg::associativity::ltor 
     );
 constexpr static ctpg::char_term minus_term( 
-        ExpressionOperator::SumSubtract, 1, ctpg::associativity::ltor 
+        static_cast< char >( ExpressionOperator::SumSubtract ), 1, ctpg::associativity::ltor 
     );
 constexpr static ctpg::char_term multiply_term( 
-        ExpressionOperator::FactorMultiply, 2, ctpg::associativity::ltor 
+        static_cast< char >( ExpressionOperator::FactorMultiply ), 2, ctpg::associativity::ltor 
     );
 constexpr static ctpg::char_term divide_term( 
-        ExpressionOperator::FactorDivide, 2, ctpg::associativity::ltor 
+        static_cast< char >( ExpressionOperator::FactorDivide ), 2, ctpg::associativity::ltor 
     );
 constexpr static ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::ltor );
 constexpr static ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
-*/
+
 /*
 constexpr ctpg::parser factor_parser( 
         factor, 
