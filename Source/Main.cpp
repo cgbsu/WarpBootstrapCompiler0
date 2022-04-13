@@ -58,7 +58,7 @@ namespace Utility
 {
 
     template< std::integral ParameterType >
-    constexpr auto to_integral( std::string_view integer_token )
+    constexpr ParameterType to_integral( std::string_view integer_token )
     {
         ParameterType sum = 0;
         for( auto digit : integer_token )
@@ -164,7 +164,7 @@ enum class NodeType
 struct NodePointer;
 
 struct Duplicator {
-    constexpr virtual const NodePointer duplicate() const = 0;
+    // constexpr virtual const NodePointer duplicate() const = 0;
 };
 
 struct Owner {
@@ -316,9 +316,9 @@ constexpr char char_cast( ExpressionOperator operation ) {
     return static_cast< char >( operation );
 }
 
-constexpr static ctpg::nterm< FactorNodeType > factor{ "Factor" };
-constexpr static ctpg::nterm< SumNodeType > sum{ "Sum" };
-constexpr static ctpg::nterm< FactorNodeType > parenthesis_scope{ "ParenthesisScope" };
+constexpr static ctpg::nterm< NodePointer > factor{ "Factor" };
+constexpr static ctpg::nterm< NodePointer > sum{ "Sum" };
+constexpr static ctpg::nterm< NodePointer > parenthesis_scope{ "ParenthesisScope" };
 
 constexpr static char natural_number_regex[] = "[0-9][0-9]*";
 constexpr static ctpg::regex_term< natural_number_regex > natural_number_term{ "NaturalNumber" };
@@ -338,7 +338,7 @@ constexpr static ctpg::char_term divide_term(
 constexpr static ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::ltor );
 constexpr static ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
 
-/*
+
 constexpr ctpg::parser factor_parser( 
         factor, 
         ctpg::terms( 
@@ -358,27 +358,23 @@ constexpr ctpg::parser factor_parser(
         ctpg::rules( 
                 factor( natural_number_term ) 
                         >= []( auto token ) {
-                                return VariantType{ benni::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) };
+                                return NodePointer::make_pointer< LiteralNode >( Utility::to_integral< size_t >( token ) );
                             }, 
                 factor( factor, multiply_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
-                                using Type = Node< NodeType::Factor >;
-                                return VariantType{ benni::make_unique< Type > ( 
+                                return NodePointer::make_pointer< MultiplyNode >( 
                                         current_factor, 
-                                        ExpressionOperator::FactorMultiply, 
-                                        VariantType{ benni::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) } 
-                                    ) };
+                                        NodePointer::make_pointer< LiteralNode >( Utility::to_integral< size_t >( next_token ) ) 
+                                    );
                             }, 
                 factor( factor, divide_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
-                                using Type = Node< NodeType::Factor >;
-                                return VariantType{ benni::make_unique< Type > ( 
+                                return NodePointer::make_pointer< DivideNode >( 
                                         current_factor, 
-                                        ExpressionOperator::FactorDivide, 
-                                        VariantType{ benni::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) } 
-                                    ) };
+                                        NodePointer::make_pointer< LiteralNode >( Utility::to_integral< size_t >( next_token ) ) 
+                                    );
                             }, 
                 parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
                         >= [] ( auto, auto factor, auto ) { return factor; }, 
@@ -386,50 +382,42 @@ constexpr ctpg::parser factor_parser(
                 factor( factor, multiply_term, parenthesis_scope ) 
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
-                                using Type = Node< NodeType::Factor >;
-                                return VariantType{ benni::make_unique< Type > ( 
+                                return NodePointer::make_pointer< MultiplyNode >( 
                                         factor, 
-                                        ExpressionOperator::FactorMultiply, 
-                                        parenthesis_scope 
-                                    ) };
+                                        parenthesis_scope
+                                    );
                             }, 
                 factor( factor, divide_term, parenthesis_scope ) 
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
-                                using Type = Node< NodeType::Factor >;
-                                 return VariantType{ benni::make_unique< Type > ( 
-                                       factor, 
-                                        ExpressionOperator::FactorDivide, 
-                                        parenthesis_scope 
-                                    ) };
+                                return NodePointer::make_pointer< DivideNode >(  
+                                        factor, 
+                                        parenthesis_scope
+                                    );
                             }, 
                 factor( sum ) 
                         >= []( auto sum ) {
-                            return VariantType{ sum };
+                            return sum;
                         }, 
                 sum( factor, plus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token ) 
                             {
-                                using Type = Node< NodeType::Sum >;
-                                return VariantType{ benni::make_unique< Type > ( 
+                                return NodePointer::make_pointer< AddNode >( 
                                         current_sum, 
-                                        ExpressionOperator::SumAdd, 
                                         next_token 
-                                    ) };
+                                    );
                             }, 
                 sum( factor, minus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token )
                             {
-                                using Type = Node< NodeType::Sum >;
-                                return VariantType{ benni::make_unique< Type > ( 
+                                return NodePointer::make_pointer< SubtractNode >( 
                                         current_sum, 
-                                        ExpressionOperator::SumSubtract, 
                                         next_token 
-                                    ) };
+                                    );
                             }
            )
 );
-
+/*
 int main( int argc, char** args )
 {
     std::cout << "Hello world! Please enter your expression: ";
