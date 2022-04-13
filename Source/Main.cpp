@@ -100,36 +100,51 @@ enum class ScopeOperators : char
     CloseAngleBracket = close_angle_bracket 
 };
 
-template< std::integral ParameterType >
-constexpr auto to_integral( std::string_view integer_token )
+namespace Utility
 {
-    ParameterType sum = 0;
-    for( auto digit : integer_token )
-        sum = ( sum * 10 ) + digit - '0';
-    return sum;
+
+    template< std::integral ParameterType >
+    constexpr auto to_integral( std::string_view integer_token )
+    {
+        ParameterType sum = 0;
+        for( auto digit : integer_token )
+            sum = ( sum * 10 ) + digit - '0';
+        return sum;
+    }
+
+    template< typename ParameterType >
+    constexpr std::string_view to_string( ParameterType to_stringify ) {
+        return std::string_view{ to_stringify };
+    }
+
+    template<>
+    constexpr std::string_view to_string( char to_stringify ) {
+        const char string[] = { to_stringify, '\0' };
+        return std::string_view{ string };
+    }
+
+    template< typename ParameterType >
+    concept Enumaration = std::is_enum< ParameterType >::value;
+
+    template< Enumaration EnumerationParameterType >
+    constexpr std::string_view to_string( EnumerationParameterType to_stringify )
+    {
+        using UnderylingType = std::underlying_type_t< decltype( to_stringify ) >;
+        return to_string( static_cast< UnderylingType >( to_stringify ) );
+    }
+
+    // constexpr std::string_view to_string( ExpressionOperator to_stringify )
+    // {
+    //     const char string[] = { static_cast< char >( to_stringify ), '\0' };
+    //     return std::string_view{ string };
+    // }
+
+
+    template< std::integral IntegralParameterType >
+    constexpr std::string_view to_string( IntegralParameterType to_stringify ) {
+        return std::string_view{ std::atoi( to_stringify ) };
+    }
 }
-
-template< typename ParameterType >
-constexpr std::string_view to_string( ParameterType to_stringify ) {
-    return std::string_view{ to_stringify };
-}
-
-template< typename ParameterType >
-concept Enumaration = std::is_enum< ParameterType >::value;
-
-// template< Enumaration EnumerationParameterType >
-// constexpr std::string_view to_string( EnumerationParameterType to_stringify )
-// {
-//     return std::string_view{ std::string{ 
-//             static_cast< std::underlying_type_t( to_stringify ) >( to_stringify ) 
-//         } };
-// }
-
-template< std::integral IntegralParameterType >
-constexpr std::string_view to_string( IntegralParameterType to_stringify ) {
-    return std::string_view{ std::atoi( to_stringify ) };
-}
-
 
 struct ConstexprStringable
 {
@@ -326,7 +341,7 @@ struct OperationNode : public LeftRightNode< OperationParameterConstant >
         buffer 
                 << BaseType::left->to_string() 
                 << " " 
-                << to_string< OperationType >( operation ) 
+                << Utility::to_string< OperationType >( operation ) 
                 << " " 
                 << BaseType::right->to_string();
         return std::string_view{ buffer.str() };
