@@ -9,6 +9,11 @@
 #include <memory>
 #include <any>
 #include <ctpg.hpp>
+#include <ThirdParty/constexpr_unique_ptr.hpp>
+
+/* See: https://github.com/cplusplus/papers/issues/961 *****************************
+** and http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2273r0.pdf *********
+** https://github.com/riscygeek/constexpr_suff/blob/master/include/unique_ptr.hpp */
 
 constexpr char star_token = '*';
 constexpr char forward_slash_token = '/';
@@ -170,9 +175,11 @@ struct BaseNode : public Node
 
 struct NodePointer
 {
-    using PointerType = std::unique_ptr< const Node >;
-    PointerType pointer;
+    using PointerType = benni::unique_ptr< Node >;
+    const PointerType pointer;
     constexpr NodePointer( PointerType& other_pointer )
+            : pointer( std::exchange( other_pointer, nullptr ) ) {}
+    constexpr NodePointer( const PointerType& other_pointer )
             : pointer( std::exchange( other_pointer, nullptr ) ) {}
     constexpr NodePointer( NodePointer& other ) 
             : pointer( std::exchange( other.pointer, nullptr ) ) {}
@@ -202,20 +209,20 @@ struct LiteralNode : public BaseNode< NodeType::Literal >
     constexpr LiteralNode( LiteralNode const& other ) : value( other.value ) {}
     constexpr virtual const NodePointer duplicate() const override final
     {
-        // const std::unique_ptr< const Node > new_ptr = std::make_unique< const LiteralNode >( value );
-        return NodePointer{ // static_cast< NodePointer::PointerType >( 
-                std::move( std::make_unique< const LiteralNode >( value ) )//;
-            // ) };
-            };
+        const NodePointer::PointerType new_ptr = benni::make_unique< LiteralNode >( value );
+        NodePointer node_ptr{ new_ptr };
+        return node_ptr;
     }
     constexpr virtual bool clean_up() const override final {
         return true;
     }
     constexpr virtual std::string_view to_string() const override final
     {
-        return std::visit( [ & ]( auto data_value ) { 
+        /*return std::visit( [ & ]( auto data_value ) { 
                 return to_string< decltype( data_value ) >( data_value );
-            }, value.factor );
+            }, value.factor );*/
+        static const char* test = "abc";
+        return std::string_view{ test };
     }
 };
 
@@ -253,7 +260,7 @@ struct OperationNode : public LeftRightNode< OperationParameterConstant >
         constexpr virtual const NodePointer duplicate() const override final \
         { \
             return NodePointer{ static_cast< NodePointer::PointerType >( \
-                    std::make_unique< const NODE_NAME >( left, right ) \
+                    benni::make_unique< const NODE_NAME >( left, right ) \
                 ) }; \
         } \
     }
@@ -313,26 +320,26 @@ constexpr ctpg::parser factor_parser(
         ctpg::rules( 
                 factor( natural_number_term ) 
                         >= []( auto token ) {
-                                return VariantType{ std::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) };
+                                return VariantType{ benni::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) };
                             }, 
                 factor( factor, multiply_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
                                 using Type = Node< NodeType::Factor >;
-                                return VariantType{ std::make_unique< Type > ( 
+                                return VariantType{ benni::make_unique< Type > ( 
                                         current_factor, 
                                         ExpressionOperator::FactorMultiply, 
-                                        VariantType{ std::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) } 
+                                        VariantType{ benni::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) } 
                                     ) };
                             }, 
                 factor( factor, divide_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
                                 using Type = Node< NodeType::Factor >;
-                                return VariantType{ std::make_unique< Type > ( 
+                                return VariantType{ benni::make_unique< Type > ( 
                                         current_factor, 
                                         ExpressionOperator::FactorDivide, 
-                                        VariantType{ std::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) } 
+                                        VariantType{ benni::make_unique< const Node< NodeType::Literal > >( to_size_t( token ) ) } 
                                     ) };
                             }, 
                 parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
@@ -342,7 +349,7 @@ constexpr ctpg::parser factor_parser(
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
                                 using Type = Node< NodeType::Factor >;
-                                return VariantType{ std::make_unique< Type > ( 
+                                return VariantType{ benni::make_unique< Type > ( 
                                         factor, 
                                         ExpressionOperator::FactorMultiply, 
                                         parenthesis_scope 
@@ -352,7 +359,7 @@ constexpr ctpg::parser factor_parser(
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
                                 using Type = Node< NodeType::Factor >;
-                                 return VariantType{ std::make_unique< Type > ( 
+                                 return VariantType{ benni::make_unique< Type > ( 
                                        factor, 
                                         ExpressionOperator::FactorDivide, 
                                         parenthesis_scope 
@@ -366,7 +373,7 @@ constexpr ctpg::parser factor_parser(
                         >= []( auto current_sum, auto, const auto& next_token ) 
                             {
                                 using Type = Node< NodeType::Sum >;
-                                return VariantType{ std::make_unique< Type > ( 
+                                return VariantType{ benni::make_unique< Type > ( 
                                         current_sum, 
                                         ExpressionOperator::SumAdd, 
                                         next_token 
@@ -376,7 +383,7 @@ constexpr ctpg::parser factor_parser(
                         >= []( auto current_sum, auto, const auto& next_token )
                             {
                                 using Type = Node< NodeType::Sum >;
-                                return VariantType{ std::make_unique< Type > ( 
+                                return VariantType{ benni::make_unique< Type > ( 
                                         current_sum, 
                                         ExpressionOperator::SumSubtract, 
                                         next_token 
