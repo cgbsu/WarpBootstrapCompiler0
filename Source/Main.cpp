@@ -31,6 +31,54 @@ constexpr char close_square_bracket = ']';
 constexpr char open_angle_bracket = '<';
 constexpr char close_angle_bracket = '>';
 
+/*
+Starting verison
+template<class T, class U = T>
+constexpr // since C++20
+T exchange(T& obj, U&& new_value)
+    noexcept( // since C++23
+        std::is_nothrow_move_constructible<T>::value &&
+        std::is_nothrow_assignable<T&, U>::value
+    )
+{
+    T old_value = std::move(obj);
+    obj = std::forward<U>(new_value);
+    return old_value;
+}*/
+
+template<class T, class U = T>
+constexpr // since C++20
+T& exchange(T& obj, U&& new_value)
+    noexcept( // since C++23
+        std::is_nothrow_move_constructible<T>::value &&
+        std::is_nothrow_assignable<T&, U>::value
+    )
+{
+    T& old_value = std::move(obj);
+    obj = std::forward<U>(new_value);
+    return old_value;
+}
+
+/*
+  // C++11 version of std::exchange for internal use.
+  template <typename _Tp, typename _Up = _Tp>
+    _GLIBCXX20_CONSTEXPR
+    inline _Tp
+    __exchange(_Tp& __obj, _Up&& __new_val)
+    {
+      _Tp __old_val = std::move(__obj);
+      __obj = std::forward<_Up>(__new_val);
+      return __old_val;
+    }
+
+
+  /// Assign @p __new_val to @p __obj and return its previous value.
+  template <typename _Tp, typename _Up = _Tp>
+    _GLIBCXX20_CONSTEXPR
+    inline _Tp
+    exchange(_Tp& __obj, _Up&& __new_val)
+    { return std::__exchange(__obj, std::forward<_Up>(__new_val)); }
+*/
 enum class ExpressionOperator : char 
 {
     FactorMultiply = star_token, 
@@ -177,16 +225,27 @@ struct NodePointer
 {
     using PointerType = benni::unique_ptr< Node >;
     const PointerType pointer;
-    constexpr NodePointer( PointerType& other_pointer )
-            : pointer( std::exchange( other_pointer, nullptr ) ) {}
-    constexpr NodePointer( const PointerType& other_pointer )
-            : pointer( std::exchange( other_pointer, nullptr ) ) {}
-    constexpr NodePointer( NodePointer& other ) 
-            : pointer( std::exchange( other.pointer, nullptr ) ) {}
+    // constexpr NodePointer( PointerType& other_pointer )
+    //         : pointer( exchange( std::move( other_pointer ), nullptr ) ) {}
+    // constexpr NodePointer( const PointerType& other_pointer )
+    //         : pointer( std::move( exchange( std::move( other_pointer ), nullptr ) ) ) {}
+    // constexpr NodePointer( NodePointer& other ) 
+            // : pointer( other.pointer ) {}
+            // : pointer( exchange( other.pointer, nullptr ) ) {}
+
     auto operator->() const {
         return pointer.operator->();
     }
+    // private: 
+    constexpr NodePointer( PointerType other_pointer )
+            : pointer( other_pointer ) {}
 };
+
+    // template< typename NodeType >
+    // constexpr static NodePointer make_pointer( auto... constructor_values )
+    // {
+    //     return std::make_unique< 
+    // }
 
 template< auto NodeTypeParameterConstant >
 struct LeftRightNode : public BaseNode< NodeTypeParameterConstant >
@@ -209,9 +268,10 @@ struct LiteralNode : public BaseNode< NodeType::Literal >
     constexpr LiteralNode( LiteralNode const& other ) : value( other.value ) {}
     constexpr virtual const NodePointer duplicate() const override final
     {
-        const NodePointer::PointerType new_ptr = benni::make_unique< LiteralNode >( value );
+        /*NodePointer::PointerType new_ptr = benni::make_unique< LiteralNode >( value );
         NodePointer node_ptr{ new_ptr };
-        return node_ptr;
+        return node_ptr;*/
+        return NodePointer{ .pointer =  benni::make_unique< LiteralNode >( value ) };
     }
     constexpr virtual bool clean_up() const override final {
         return true;

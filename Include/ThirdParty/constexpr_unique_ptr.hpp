@@ -85,6 +85,10 @@ namespace benni {
 			std::swap(ptr, other.ptr);
 			std::swap(deleter, other.deleter);
 		}
+		// constexpr void swap(const unique_ptr& other) const noexcept {
+		// 	std::swap(ptr, other.ptr);
+		// 	std::swap(deleter, other.deleter);
+		// }
 		[[nodiscard]]
 		constexpr T& operator*() const {
 			return ptr ? *ptr : throw std::runtime_error("dereferencing nullptr");
@@ -132,5 +136,10 @@ template<class T, class D>
 constexpr void std::swap(benni::unique_ptr<T, D>& a, benni::unique_ptr<T, D>& b) noexcept {
 	a.swap(b);
 }
+
+// template<class T, class D>
+// constexpr void std::swap(const benni::unique_ptr<T, D>& a, const benni::unique_ptr<T, D>& b) noexcept {
+// 	a.swap(b);
+// }
 
 #endif /* FILE_UNIQUE_PTR_HPP */
