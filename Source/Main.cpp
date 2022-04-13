@@ -9,6 +9,8 @@
 #include <memory>
 #include <any>
 #include <ctpg.hpp>
+#include <functional>
+
 #include <ThirdParty/constexpr_unique_ptr.hpp>
 
 /* See: https://github.com/cplusplus/papers/issues/961 *****************************
@@ -133,17 +135,16 @@ namespace Utility
         return to_string( static_cast< UnderylingType >( to_stringify ) );
     }
 
-    // constexpr std::string_view to_string( ExpressionOperator to_stringify )
-    // {
-    //     const char string[] = { static_cast< char >( to_stringify ), '\0' };
-    //     return std::string_view{ string };
-    // }
-
-
     template< std::integral IntegralParameterType >
     constexpr std::string_view to_string( IntegralParameterType to_stringify ) {
-        return std::string_view{ std::atoi( to_stringify ) };
+        return std::string_view{ std::to_string( to_stringify ) };
     }
+
+    template< typename... AlternativeParameterTypes >
+    constexpr std::string_view to_string( std::variant< AlternativeParameterTypes... > to_stringify ) {
+        return std::visit( []( auto data ) { return to_string< decltype( data ) >( data ); }, to_stringify );
+    }
+
 }
 
 struct ConstexprStringable
@@ -154,27 +155,78 @@ struct ConstexprStringable
     }
 };
 
+template< auto FunctionParameterConstant >
+using FunctionResultType = decltype( std::function{ FunctionParameterConstant } )::result_type;
+
+template< auto FunctionParameterConstant >
+using OptionalFunctionResultType = std::optional< FunctionResultType< FunctionParameterConstant > >;
+
 /*
 template< 
+        typename VariantParameterType, 
+        typename ResultParameterType, 
         auto OperationParameterConstant, 
         typename CurrentPossibleParameterType, 
         typename... PossibleParameterTypes 
     >
-constexpr auto operate_if( auto variant ) -> decltype( std::function{ OperationParameterConstant } )::result_type
+struct OperateIf
 {
-    if constexpr( 
-            CurrentPossibleParameterType* data = std::get_if< CurrentPossibleParameterType >( variant ); 
-            data != nullptr
-        ) {
-        return OperationParameterConstant( data );
+    using ResultType = ResultParameterType;//FunctionResultType< OperationParameterConstant >;
+    using VariantType = VariantParameterType;
+    using OptionalResultType = std::optional< ResultType >;
+
+    const VariantType* variant;
+    const OptionalResultType result;
+
+    constexpr OperateIf( const VariantType* variant ) : variant( variant ), result( ) {}
+
+    constexpr OptionalResultType operator()()
+    {
+        constexpr const CurrentPossibleParameterType* data = std::get_if< CurrentPossibleParameterType >( variant ); 
+        if constexpr( data != nullptr)
+            return OptionalResultType{ OperationParameterConstant( data ) };
+        else
+        {
+            return OperateIf< 
+                        VariantParameterType, 
+                        ResultParameterType, 
+                        OperationParameterConstant, 
+                        PossibleParameterTypes... 
+                    >( variant );
+        }
     }
-    else {
-        return operate_if< OperationParameterConstant, PossibleParameterTypes... >( variant );
+};
+
+template< 
+        typename VariantParameterType, 
+        typename ResultParameterType, 
+        auto OperationParameterConstant, 
+        typename CurrentPossibleParameterType 
+    >
+struct OperateIf< VariantParameterType, ResultParameterType, OperationParameterConstant, CurrentPossibleParameterType >
+{
+    using ResultType = ResultParameterType;//FunctionResultType< OperationParameterConstant >;
+    using OptionalResultType = std::optional< ResultType >;
+    using VariantType = VariantParameterType;
+    
+    const VariantType* variant;
+    constexpr OperateIf( const VariantType* variant ) : variant( variant ) {}
+
+   constexpr OptionalResultType operator()()
+    {
+        constexpr const CurrentPossibleParameterType* data = std::get_if< CurrentPossibleParameterType >( variant ); 
+        if constexpr( data != nullptr )
+            return OptionalResultType{ OperationParameterConstant( data ) };
+        else
+            return std::nullopt;
     }
-}
-*/
+};*/
+
+
+
+
 template< typename... ArithmaticParameterTypes >
-struct StrongFactor// : public ConstexprStringable
+struct StrongFactor : public ConstexprStringable
 {
     using FactorType = std::variant< ArithmaticParameterTypes... >;
     using ThisType = StrongFactor< ArithmaticParameterTypes... >;
@@ -182,15 +234,19 @@ struct StrongFactor// : public ConstexprStringable
     
     constexpr StrongFactor( FactorType factor ) : factor( factor ) {}
     constexpr StrongFactor( auto factor ) : factor( factor ) {}
-/*
+
     constexpr virtual std::string_view to_string() const override final
     {
-        return operate_if< 
+        /*OperateIf< 
+                FactorType, 
+                std::string_view, 
                 []( auto data ) -> std::string_view { return to_string( data ); }, 
                 ArithmaticParameterTypes... 
-            >( factor );
+            > string_getter{ &factor };
+        return *string_getter();*/
+        return Utility::to_string( factor );
     }
-*/
+
     constexpr ThisType operator*( const auto other ) {
         return ThisType{ *std::get_if< decltype( other ) >( &factor ) * other };
     }
