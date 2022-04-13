@@ -130,8 +130,36 @@ constexpr std::string_view to_string( IntegralParameterType to_stringify ) {
     return std::string_view{ std::atoi( to_stringify ) };
 }
 
+
+struct ConstexprStringable
+{
+    constexpr virtual std::string_view to_string() const = 0;
+    constexpr operator std::string_view() const {
+        return to_string();
+    }
+};
+
+/*
+template< 
+        auto OperationParameterConstant, 
+        typename CurrentPossibleParameterType, 
+        typename... PossibleParameterTypes 
+    >
+constexpr auto operate_if( auto variant ) -> decltype( std::function{ OperationParameterConstant } )::result_type
+{
+    if constexpr( 
+            CurrentPossibleParameterType* data = std::get_if< CurrentPossibleParameterType >( variant ); 
+            data != nullptr
+        ) {
+        return OperationParameterConstant( data );
+    }
+    else {
+        return operate_if< OperationParameterConstant, PossibleParameterTypes... >( variant );
+    }
+}
+*/
 template< typename... ArithmaticParameterTypes >
-struct StrongFactor
+struct StrongFactor// : public ConstexprStringable
 {
     using FactorType = std::variant< ArithmaticParameterTypes... >;
     using ThisType = StrongFactor< ArithmaticParameterTypes... >;
@@ -139,7 +167,15 @@ struct StrongFactor
     
     constexpr StrongFactor( FactorType factor ) : factor( factor ) {}
     constexpr StrongFactor( auto factor ) : factor( factor ) {}
-
+/*
+    constexpr virtual std::string_view to_string() const override final
+    {
+        return operate_if< 
+                []( auto data ) -> std::string_view { return to_string( data ); }, 
+                ArithmaticParameterTypes... 
+            >( factor );
+    }
+*/
     constexpr ThisType operator*( const auto other ) {
         return ThisType{ *std::get_if< decltype( other ) >( &factor ) * other };
     }
@@ -164,14 +200,6 @@ enum class NodeType
     Factor, 
     Sum, 
     Literal 
-};
-
-struct ConstexprStringable
-{
-    constexpr virtual std::string_view to_string() const = 0;
-    constexpr operator std::string_view() const {
-        return to_string();
-    }
 };
 
 struct NodePointer;
@@ -226,7 +254,7 @@ struct NodePointer : public Owner
     using PointerType = const Node*;
     const PointerType pointer;
     constexpr NodePointer( const PointerType other_pointer ) : pointer( other_pointer ) {}
-    constexpr NodePointer( NodePointer& other ) : pointer( other.pointer ) {}
+    constexpr NodePointer( const NodePointer& other ) : pointer( other.pointer ) {}
 
     template< typename NodeType >
     constexpr static NodePointer make_pointer( auto... constructor_values ) {
@@ -273,12 +301,12 @@ struct LiteralNode : public BaseNode< NodeType::Literal >
     constexpr virtual bool clean_up() const override final {
         return true;
     }
+    constexpr static const char* test = "abc";
     constexpr virtual std::string_view to_string() const override final
     {
         /*return std::visit( [ & ]( auto data_value ) { 
                 return to_string< decltype( data_value ) >( data_value );
             }, value.factor );*/
-        static const char* test = "abc";
         return std::string_view{ test };
     }
 };
@@ -287,6 +315,7 @@ struct LiteralNode : public BaseNode< NodeType::Literal >
 template< auto OperationParameterConstant >
 struct OperationNode : public LeftRightNode< OperationParameterConstant >
 {
+    using BaseType = LeftRightNode< OperationParameterConstant >;
     constexpr OperationNode( const NodePointer left, const NodePointer right ) : 
             LeftRightNode< OperationParameterConstant >( left, right ) {}
     constexpr static const auto operation = OperationParameterConstant;
@@ -295,11 +324,11 @@ struct OperationNode : public LeftRightNode< OperationParameterConstant >
     {
         std::stringstream buffer;
         buffer 
-                << left->to_string() 
+                << BaseType::left->to_string() 
                 << " " 
                 << to_string< OperationType >( operation ) 
                 << " " 
-                << right->to_string();
+                << BaseType::right->to_string();
         return std::string_view{ buffer.str() };
     }
 };
@@ -310,10 +339,9 @@ struct OperationNode : public LeftRightNode< OperationParameterConstant >
         constexpr NODE_NAME ( \
                 const NodePointer left, \
                 const NodePointer right \
-            ) : public OperationNode< OPERATION_TYPE >( left, right ) {} \
+            ) : OperationNode< OPERATION_TYPE >( left, right ) {} \
         constexpr NODE_NAME( NODE_NAME const& other ) : \
-                        public OperationNode< OPERATION_TYPE >( other.left, other.right ), \
-                        operation( other.operation ) {} \
+                        OperationNode< OPERATION_TYPE >( other.left, other.right ) {} \
     }
     //     constexpr virtual const NodePointer duplicate() const override final \
     //     { \
