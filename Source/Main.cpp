@@ -142,79 +142,131 @@ struct StrongFactor : public ConstexprStringable
 
 using LiteralType = StrongFactor< size_t, signed long long int >;
 
+struct Taggable
+{
+    template< typename NodeTagTypeParameterType >
+    constexpr const std::optional< NodeTagTypeParameterType > tag_as() const
+    {
+        if constexpr( 
+                    auto result = std::any_cast< NodeTagTypeParameterType >( type_tag ); 
+                    result != nullptr 
+                )
+            return std::optional{ result };
+        return std::nullopt;
+    }
+    // Includes runtime check, cant do it at compile time :( //
+    template< typename NodeTagTypeParameterType >
+    const std::optional< NodeTagTypeParameterType > safe_tag_as() const
+    {
+        if( tag_type_id() == typeid( NodeTagTypeParameterType ).hash_code() )
+            return tag_as< NodeTagTypeParameterType >();
+        return std::nullopt;
+    }
+    // Runtime function //
+    size_t tag_type_id() const {
+        return type_tag().type().hash_code();
+    }
+    protected: 
+        constexpr virtual const std::any type_tag() const = 0;
+};
+
+template< auto TagParameterConstant >
+struct BaseNode : public Taggable
+{
+    protected: 
+        constexpr virtual const std::any type_tag() const override final {
+            return TagParameterConstant;
+        }
+};
+
 template< auto >
 struct Node {};
 
-// I dont remember this being such a problem https://stackoverflow.com/questions/652155/invalid-use-of-incomplete-type
 
-struct Node< NodeType::Factor >;
-struct Node< NodeType::Sum >;
+struct Node< ExpressionOperator::FactorMultiply >;
+struct Node< ExpressionOperator::FactorDivide >;
+struct Node< ExpressionOperator::SumAdd >;
+struct Node< ExpressionOperator::SumSubtract >;
 struct Node< NodeType::Literal >;
 
 using VariantType = std::variant< 
-    const Node< NodeType::Factor >*, 
-    const Node< NodeType::Sum >*, 
-    const Node< NodeType::Literal >* 
->;
+        const Node< ExpressionOperator::FactorMultiply >*, 
+        const Node< ExpressionOperator::FactorDivide >*, 
+        const Node< ExpressionOperator::SumAdd >*, 
+        const Node< ExpressionOperator::SumSubtract >*, 
+        const Node< NodeType::Literal >* 
+    >;
 
-struct LeftRight : public ConstexprStringable
+/*struct VariantType
+{
+    const Taggable* node;
+    constexpr VariantType() : node( nullptr ) {}
+    constexpr VariantType( const Taggable* node ) : node( node ) {}
+    constexpr VariantType( const VariantType& other ) = default;
+    constexpr VariantType( VariantType&& other ) = default;
+    constexpr VariantType& operator=( const VariantType& other ) = default;
+    constexpr VariantType& operator=( VariantType&& other ) = default;
+
+    constexpr const Taggable* operator->() const {
+        return node;
+    }
+};*/
+
+template< auto TagParameterConstant >
+struct LeftRight : public BaseNode< TagParameterConstant >
 {
     const VariantType left;
     const VariantType right;
     constexpr LeftRight( const VariantType left, const VariantType right ) 
-            : left( left ), right( right ) {}
+            : left( left ), right( right ) {}    
 };
 
 template<>
-struct Node< NodeType::Literal > : public ConstexprStringable
+struct Node< NodeType::Literal > : public BaseNode< NodeType::Literal >
 {
     const LiteralType value;
     constexpr Node( LiteralType value ) : value( value ) {}
     constexpr Node( auto value ) : value( value ) {}
     constexpr Node( Node< NodeType::Literal > const& other ) : value( other.value ) {}
-    constexpr virtual std::string_view to_string() const override final {
-        return value.to_string();
-    }
 };
 
-template<>
-struct Node< NodeType::Factor > : public LeftRight
+
+#define DEFINE_BI_NODE( VALUE ) \
+    template<> \
+    struct Node< VALUE > : public LeftRight< VALUE > \
+    { \
+        using BaseType = LeftRight< VALUE >; \
+        constexpr static const ExpressionOperator operation = VALUE ; \
+        constexpr Node( \
+                const VariantType left, \
+                const VariantType right \
+            ) : BaseType( left, right ) {} \
+        constexpr Node( Node< VALUE > const& other ) \
+                : BaseType( other.left, other.right ) {} \
+    }
+
+DEFINE_BI_NODE( ExpressionOperator::FactorMultiply );
+DEFINE_BI_NODE( ExpressionOperator::FactorDivide );
+DEFINE_BI_NODE( ExpressionOperator::SumAdd );
+DEFINE_BI_NODE( ExpressionOperator::SumSubtract );
+
+template< auto NodeTag >
+constexpr VariantType allocate_node( auto... constructor_arguments )
 {
-    using BaseType = LeftRight;
-    const ExpressionOperator operation;
-    constexpr Node( 
-            const VariantType left, 
-            const ExpressionOperator operation, 
-            const VariantType right 
-        ) : BaseType( left, right ), operation( operation ) {}
-    constexpr Node( Node< NodeType::Factor > const& other ) 
-            : BaseType( other.left, other.right ), 
-                    operation( other.operation ) {}
-        constexpr static const char* debug = "Factor";
-    constexpr virtual std::string_view to_string() const override final {
-        return debug;
-    }
-};
+    return VariantType{ 
+            new Node< NodeTag >{ constructor_arguments... }
+        };
+}
 
-template<>
-struct Node< NodeType::Sum > : public LeftRight
+template< typename LiteralType >
+constexpr VariantType allocate_integral_literal_node( auto data )
 {
-    using BaseType = LeftRight;
-    const ExpressionOperator operation;
-    constexpr Node( 
-            const VariantType left, 
-            const ExpressionOperator operation, 
-            const VariantType right 
-        ) : BaseType( left, right ), operation( operation ) {}
-    constexpr Node( Node< NodeType::Sum > const& other ) 
-            : BaseType( other.left, other.right ), 
-                    operation( other.operation ) {}
-        constexpr static const char* debug = "Sum";
-    constexpr virtual std::string_view to_string() const override final {
-        return debug;
-    }
-
-};
+    return VariantType{ 
+            new Node< NodeType::Literal >{ 
+                    Utility::to_integral< LiteralType >( data ) 
+                }
+        };
+}
 
 constexpr char char_cast( ExpressionOperator operation ) {
     return static_cast< char >( operation );
@@ -249,7 +301,6 @@ constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::l
 ** https://github.com/riscygeek/constexpr_suff/blob/master/include/unique_ptr.hpp */
 
 
-
 constexpr ctpg::parser factor_parser( 
         factor, 
         ctpg::terms( 
@@ -269,33 +320,23 @@ constexpr ctpg::parser factor_parser(
         ctpg::rules( 
                 factor( natural_number_term ) 
                         >= []( auto token ) {
-                                return VariantType{ new Node< NodeType::Literal >{ 
-                                        Utility::to_integral< size_t >( token ) 
-                                    } };
+                                return allocate_integral_literal_node< size_t >( token );
                             }, 
                 factor( factor, multiply_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
-                                using Type = Node< NodeType::Factor >;
-                                return VariantType{ new Type { 
+                                return allocate_node< ExpressionOperator::FactorMultiply >( 
                                         current_factor, 
-                                        ExpressionOperator::FactorMultiply, 
-                                        VariantType{ new Node< NodeType::Literal >{ 
-                                                Utility::to_integral< size_t >( next_token ) 
-                                            } } 
-                                    } };
+                                        allocate_integral_literal_node< size_t >( next_token )
+                                    );
                             }, 
                 factor( factor, divide_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
-                                using Type = Node< NodeType::Factor >;
-                                return VariantType{ new Type { 
+                                return allocate_node< ExpressionOperator::FactorDivide >( 
                                         current_factor, 
-                                        ExpressionOperator::FactorDivide, 
-                                        VariantType{ new Node< NodeType::Literal >{ 
-                                                Utility::to_integral< size_t >( next_token ) 
-                                            } } 
-                                    } };
+                                        allocate_integral_literal_node< size_t >( next_token )
+                                    );
                             }, 
                 parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
                         >= [] ( auto, auto factor, auto ) { return factor; }, 
@@ -303,46 +344,38 @@ constexpr ctpg::parser factor_parser(
                 factor( factor, multiply_term, parenthesis_scope ) 
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
-                                using Type = Node< NodeType::Factor >;
-                                return VariantType{ new Type { 
+                                return allocate_node< ExpressionOperator::FactorMultiply >( 
                                         factor, 
-                                        ExpressionOperator::FactorMultiply, 
                                         parenthesis_scope 
-                                    } };
+                                    );
                             }, 
                 factor( factor, divide_term, parenthesis_scope ) 
                         >= []( auto factor, auto, auto parenthesis_scope ) 
                             {
-                                using Type = Node< NodeType::Factor >;
-                                return VariantType{ new Type { 
+                                return allocate_node< ExpressionOperator::FactorDivide >( 
                                         factor, 
-                                        ExpressionOperator::FactorDivide, 
                                         parenthesis_scope 
-                                    } };
+                                    );
                             }, 
                 factor( sum ) 
                         >= []( auto sum ) {
-                            return VariantType{ sum };
+                            return sum;
                         }, 
                 sum( factor, plus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token ) 
                             {
-                                using Type = Node< NodeType::Sum >;
-                                return VariantType{ new Type { 
+                                return allocate_node< ExpressionOperator::SumAdd >( 
                                         current_sum, 
-                                        ExpressionOperator::SumAdd, 
                                         next_token 
-                                    } };
+                                    );
                             }, 
                 sum( factor, minus_term, factor ) 
                         >= []( auto current_sum, auto, const auto& next_token )
                             {
-                                using Type = Node< NodeType::Sum >;
-                                return VariantType{ new Type { 
+                                return allocate_node< ExpressionOperator::SumSubtract >( 
                                         current_sum, 
-                                        ExpressionOperator::SumSubtract, 
                                         next_token 
-                                    } };
+                                    );
                             }
            )
 );
@@ -354,14 +387,14 @@ int main( int argc, char** args )
     {
         std::cout << "Got: " << input << "\n";
         if( auto parse_result = factor_parser.parse( 
-                            // ctpg::parse_options{}.set_verbose(), 
+                            ctpg::parse_options{}.set_verbose(), 
                             ctpg::buffers::string_buffer( input.c_str() ), std::cerr 
                     ); 
                     parse_result.has_value() == true 
                 )
         {
             // char* result;
-            std::cout << "Result: " << std::visit( [ & ]( auto data ) { return data->to_string(); }, parse_result.value() ) << "\n";
+            // std::cout << "Result: " << return data->to_string(); }, parse_result.value() << "\n";
         }
         else
             std::cerr << "Error failed to parse!\n";
