@@ -471,15 +471,12 @@ int main( int argc, char** args )
     {
         std::cout << "Got: " << input << "\n";
         if( auto parse_result = factor_parser.parse( 
-                            ctpg::parse_options{}.set_verbose(), 
+                            // ctpg::parse_options{}.set_verbose(), 
                             ctpg::buffers::string_buffer( input.c_str() ), std::cerr 
                     ); 
                     parse_result.has_value() == true 
                 )
-        {
-            // char* result;
-            // std::cout << "Result: " << return data->to_string(); }, parse_result.value() << "\n";
-        }
+            std::cout << "Result: " << tree_to_string( parse_result.value(), 0 ) << "\n";
         else
             std::cerr << "Error failed to parse!\n";
         std::cout << "Enter prompt please: ";
