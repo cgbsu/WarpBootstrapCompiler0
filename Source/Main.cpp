@@ -56,6 +56,153 @@ enum class NodeType : char
 
 namespace Utility
 {
+    template< typename ParameterType >
+    struct Optional
+    {
+        constexpr Optional( ParameterType&& data ) noexcept : data( data ), occupied( true ) {}
+        constexpr Optional( std::nullptr_t ) noexcept : data {}
+
+        protected: 
+            const bool occupied;
+            const ParameterType data;
+    };
+
+    template< typename StorageType >
+    struct NotSoUniquePointer
+    {
+        constexpr NotSoUniquePointer() : pointer( nullptr ) {}
+        constexpr NotSoUniquePointer( const StorageType* pointer ) noexcept : pointer( pointer ) {}
+        constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ) {
+            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
+        }
+        constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ) {
+            other.pointer = nullptr;
+        }
+        constexpr ~NotSoUniquePointer() noexcept {
+            delete pointer; 
+        }
+        constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept {
+            pointer = other.pointer;
+            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
+        }
+        constexpr NotSoUniquePointer& operator=( NotSoUniquePointer&& other ) noexcept {
+            pointer = other.pointer;
+            other.pointer = nullptr;
+        }
+        constexpr StorageType* operator->() const noexcept {
+            return pointer;
+        }
+        protected: 
+            StorageType* pointer;
+    };
+
+    template< 
+        size_t IndexParameterConstant, 
+        typename QueryParameterType, 
+        typename CurrentParameterType, 
+        typename... ParameterTypes 
+    >
+    struct FindTypeIndex
+    {
+        constexpr static const size_t type_index = FindTypeIndex< 
+                IndexParameterConstant + 1, 
+                QueryParameterType, 
+                ParameterTypes... 
+            >::type_index;
+    };
+
+    template< 
+            size_t IndexParameterConstant, 
+            typename QueryParameterType, 
+            typename... ParameterTypes 
+        >
+    struct FindTypeIndex< 
+            IndexParameterConstant, 
+            QueryParameterType, 
+            QueryParameterType, // Same type twice in a row means we found it! //
+            ParameterTypes... 
+        > {
+        constexpr static const size_t type_index = IndexParameterConstant;
+    };
+
+    template< 
+            size_t IndexParameterConstant, 
+            size_t CurrentIndexParameterConstant, 
+            typename CurrentParameterType, 
+            typename... ParameterTypes 
+        >
+    struct IndexToType
+    {
+        using Type = IndexToType< 
+                IndexParameterConstant, 
+                CurrentIndexParameterConstant + 1, 
+                ParameterTypes ...
+            >::Type;
+    };
+
+
+    template< 
+            size_t IndexParameterConstant, 
+            size_t CurrentIndexParameterConstant, 
+            typename CurrentParameterType 
+        >
+    struct IndexToType< 
+            IndexParameterConstant, 
+            CurrentIndexParameterConstant, 
+            CurrentParameterType, 
+            CurrentParameterType 
+        > {
+        using Type = CurrentParameterType;
+    };
+
+
+    template< 
+            size_t IndexParameterConstant, 
+            typename CurrentParameterType, 
+            typename... ParameterTypes 
+        >
+    struct IndexToType< 
+            IndexParameterConstant, 
+            IndexParameterConstant, 
+            CurrentParameterType, 
+            ParameterTypes... 
+        > {
+        using Type = CurrentParameterType;
+    };
+
+template< typename... ParameterTypes >
+struct AutoVariant
+{
+    using ThisType = AutoVariant< ParameterTypes... >;
+
+    template< typename ParameterType >
+    constexpr static size_t type_index = FindTypeIndex< 
+                    0, 
+                    typename std::remove_pointer< ParameterType >::type, 
+                    ParameterTypes... 
+                >::type_index;
+    constexpr AutoVariant( auto* data_ ) noexcept
+            : data( static_cast< const void* >( data_ ) ), 
+            alternative_index( type_index< decltype( data_ ) >  ) {}
+
+    constexpr ~AutoVariant() noexcept {
+        delete data;
+    }
+
+    template< typename ParameterType >
+    constexpr bool holds_alternative() const noexcept {
+        return FindTypeIndex< 0, ParameterType, ParameterTypes... >::type_index == alternative_index;
+    }
+
+    constexpr auto get_data() const noexcept {
+        return static_cast< IndexToType< alternative_index, 
+                0, ParameterTypes... >::Type* >( data );
+    }
+
+    protected: 
+        const void* data;
+        const size_t alternative_index;
+};
 
     template< std::integral ParameterType >
     constexpr ParameterType to_integral( std::string_view integer_token )
@@ -190,27 +337,12 @@ struct Node< ExpressionOperator::SumSubtract >;
 struct Node< NodeType::Literal >;
 
 using VariantType = std::variant< 
-        const Node< ExpressionOperator::FactorMultiply >*, 
-        const Node< ExpressionOperator::FactorDivide >*, 
-        const Node< ExpressionOperator::SumAdd >*, 
-        const Node< ExpressionOperator::SumSubtract >*, 
-        const Node< NodeType::Literal >* 
+        const Utility::NotSoUniquePointer< Node< ExpressionOperator::FactorMultiply > >, 
+        const Utility::NotSoUniquePointer< Node< ExpressionOperator::FactorDivide > >, 
+        const Utility::NotSoUniquePointer< Node< ExpressionOperator::SumAdd > >, 
+        const Utility::NotSoUniquePointer< Node< ExpressionOperator::SumSubtract > >, 
+        const Utility::NotSoUniquePointer< Node< NodeType::Literal > > 
     >;
-
-/*struct VariantType
-{
-    const Taggable* node;
-    constexpr VariantType() : node( nullptr ) {}
-    constexpr VariantType( const Taggable* node ) : node( node ) {}
-    constexpr VariantType( const VariantType& other ) = default;
-    constexpr VariantType( VariantType&& other ) = default;
-    constexpr VariantType& operator=( const VariantType& other ) = default;
-    constexpr VariantType& operator=( VariantType&& other ) = default;
-
-    constexpr const Taggable* operator->() const {
-        return node;
-    }
-};*/
 
 template< auto TagParameterConstant >
 struct LeftRight : public BaseNode< TagParameterConstant >
@@ -254,7 +386,9 @@ template< auto NodeTag >
 constexpr VariantType allocate_node( auto... constructor_arguments )
 {
     return VariantType{ 
-            new Node< NodeTag >{ constructor_arguments... }
+            NotSoUniquePointer{ 
+                    new Node< NodeTag >{ constructor_arguments... }
+                }
         };
 }
 
@@ -262,9 +396,9 @@ template< typename LiteralType >
 constexpr VariantType allocate_integral_literal_node( auto data )
 {
     return VariantType{ 
-            new Node< NodeType::Literal >{ 
+            new NotSoUniquePointer{ new Node< NodeType::Literal > { 
                     Utility::to_integral< LiteralType >( data ) 
-                }
+                } }
         };
 }
 
@@ -393,13 +527,6 @@ struct StringableTrait
     }
 };
 
-// struct StringableTrait< const Node< ExpressionOperator::FactorMultiply > >;  
-// struct StringableTrait< const Node< ExpressionOperator::FactorDivide > >; 
-// struct StringableTrait< const Node< ExpressionOperator::SumAdd > >; 
-// struct StringableTrait< const Node< ExpressionOperator::SumSubtract > >; 
-// struct StringableTrait< const Node< NodeType::Literal > >; 
-// struct StringableTrait< VariantType >; 
-
 std::string_view tree_to_string( const VariantType node, const size_t tabs );
 
 #define DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( TAG_VALUE ) \
@@ -427,7 +554,6 @@ std::string_view tree_to_string( const VariantType node, const size_t tabs );
             return std::string_view{ buffer.str() }; \
         } \
     }
-
 
 
 DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( ExpressionOperator::FactorMultiply );
