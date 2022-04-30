@@ -178,10 +178,10 @@ struct AutoVariant
     template< typename ParameterType >
     constexpr static size_t type_index = FindTypeIndex< 
                     0, 
-                    typename std::remove_pointer< ParameterType >::type, 
+                    typename ParameterType, 
                     ParameterTypes... 
                 >::type_index;
-    constexpr AutoVariant( auto* data_ ) noexcept
+    constexpr AutoVariant( auto data_ ) noexcept
             : data( static_cast< const void* >( data_ ) ), 
             alternative_index( type_index< decltype( data_ ) >  ) {}
 
@@ -235,7 +235,8 @@ struct AutoVariant
     }
 
     template< std::integral IntegralParameterType >
-    constexpr std::string_view to_string( IntegralParameterType to_stringify ) {
+    constexpr std::string_view to_string( Integ
+    ralParameterType to_stringify ) {
         return std::string_view{ std::to_string( to_stringify ) };
     }
 
@@ -427,6 +428,7 @@ constexpr ctpg::char_term divide_term(
     );
 constexpr ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::ltor );
 constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
+
 
 /* Before you ask... no, I could not use unique_ptr, in fact I could not manage ****
 ** the memory, for why you cant use unique_ptr see: ********************************
