@@ -65,6 +65,12 @@ struct ToRawTemplateArray
 #include <tuple>
 #include <functional>
 
+
+template< typename UncleanParmaeterType >
+using CleanType = typename std::remove_reference< 
+        typename std::remove_pointer< UncleanParmaeterType >::type 
+            >::type;
+
 template< 
         size_t IndexParameterConstant, 
         typename QueryParameterType, 
@@ -114,20 +120,22 @@ struct AnyParameter {
     using Type = AnyParameterType;
 };
 
+template< typename ParameterType >
+using ToPointerType = std::remove_reference< ParameterType >::type*;
+
 template< typename AffirmativeParameterType >
 struct NullNotType
 {
     using AffirmativeType = std::remove_reference< AffirmativeParameterType >::type;
     const AffirmativeType* pointer;
     constexpr NullNotType( const AffirmativeType* pointer ) noexcept : pointer( pointer ) {}
-    template< typename AnyParameterType >
-    constexpr NullNotType( std::remove_reference< AnyParameterType >::type* ) noexcept : pointer( nullptr ) {}
+    constexpr NullNotType( auto ) noexcept : pointer( nullptr ) {}
 };
 
 template< typename CurrentParameterType, typename... ParameterTypes >
 struct LightTuple : public LightTuple< typename std::remove_reference< ParameterTypes >::type... >
 {
-    using Type = CurrentParameterType;//std::remove_reference< CurrentParameterType >::type;
+    using Type = CurrentParameterType;
     using BaseType = LightTuple< ParameterTypes... >;
     using ThisType = LightTuple< Type, ParameterTypes... >;
 
@@ -149,10 +157,20 @@ struct LightTuple : public LightTuple< typename std::remove_reference< Parameter
             const BaseType& other 
         ) noexcept : BaseType( other ), data( data ) {}
 
-    template< typename... ConstructorParameterTypes >
     constexpr LightTuple( 
-            NullNotType< typename std::remove_reference< CurrentParameterType >::type > data
-        ) noexcept : BaseType( data ), data( data.pointer ) {}
+                std::remove_reference< const Type >::type* data
+        ) noexcept : BaseType( data ), data( data ) {}
+
+    constexpr LightTuple( 
+                std::remove_reference< Type >::type* data
+        ) noexcept : BaseType( data ), data( data ) {}
+
+    template< typename AnyParameterType >
+    constexpr LightTuple( 
+                AnyParameterType* data
+        ) noexcept : BaseType( data ), data( nullptr ) {}
+        
+    //data( NullifierType< const Type >( typename ToPointerType< AnyParameterType >{ data } ).pointer ) {}
 
     constexpr LightTuple( const ThisType& other ) = default;
 
@@ -165,6 +183,8 @@ struct LightTuple : public LightTuple< typename std::remove_reference< Parameter
     template< typename NewParameterType >
     using AppendType = LightTuple< CurrentParameterType, ParameterTypes..., NewParameterType >;
 
+    template< typename PointerParameterType >
+    using NullifierType = NullNotType< typename std::remove_reference< PointerParameterType >::type >;
 };
 
 template< typename CurrentParameterType >
@@ -178,15 +198,17 @@ struct LightTuple< CurrentParameterType > //typename std::remove_reference< Curr
     //         const Type& data 
     //     ) noexcept : data( &data ) {}
 
+    constexpr LightTuple( 
+            std::remove_reference< Type >::type* data 
+        ) noexcept : data( data ) {}
 
     constexpr LightTuple( 
             std::remove_reference< const Type >::type* data 
         ) noexcept : data( data ) {}
     
-    template< typename... ConstructorParameterTypes >
-    constexpr LightTuple( 
-            NullNotType< typename std::remove_reference< CurrentParameterType >::type > data
-        ) noexcept : data( data.pointer ) {}
+   constexpr LightTuple( 
+            auto
+        ) noexcept : data( nullptr ) {}
 
     constexpr LightTuple( const ThisType& other ) = default;
 
@@ -237,12 +259,6 @@ struct TakeOne {
     using Type = ParameterType;
     using NextType = TakeOne< ParameterTypes... >;
 };
-
-template< typename UncleanParmaeterType >
-using CleanType = typename std::remove_reference< 
-        typename std::remove_pointer< UncleanParmaeterType >::type 
-            >::type;
-
 template< 
         auto OperationParameterConstant,
         typename CurrentParameterType, 
@@ -396,7 +412,7 @@ struct HoldsAlternative
     constexpr HoldsAlternative( const AutoVariant< ParameterTypes... >& variant ) 
             : value( FindTypeIndex< 0, ParameterType, ParameterTypes... >::type_index == variant.alternative_index ) {} 
 };
-/*
+
 #include <cxxabi.h>
 auto type_name( auto data ) {
     int status;
@@ -405,25 +421,34 @@ auto type_name( auto data ) {
 
 constexpr auto test()
 {
+    // auto lt = LightTuple< int, float, bool, double, char >( 
+    //         new int{ 42 }, 
+    //         new float( 54.3f ), 
+    //         new bool( false ), 
+    //         new double( 32.2 ), 
+    //         new char{ 'c' } 
+    //     );
     auto lt = LightTuple< int, float, bool, double, char >( 
-            new int{ 42 }, 
-            new float( 54.3f ), 
-            new bool( false ), 
-            new double( 32.2 ), 
-            new char{ 'c' } 
+            new bool{ false }
         );
+
     // std::cout << "Light tuple " << type_name( lt ) << "\n";
-    return apply< []( auto x ) { 
-            std::cout << type_name( x ) << " x " << *x << "\n";
+    return apply< []( auto* x )
+    { 
+            if( x != nullptr )
+                std::cout << type_name( x ) << " x " << *x << "\n";
+            else
+                std::cout << "nullptr" << "\n";
             return x;
         } >( lt );
+    // return lt;
 }
 
 int main( int argc, char** args )
 {
     int status;
     auto r = test();
-    std::cout << type_name( r ) << " data " << type_name( r.data ) << " result " << *r.data << "\n";
+    std::cout << "HI\n";
+    std::cout << type_name( r ) << " data " << type_name( r.data ) << "\n";//<< " result " << *r.data << "\n";
     return 0;
 }
-*/
