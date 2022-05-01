@@ -448,6 +448,29 @@ namespace Warp::Utilities
                 ParameterTypes... 
             >( AutoVariant ).result;
     }
+    template< typename ParameterType >
+    struct NotSoUniquePointer
+    {
+        using Type = ParameterType;
+        template< typename... InitializerParameterTypes >
+        constexpr explicit NotSoUniquePointer( InitializerParameterTypes&&... initalizers ) noexcept 
+                : pointer( new Type( initalizers... ) ) {}
+        constexpr NotSoUniquePointer( const NotSoUniquePointer< Type >& other ) noexcept 
+                : pointer( other.pointer ) {
+            // static_cast< NotSoUniquePointer< Type >& >( 
+                ( ( NotSoUniquePointer< Type >& ) other ).pointer = nullptr;
+        }
+        constexpr NotSoUniquePointer( NotSoUniquePointer< Type >&& other ) noexcept 
+                : pointer( other.pointer ) {
+            other.pointer = nullptr;
+        }
+        constexpr ~NotSoUniquePointer() {
+            delete pointer;
+        }
+        
+    protected: 
+            Type* pointer;
+    };
 }
 
     /*
