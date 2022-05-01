@@ -388,6 +388,14 @@ constexpr auto apply( const LightTuple< TupleParameterTypes... >& tuple ) noexce
 }
 
 template< typename... ParameterTypes >
+struct Variant;
+
+template< auto VisitorParameterConstant, typename... ParameterTypes >
+constexpr static auto visit( 
+        const Variant< ParameterTypes... >& variant 
+    ) noexcept;
+
+template< typename... ParameterTypes >
 struct Variant
 {
     template< typename ParameterType >
@@ -397,11 +405,17 @@ struct Variant
                     ParameterTypes... 
                 >::type_index;
 
-    constexpr Variant( auto data_ ) noexcept
-            : data( static_cast< void* >( new decltype( data_ )( data_ ) ) ), 
-            alternative_index( type_index< decltype( data_ ) > ) {}
-    constexpr ~Variant() noexcept {
-        delete static_cast< const int* >( data );
+    template< typename AlternativeParameterType, typename... InitializersParameterTypes >
+    constexpr Variant( std::in_place_type_t< AlternativeParameterType >, InitializersParameterTypes&&... initializers ) noexcept
+            : data( static_cast< void* >( new AlternativeParameterType( 
+                    std::forward< InitializersParameterTypes >( initializers )... ) 
+                ) ), 
+            alternative_index( type_index< AlternativeParameterType > ) {}
+    constexpr ~Variant() noexcept
+    {
+        visit< []( auto* data_ ) {
+            delete static_cast< decltype( data_ ) >( data_ );
+            return nullptr; }>( *this );
     }
     constexpr const size_t index() const noexcept {
         return alternative_index;
@@ -479,9 +493,11 @@ struct VisitImplementation<
 template< auto VisitorParameterConstant, typename... ParameterTypes >
 constexpr static auto visit( 
         const Variant< ParameterTypes... >& variant 
-    ) noexcept {
+    ) noexcept
+{
+    using FirstAlternativeType = typename IndexToType< 0, 0, ParameterTypes... >::Type;
     using ReturnType = decltype( VisitorParameterConstant( 
-            typename IndexToType< 0, 0, ParameterTypes... >::Type{} ) 
+            new FirstAlternativeType{} ) 
         );
     return VisitImplementation< 
             ReturnType, 
@@ -493,7 +509,7 @@ constexpr static auto visit(
 }
 
 
-
+/*
 #include <cxxabi.h>
 auto type_name( auto data ) {
     int status;
@@ -503,7 +519,8 @@ auto type_name( auto data ) {
 
 int main( int argc, char** args )
 {
-    auto x = Variant< int, bool, float >( 42.f );
-    visit< []( auto p ) { std::cout << p << "\n"; return 2; } >( x );
+    auto x = Variant< int, bool, float >( std::in_place_type_t< float >{}, 42.5f );
+    visit< []( auto p ) { std::cout << type_name( p ) << " val " << *p << "\n"; return 2; } >( x );
     return 0;
 }
+*/
