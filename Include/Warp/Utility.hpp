@@ -61,9 +61,10 @@ struct ToRawTemplateArray
         >::ResultType;
 };*/
 #include <iostream>
+#include <string>
 #include <type_traits>
-#include <tuple>
-#include <functional>
+#include <utility>
+
 
 
 template< typename UncleanParmaeterType >
@@ -113,6 +114,20 @@ struct IndexToType
             CurrentIndexParameterConstant + 1, 
             ParameterTypes ...
         >::Type;
+};
+
+template< 
+        size_t IndexParameterConstant, 
+        typename CurrentParameterType, 
+        typename... ParameterTypes 
+    >
+struct IndexToType< 
+        IndexParameterConstant, 
+        IndexParameterConstant, 
+        CurrentParameterType, 
+        ParameterTypes... 
+    > {
+    using Type = CurrentParameterType;
 };
 
 template< typename AnyParameterType >
@@ -373,7 +388,7 @@ constexpr auto apply( const LightTuple< TupleParameterTypes... >& tuple ) noexce
 }
 
 template< typename... ParameterTypes >
-struct AutoVariant
+struct Variant
 {
     template< typename ParameterType >
     constexpr static size_t type_index = FindTypeIndex< 
@@ -381,37 +396,103 @@ struct AutoVariant
                     ParameterType, 
                     ParameterTypes... 
                 >::type_index;
-    constexpr AutoVariant( auto data_ ) noexcept
-            : data( static_cast< const void* >( new decltype( data_ )( data_ ) ) ), 
-            alternative_index( type_index< decltype( data_ ) >  ) {}
 
-    constexpr ~AutoVariant() noexcept {
+    constexpr Variant( auto data_ ) noexcept
+            : data( static_cast< void* >( new decltype( data_ )( data_ ) ) ), 
+            alternative_index( type_index< decltype( data_ ) > ) {}
+    constexpr ~Variant() noexcept {
         delete static_cast< const int* >( data );
     }
-
-    template< typename ParameterType >
-    constexpr bool holds_alternative() const noexcept {
-        return FindTypeIndex< 0, ParameterType, ParameterTypes... >::type_index == alternative_index;
+    constexpr const size_t index() const noexcept {
+        return alternative_index;
     }
-
-    constexpr auto get_data() const noexcept {
-        return static_cast< typename IndexToType< alternative_index, 
-                0, ParameterTypes... >::Type* >( data );
+    constexpr void* get_data() const noexcept {
+        return data;
     }
-
-    const void* data;
-    const size_t alternative_index;
+    protected: 
+        void* data;
+        const size_t alternative_index;
 };
 
-template< typename ParameterType >
-struct HoldsAlternative
+
+template< typename AlternativeType >
+constexpr bool holds_alternative( auto variant ) {
+    return decltype( variant )::template type_index< AlternativeType >() == variant.index();
+}
+
+template< 
+        typename ReturnParameterType, 
+        size_t IndexParameterConstant, 
+        size_t MaximumParameterConstant, 
+        auto VisitorParameterConstant, 
+        typename... ParameterTypes 
+    >
+struct VisitImplementation
 {
-    const bool value;
-    const ParameterType* data;
-    template< typename... ParameterTypes >
-    constexpr HoldsAlternative( const AutoVariant< ParameterTypes... >& variant ) 
-            : value( FindTypeIndex< 0, ParameterType, ParameterTypes... >::type_index == variant.alternative_index ) {} 
+    ReturnParameterType result;
+    constexpr VisitImplementation( 
+            const Variant< ParameterTypes... >& variant 
+        ) noexcept : result( 
+        ( IndexParameterConstant == variant.index() ) ? 
+            VisitorParameterConstant( static_cast< 
+                    IndexToType< 
+                            IndexParameterConstant, 
+                            0, 
+                            ParameterTypes... >::Type* 
+                >( variant.get_data() ) ) 
+         : 
+        VisitImplementation< 
+                ReturnParameterType, 
+                IndexParameterConstant + 1, 
+                MaximumParameterConstant, 
+                VisitorParameterConstant, 
+                ParameterTypes... 
+            >( variant ).result ) {}
 };
+
+template< 
+        typename ReturnParameterType, 
+        size_t MaximumParameterConstant, 
+        auto VisitorParameterConstant, 
+        typename... ParameterTypes 
+    >
+struct VisitImplementation< 
+        ReturnParameterType, 
+        MaximumParameterConstant, 
+        MaximumParameterConstant, 
+        VisitorParameterConstant, 
+        ParameterTypes... 
+    >
+{
+    ReturnParameterType result;
+    constexpr VisitImplementation( 
+            const Variant< ParameterTypes... >& variant 
+        ) noexcept : result( VisitorParameterConstant( static_cast< 
+                    IndexToType< 
+                            MaximumParameterConstant, 
+                            0, 
+                            ParameterTypes... >::Type* 
+                >( variant.get_data() ) )
+            ) {}
+};
+
+template< auto VisitorParameterConstant, typename... ParameterTypes >
+constexpr static auto visit( 
+        const Variant< ParameterTypes... >& variant 
+    ) noexcept {
+    using ReturnType = decltype( VisitorParameterConstant( 
+            typename IndexToType< 0, 0, ParameterTypes... >::Type{} ) 
+        );
+    return VisitImplementation< 
+            ReturnType, 
+            0, 
+            sizeof...( ParameterTypes ) - 1, 
+            VisitorParameterConstant, 
+            ParameterTypes... 
+        >( variant ).result;
+}
+
+
 
 #include <cxxabi.h>
 auto type_name( auto data ) {
@@ -419,36 +500,10 @@ auto type_name( auto data ) {
     return abi::__cxa_demangle( typeid( data ).name(), 0, 0, &status );
 }
 
-constexpr auto test()
-{
-    // auto lt = LightTuple< int, float, bool, double, char >( 
-    //         new int{ 42 }, 
-    //         new float( 54.3f ), 
-    //         new bool( false ), 
-    //         new double( 32.2 ), 
-    //         new char{ 'c' } 
-    //     );
-    auto lt = LightTuple< int, float, bool, double, char >( 
-            new bool{ false }
-        );
-
-    // std::cout << "Light tuple " << type_name( lt ) << "\n";
-    return apply< []( auto* x )
-    { 
-            if( x != nullptr )
-                std::cout << type_name( x ) << " x " << *x << "\n";
-            else
-                std::cout << "nullptr" << "\n";
-            return x;
-        } >( lt );
-    // return lt;
-}
 
 int main( int argc, char** args )
 {
-    int status;
-    auto r = test();
-    std::cout << "HI\n";
-    std::cout << type_name( r ) << " data " << type_name( r.data ) << "\n";//<< " result " << *r.data << "\n";
+    auto x = Variant< int, bool, float >( 42.f );
+    visit< []( auto p ) { std::cout << p << "\n"; return 2; } >( x );
     return 0;
 }
