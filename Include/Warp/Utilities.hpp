@@ -344,7 +344,7 @@ namespace Warp::Utilities
                     >::type_index;
 
         template< typename AlternativeParameterType, typename... InitializersParameterTypes >
-        constexpr AutoVariant( std::in_place_type_t< AlternativeParameterType >, InitializersParameterTypes&&... initializers ) noexcept
+        constexpr AutoVariant( std::in_place_type_t< AlternativeParameterType >, InitializersParameterTypes... initializers ) noexcept
                 : data( static_cast< void* >( new AlternativeParameterType( 
                         std::forward< InitializersParameterTypes >( initializers )... ) 
                     ) ), 
@@ -434,7 +434,8 @@ namespace Warp::Utilities
         ) noexcept
     {
         using FirstAlternativeType = typename IndexToType< 0, 0, ParameterTypes... >::Type;
-        using ReturnType = decltype( VisitorParameterConstant( []() -> FirstAlternativeType* { return nullptr; } ) );
+        FirstAlternativeType* substitute = nullptr;
+        using ReturnType = decltype( VisitorParameterConstant( substitute ) );
         return VisitImplementation< 
                 ReturnType, 
                 0, 
@@ -458,13 +459,17 @@ namespace Warp::Utilities
         constexpr ~NotSoUniquePointer() noexcept {
             delete pointer; 
         }
-        constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept {
+        constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept
+        {
             pointer = other.pointer;
             ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
+            return *this;
         }
-        constexpr NotSoUniquePointer& operator=( NotSoUniquePointer&& other ) noexcept {
+        constexpr NotSoUniquePointer& operator=( NotSoUniquePointer&& other ) noexcept
+        {
             pointer = other.pointer;
             other.pointer = nullptr;
+            return *this;
         }
         constexpr StorageType* operator->() const noexcept {
             return pointer;
@@ -473,7 +478,6 @@ namespace Warp::Utilities
         constexpr const StorageType* get_pointer() const noexcept {
             return pointer;
         }
-
         protected: 
             StorageType* pointer;
     };

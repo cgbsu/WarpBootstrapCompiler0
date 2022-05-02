@@ -7,21 +7,22 @@ namespace Warp::Utilities
 {
 
     template< auto NodeTag >
-    constexpr VariantType allocate_node( auto... constructor_arguments )
+    constexpr Warp::AbstractSyntaxTree::VariantType allocate_node( auto... constructor_arguments )
     {
-        return VariantType{ 
-                NotSoUniquePointer{ 
-                        new Node< NodeTag >{ constructor_arguments... }
+        return Warp::AbstractSyntaxTree::VariantType { 
+                new Warp::AbstractSyntaxTree::InternalVariantType { 
+                        std::in_place_type_t< Warp::AbstractSyntaxTree::Node< NodeTag > >{}, 
+                        constructor_arguments... 
                     }
             };
     }
 
 
     template< typename LiteralType >
-    constexpr VariantType allocate_integral_literal_node( auto data )
+    constexpr Warp::AbstractSyntaxTree::VariantType allocate_integral_literal_node( auto data )
     {
-        return VariantType{ 
-                new NotSoUniquePointer{ new Node< NodeType::Literal > { 
+        return Warp::AbstractSyntaxTree::VariantType{ 
+                new NotSoUniquePointer{ new Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal > { 
                         Utilities::to_integral< LiteralType >( data ) 
                     } }
             };
@@ -40,14 +41,14 @@ namespace Warp::Utilities
         }
     };
 
-    std::string_view tree_to_string( const VariantType node, const size_t tabs );
+    std::string_view tree_to_string( const Warp::AbstractSyntaxTree::VariantType node, const size_t tabs );
 
     #define DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( TAG_VALUE ) \
         template<> \
-        struct StringableTrait< const Node< TAG_VALUE >* > : public StringableTrait< void > \
+        struct StringableTrait< const Warp::AbstractSyntaxTree::Node< TAG_VALUE >* > : public StringableTrait< void > \
         { \
-            const Node< TAG_VALUE >* node; \
-            constexpr StringableTrait( const Node< TAG_VALUE >* node ) : node( node ) {} \
+            const Warp::AbstractSyntaxTree::Node< TAG_VALUE >* node; \
+            constexpr StringableTrait( const Warp::AbstractSyntaxTree::Node< TAG_VALUE >* node ) : node( node ) {} \
             virtual std::string_view to_string( const size_t tabs_ ) const override final \
             { \
                 std::string_view child_nodes[] = { \
@@ -69,29 +70,29 @@ namespace Warp::Utilities
         }
 
 
-    DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( ExpressionOperator::FactorMultiply );
-    DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( ExpressionOperator::FactorDivide );
-    DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( ExpressionOperator::SumAdd );
-    DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( ExpressionOperator::SumSubtract );
+    DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::FactorMultiply );
+    DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::FactorDivide );
+    DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::SumAdd );
+    DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::SumSubtract );
 
     template<>
-    struct StringableTrait< const Node< NodeType::Literal >* > : public StringableTrait< void >
+    struct StringableTrait< const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >* > : public StringableTrait< void >
     {
-        const Node< NodeType::Literal >* node;
-        constexpr StringableTrait( const Node< NodeType::Literal >* node ) : node( node ) {}
+        const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >* node;
+        constexpr StringableTrait( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >* node ) : node( node ) {}
         virtual std::string_view to_string( const size_t tabs ) const override final 
         {
             std::stringstream buffer;
             buffer 
                     << make_tabs( tabs ) 
-                    << "Node< " << Utilities::to_string< NodeType >( NodeType::Literal ) 
+                    << "Node< " << Utilities::to_string< Warp::AbstractSyntaxTree::NodeType >( Warp::AbstractSyntaxTree::NodeType::Literal ) 
                     << ">{" << node->value.to_string() << "}\n";
             return std::string_view{ buffer.str() };
         }
     };
 
 
-    std::string_view tree_to_string( const VariantType node, const size_t tabs )
+    std::string_view tree_to_string( const Warp::AbstractSyntaxTree::VariantType node, const size_t tabs )
     {
         StringableTrait< void >* stringable = nullptr;
         Utilities::visit< [ & ]( auto underyling_node ) {

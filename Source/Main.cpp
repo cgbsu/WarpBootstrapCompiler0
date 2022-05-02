@@ -7,7 +7,7 @@
 #include <memory>
 #include <any>
 
-#include <Warp/ExpressionTree.hpp>
+#include <Warp/AbstractSyntaxTreeUtilities.hpp>
 
 using namespace Warp::Parser;
 
@@ -64,14 +64,14 @@ constexpr ctpg::parser factor_parser(
         ctpg::rules( 
                 factor( natural_number_term ) 
                         >= []( auto token ) {
-                                return allocate_integral_literal_node< size_t >( token );
+                                return Warp::Utilities::allocate_integral_literal_node< size_t >( token );
                             }, 
                 factor( factor, multiply_term, natural_number_term ) 
                         >= []( auto current_factor, auto, const auto& next_token )
                             {
                                 return allocate_node< Warp::Parser::ExpressionOperator::FactorMultiply >( 
                                         current_factor, 
-                                        allocate_integral_literal_node< size_t >( next_token )
+                                        Warp::Utilities::allocate_integral_literal_node< size_t >( next_token )
                                     );
                             }, 
                 factor( factor, divide_term, natural_number_term ) 
@@ -79,7 +79,7 @@ constexpr ctpg::parser factor_parser(
                             {
                                 return allocate_node< ExpressionOperator::FactorDivide >( 
                                         current_factor, 
-                                        allocate_integral_literal_node< size_t >( next_token )
+                                        Warp::Utilities::allocate_integral_literal_node< size_t >( next_token )
                                     );
                             }, 
                 parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )

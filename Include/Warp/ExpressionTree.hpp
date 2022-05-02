@@ -55,15 +55,16 @@ namespace Warp::AbstractSyntaxTree
     struct Node< Warp::Parser::ExpressionOperator::SumSubtract >;
     struct Node< NodeType::Literal >;
 
-    using VariantType = Utilities::NotSoUniquePointer< 
-            Utilities::AutoVariant< 
-                    Node< Warp::Parser::ExpressionOperator::FactorMultiply >, 
-                    Node< Warp::Parser::ExpressionOperator::FactorDivide >, 
-                    Node< Warp::Parser::ExpressionOperator::SumAdd >, 
-                    Node< Warp::Parser::ExpressionOperator::SumSubtract >, 
-                    Node< NodeType::Literal > 
-                >
+
+    using InternalVariantType = Utilities::AutoVariant< 
+            Node< Warp::Parser::ExpressionOperator::FactorMultiply >, 
+            Node< Warp::Parser::ExpressionOperator::FactorDivide >, 
+            Node< Warp::Parser::ExpressionOperator::SumAdd >, 
+            Node< Warp::Parser::ExpressionOperator::SumSubtract >, 
+            Node< NodeType::Literal > 
         >;
+
+    using VariantType = Utilities::NotSoUniquePointer< InternalVariantType >;
 
 
     using LiteralType = StrongFactor< size_t, signed long long int >;
