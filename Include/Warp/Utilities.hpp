@@ -3,11 +3,14 @@
 #include <type_traits>
 #include <utility>
 
+#include <Warp/Tokens.hpp>
+
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_HPP
 
 namespace Warp::Utilities
 {
+    
     template< typename UncleanParmaeterType >
     using CleanType = typename std::remove_reference< 
             typename std::remove_pointer< UncleanParmaeterType >::type 
@@ -36,7 +39,7 @@ namespace Warp::Utilities
     struct FindTypeIndex< 
             IndexParameterConstant, 
             QueryParameterType, 
-            QueryParameterType, // Same type twice in a row means we found it! //
+            QueryParameterType, 
             ParameterTypes... 
         > {
         constexpr static const size_t type_index = IndexParameterConstant;
@@ -125,9 +128,7 @@ namespace Warp::Utilities
         constexpr LightTuple( 
                     AnyParameterType* data
             ) noexcept : BaseType( data ), data( nullptr ) {}
-            
-        //data( NullifierType< const Type >( typename ToPointerType< AnyParameterType >{ data } ).pointer ) {}
-
+        
         constexpr LightTuple( const ThisType& other ) = default;
 
         constexpr LightTuple( ThisType&& other ) = default;
@@ -144,15 +145,11 @@ namespace Warp::Utilities
     };
 
     template< typename CurrentParameterType >
-    struct LightTuple< CurrentParameterType > //typename std::remove_reference< CurrentParameterType >::type >
+    struct LightTuple< CurrentParameterType >
     {
-        using Type = CurrentParameterType;//std::remove_reference< CurrentParameterType >::type;
+        using Type = CurrentParameterType;
         std::remove_reference< const Type >::type* data;
         using ThisType = LightTuple< Type >;
-
-        // constexpr LightTuple( 
-        //         const Type& data 
-        //     ) noexcept : data( &data ) {}
 
         constexpr LightTuple( 
                 std::remove_reference< Type >::type* data 
@@ -437,9 +434,7 @@ namespace Warp::Utilities
         ) noexcept
     {
         using FirstAlternativeType = typename IndexToType< 0, 0, ParameterTypes... >::Type;
-        using ReturnType = decltype( VisitorParameterConstant( 
-                new FirstAlternativeType{} ) 
-            );
+        using ReturnType = decltype( VisitorParameterConstant( []() -> FirstAlternativeType* { return nullptr; } ) );
         return VisitImplementation< 
                 ReturnType, 
                 0, 
@@ -474,21 +469,14 @@ namespace Warp::Utilities
         constexpr StorageType* operator->() const noexcept {
             return pointer;
         }
+
+        constexpr const StorageType* get_pointer() const noexcept {
+            return pointer;
+        }
+
         protected: 
             StorageType* pointer;
     };
-
-    template< typename ParameterType >
-    struct Optional
-    {
-        constexpr Optional( ParameterType&& data ) noexcept : data( data ), occupied( true ) {}
-        constexpr Optional( std::nullptr_t ) noexcept : data {}
-
-        protected: 
-            const bool occupied;
-            const ParameterType data;
-    };
-
 
     template< std::integral ParameterType >
     constexpr ParameterType to_integral( std::string_view integer_token )
@@ -521,8 +509,7 @@ namespace Warp::Utilities
     }
 
     template< std::integral IntegralParameterType >
-    constexpr std::string_view to_string( Integ
-    ralParameterType to_stringify ) {
+    constexpr std::string_view to_string( IntegralParameterType to_stringify ) {
         return std::string_view{ std::to_string( to_stringify ) };
     }
 
@@ -538,47 +525,7 @@ namespace Warp::Utilities
             return to_string();
         }
     };
-    
+
 }
 
-    /*
-    #include <cxxabi.h>
-    auto type_name( auto data ) {
-        int status;
-        return abi::__cxa_demangle( typeid( data ).name(), 0, 0, &status );
-    }
-
-
-    int main( int argc, char** args )
-    {
-        auto x = AutoVariant< int, bool, float >( std::in_place_type_t< float >{}, 42.5f );
-        std::cout << visit< []( auto p ) { 
-                std::cout << type_name( p ) 
-                        << " val " 
-                        << *p 
-                        << "\n"; 
-                return static_cast< float >( *p * *p ); 
-            } >( x );
-        return 0;
-    }
-
-    consteval auto test( auto val )
-    {
-        auto x = AutoVariant< int, bool, float, char, double, size_t >( std::in_place_type_t< decltype( val ) >{}, val );
-        return visit< []( auto p ) { 
-                // std::cout << type_name( p ) 
-                //         << " val " 
-                //         << *p 
-                //         << "\n"; 
-                return static_cast< float >( *p * *p ); 
-            } >( x );
-    }
-
-    int main( int argc, char** args )
-    {
-        std::cout << "result: " << test( 4.2 );
-        return 0;
-    }
-
-    */
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_UTILITES_HPP

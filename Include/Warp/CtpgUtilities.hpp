@@ -68,4 +68,5 @@ namespace Warp::Utilities
                 ctpg::utils::str_len( ArrayParameterConstant ) + 1
             >::ResultType;
     };
-#endif //WARP_BOOTSTRAP_COMPILER_HEADER_CTPG_UTILITIES_HPP
+}
+#endif // WARP_BOOTSTRAP_COMPILER_HEADER_CTPG_UTILITIES_HPP
