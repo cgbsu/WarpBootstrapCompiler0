@@ -21,10 +21,12 @@ namespace Warp::Utilities
     template< typename LiteralType >
     constexpr Warp::AbstractSyntaxTree::VariantType allocate_integral_literal_node( auto data )
     {
-        return Warp::AbstractSyntaxTree::VariantType{ 
-                new NotSoUniquePointer{ new Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal > { 
+        return Warp::AbstractSyntaxTree::VariantType { 
+                new Warp::AbstractSyntaxTree::InternalVariantType { 
+                        std::in_place_type_t< Warp::AbstractSyntaxTree::Node< 
+                                Warp::AbstractSyntaxTree::NodeType::Literal > >{}, 
                         Utilities::to_integral< LiteralType >( data ) 
-                    } }
+                    }
             };
     }
 
