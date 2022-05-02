@@ -449,7 +449,7 @@ namespace Warp::Utilities
     struct NotSoUniquePointer
     {
         constexpr NotSoUniquePointer() : pointer( nullptr ) {}
-        constexpr NotSoUniquePointer( const StorageType* pointer ) noexcept : pointer( pointer ) {}
+        constexpr NotSoUniquePointer( StorageType* pointer ) noexcept : pointer( pointer ) {}
         constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ) {
             ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
         }

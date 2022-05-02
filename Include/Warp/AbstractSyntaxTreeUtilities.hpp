@@ -33,44 +33,44 @@ namespace Warp::Utilities
     template< typename = void >
     struct StringableTrait
     {
-        virtual std::string_view to_string( const size_t tabs ) const = 0;
-        std::string_view make_tabs( const size_t tabs ) const
+        virtual std::string_view to_string() /*( const size_t tabs )*/ const = 0;
+        /*std::string_view make_tabs( const size_t tabs ) const
         {
             std::stringstream tab_buffer;
             for( size_t ii = 0; ii < tabs; ++ii )
                 tab_buffer << "\t";
             return std::string_view{ tab_buffer.str() };
-        }
+        }*/
     };
 
-    std::string_view tree_to_string( const Warp::AbstractSyntaxTree::VariantType node, const size_t tabs );
+    std::string_view tree_to_string( const Warp::AbstractSyntaxTree::VariantType node );//, const size_t tabs );
 
     #define DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( TAG_VALUE ) \
         template<> \
-        struct StringableTrait< const Warp::AbstractSyntaxTree::Node< TAG_VALUE >* > : public StringableTrait< void > \
+        struct StringableTrait< Warp::AbstractSyntaxTree::Node< TAG_VALUE >* > : public StringableTrait< void > \
         { \
             const Warp::AbstractSyntaxTree::Node< TAG_VALUE >* node; \
-            constexpr StringableTrait( const Warp::AbstractSyntaxTree::Node< TAG_VALUE >* node ) : node( node ) {} \
-            virtual std::string_view to_string( const size_t tabs_ ) const override final \
+            constexpr StringableTrait( Warp::AbstractSyntaxTree::Node< TAG_VALUE >* node ) : node( node ) {} \
+            virtual std::string_view to_string() const override final \
             { \
                 std::string_view child_nodes[] = { \
-                        tree_to_string( node->left, tabs_ + 1 ), \
-                        tree_to_string( node->right, tabs_ + 1 ) \
+                        tree_to_string( node->left ), \
+                        tree_to_string( node->right ) \
                     }; \
-                std::string_view tabs = make_tabs( tabs_ ); \
                 std::stringstream buffer; \
                 buffer \
-                    << tabs << "Node< " << Utilities::to_string< decltype( TAG_VALUE ) >( TAG_VALUE ) << ">{\n" \
-                    << tabs << "\t" << "Left{\n" << child_nodes[ 0 ] \
-                    << tabs << "\t}\n" \
-                    << tabs << "\t" << "Right{\n" \
-                    << tabs << "\t" << child_nodes[ 1 ] \
-                    << tabs << "\t}\n" \
-                    << tabs << "}\n"; \
+                   /* << tabs*/ << "Node< " << Utilities::to_string< decltype( TAG_VALUE ) >( TAG_VALUE ) << ">{\n" \
+                   /* << tabs*/ << "\t" << "Left{\n" << child_nodes[ 0 ] \
+                   /* << tabs*/ << "\t}\n" \
+                   /* << tabs*/ << "\t" << "Right{\n" \
+                   /* << tabs*/ << "\t" << child_nodes[ 1 ] \
+                   /* << tabs*/ << "\t}\n" \
+                   /* << tabs*/ << "}\n"; \
                 return std::string_view{ buffer.str() }; \
             } \
         }
 
+                // std::string_view tabs = make_tabs( tabs_ ); \
 
     DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::FactorMultiply );
     DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::FactorDivide );
@@ -78,15 +78,15 @@ namespace Warp::Utilities
     DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::SumSubtract );
 
     template<>
-    struct StringableTrait< const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >* > : public StringableTrait< void >
+    struct StringableTrait< Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >* > : public StringableTrait< void >
     {
         const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >* node;
-        constexpr StringableTrait( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >* node ) : node( node ) {}
-        virtual std::string_view to_string( const size_t tabs ) const override final 
+        constexpr StringableTrait( Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >* node ) : node( node ) {}
+        virtual std::string_view to_string() /*( const size_t tabs )*/ const override final 
         {
             std::stringstream buffer;
             buffer 
-                    << make_tabs( tabs ) 
+                    // << make_tabs( tabs ) 
                     << "Node< " << Utilities::to_string< Warp::AbstractSyntaxTree::NodeType >( Warp::AbstractSyntaxTree::NodeType::Literal ) 
                     << ">{" << node->value.to_string() << "}\n";
             return std::string_view{ buffer.str() };
@@ -94,13 +94,13 @@ namespace Warp::Utilities
     };
 
 
-    std::string_view tree_to_string( const Warp::AbstractSyntaxTree::VariantType node, const size_t tabs )
+    std::string_view tree_to_string( const Warp::AbstractSyntaxTree::VariantType node )
     {
         StringableTrait< void >* stringable = nullptr;
         Utilities::visit< [ & ]( auto underyling_node ) {
-                return new StringableTrait< decltype( underyling_node ) >{ underyling_node };
+                return StringableTrait< decltype( underyling_node ) >{ underyling_node }.to_string();
             } >( *node.get_pointer() );
-        std::string_view string = stringable->to_string( tabs );
+        std::string_view string = stringable->to_string();
         delete stringable;
         return string;
     };
