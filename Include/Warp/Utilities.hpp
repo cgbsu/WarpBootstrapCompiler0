@@ -448,29 +448,97 @@ namespace Warp::Utilities
                 ParameterTypes... 
             >( AutoVariant ).result;
     }
-    template< typename ParameterType >
+
+    template< typename StorageType >
     struct NotSoUniquePointer
     {
-        using Type = ParameterType;
-        template< typename... InitializerParameterTypes >
-        constexpr explicit NotSoUniquePointer( InitializerParameterTypes&&... initalizers ) noexcept 
-                : pointer( new Type( initalizers... ) ) {}
-        constexpr NotSoUniquePointer( const NotSoUniquePointer< Type >& other ) noexcept 
-                : pointer( other.pointer ) {
-            // static_cast< NotSoUniquePointer< Type >& >( 
-                ( ( NotSoUniquePointer< Type >& ) other ).pointer = nullptr;
+        constexpr NotSoUniquePointer() : pointer( nullptr ) {}
+        constexpr NotSoUniquePointer( const StorageType* pointer ) noexcept : pointer( pointer ) {}
+        constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ) {
+            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
         }
-        constexpr NotSoUniquePointer( NotSoUniquePointer< Type >&& other ) noexcept 
-                : pointer( other.pointer ) {
+        constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ) {
             other.pointer = nullptr;
         }
-        constexpr ~NotSoUniquePointer() {
-            delete pointer;
+        constexpr ~NotSoUniquePointer() noexcept {
+            delete pointer; 
         }
-        
-    protected: 
-            Type* pointer;
+        constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept {
+            pointer = other.pointer;
+            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
+        }
+        constexpr NotSoUniquePointer& operator=( NotSoUniquePointer&& other ) noexcept {
+            pointer = other.pointer;
+            other.pointer = nullptr;
+        }
+        constexpr StorageType* operator->() const noexcept {
+            return pointer;
+        }
+        protected: 
+            StorageType* pointer;
     };
+
+    template< typename ParameterType >
+    struct Optional
+    {
+        constexpr Optional( ParameterType&& data ) noexcept : data( data ), occupied( true ) {}
+        constexpr Optional( std::nullptr_t ) noexcept : data {}
+
+        protected: 
+            const bool occupied;
+            const ParameterType data;
+    };
+
+
+    template< std::integral ParameterType >
+    constexpr ParameterType to_integral( std::string_view integer_token )
+    {
+        ParameterType sum = 0;
+        for( auto digit : integer_token )
+            sum = ( sum * 10 ) + digit - '0';
+        return sum;
+    }
+
+    template< typename ParameterType >
+    constexpr std::string_view to_string( ParameterType to_stringify ) {
+        return std::string_view{ to_stringify };
+    }
+
+    template<>
+    constexpr std::string_view to_string( char to_stringify ) {
+        const char string[] = { to_stringify, '\0' };
+        return std::string_view{ string };
+    }
+
+    template< typename ParameterType >
+    concept Enumaration = std::is_enum< ParameterType >::value;
+
+    template< Enumaration EnumerationParameterType >
+    constexpr std::string_view to_string( EnumerationParameterType to_stringify )
+    {
+        using UnderylingType = std::underlying_type_t< decltype( to_stringify ) >;
+        return to_string( static_cast< UnderylingType >( to_stringify ) );
+    }
+
+    template< std::integral IntegralParameterType >
+    constexpr std::string_view to_string( Integ
+    ralParameterType to_stringify ) {
+        return std::string_view{ std::to_string( to_stringify ) };
+    }
+
+    template< typename... AlternativeParameterTypes >
+    constexpr std::string_view to_string( std::variant< AlternativeParameterTypes... > to_stringify ) {
+        return std::visit( []( auto data ) { return to_string< decltype( data ) >( data ); }, to_stringify );
+    }
+
+    struct ConstexprStringable
+    {
+        constexpr virtual std::string_view to_string() const = 0;
+        constexpr operator std::string_view() const {
+            return to_string();
+        }
+    };
+    
 }
 
     /*
