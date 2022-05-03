@@ -24,7 +24,7 @@ namespace Warp::AbstractSyntaxTree
 
         const FactorType factor;
         
-        constexpr StrongFactor( FactorType factor ) : factor( factor ) {}
+        // constexpr StrongFactor( FactorType factor ) : factor( factor ) {}
         template< typename ParameterType >
         constexpr StrongFactor( ParameterType factor_ ) : factor( 
                 std::in_place_type_t< InternalFactorType >{}, 
@@ -33,7 +33,7 @@ namespace Warp::AbstractSyntaxTree
             ) {}
 
         constexpr virtual std::string_view to_string() const override final {
-            return Utilities::to_string( factor );
+            return std::string_view{ "STRONG FACTOR PLACE HOLDER" };//return Utilities::to_string( factor );
         }
 
         constexpr ThisType operator*( const auto other ) {

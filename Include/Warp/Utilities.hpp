@@ -54,8 +54,20 @@ namespace Warp::Utilities
             typename std::remove_pointer< UncleanParmaeterType >::type 
                 >::type;
 
+    template< typename... ParameterTypes >
+    struct Compare 
+    {
+        constexpr const static bool has_trailing_types = false;        
+    };
+    template< typename... ParameterTypes >
+    struct Compare 
+    {
+        constexpr const static bool has_trailing_types = false;        
+    };
+
     template< 
             size_t IndexParameterConstant, 
+            size_t NumberOfTrailingTypesParameterConstant, 
             bool SameParameterConstant, 
             typename QueryParameterType, 
             typename CurrentParameterType, 
@@ -63,15 +75,17 @@ namespace Warp::Utilities
         > requires( sizeof...( ParameterTypes ) > 0 ) // If this is not true, something is wrong //
     struct FindTypeIndex 
     {
+        constexpr const static size_t number_of_trailing_types = sizeof...( ParameterTypes )
         constexpr const static bool has_trailing_types = sizeof...( ParameterTypes ) > 0;
         using CompareType = EnableIf< 
                 typename TakeFirstType< ParameterTypes...  >::Type, 
-                typename std::add_pointer< QueryParameterType >::type, 
+                void, // typename std::add_pointer< QueryParameterType >::type, 
                 has_trailing_types 
             >::Type;
 
         constexpr static const size_t type_index = FindTypeIndex< 
                 IndexParameterConstant + 1, 
+                number_of_trailing_types, 
                 std::is_same< 
                         QueryParameterType, 
                         CompareType 
@@ -83,11 +97,13 @@ namespace Warp::Utilities
 
     template< 
             size_t IndexParameterConstant, 
+            size_t NumberOfTrailingTypesParameterConstant, 
             typename QueryParameterType, 
             typename... ParameterTypes 
         >
     struct FindTypeIndex< 
             IndexParameterConstant, 
+            NumberOfTrailingTypesParameterConstant, 
             true, 
             QueryParameterType, 
             QueryParameterType, 
@@ -96,6 +112,24 @@ namespace Warp::Utilities
     {
         constexpr static const size_t type_index = IndexParameterConstant;
     };
+
+    template< 
+            size_t IndexParameterConstant, 
+            typename QueryParameterType, 
+            typename... ParameterTypes 
+        >
+    struct FindTypeIndex< 
+            IndexParameterConstant, 
+            0, 
+            true, 
+            QueryParameterType, 
+            QueryParameterType, 
+            ParameterTypes... 
+        >
+    {
+        constexpr static const size_t type_index = IndexParameterConstant;
+    };
+
 /*
     template< 
             size_t IndexParameterConstant, 
