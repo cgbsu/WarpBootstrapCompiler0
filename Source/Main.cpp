@@ -137,7 +137,7 @@ int main( int argc, char** args )
                     parse_result.has_value() == true 
                 )
             parse_result.value();
-            // std::cout << "Result: " << Warp::Utilities::tree_to_string( parse_result.value(), 0 ) << "\n";
+            // std::cout << "Result: " << Warp::Utilities::tree_to_string( parse_result.value() ) << "\n";
         else
             std::cerr << "Error failed to parse!\n";
         std::cout << "Enter prompt please: ";

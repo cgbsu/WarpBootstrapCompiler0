@@ -16,33 +16,40 @@ namespace Warp::AbstractSyntaxTree
     template< typename... ArithmaticParameterTypes >
     struct StrongFactor : public Warp::Utilities::ConstexprStringable
     {
-        using FactorType = std::variant< ArithmaticParameterTypes... >;
+
+        using InternalFactorType = Warp::Utilities::AutoVariant< ArithmaticParameterTypes... >;
+        using FactorType = Warp::Utilities::NotSoUniquePointer< InternalFactorType >;
         using ThisType = StrongFactor< ArithmaticParameterTypes... >;
         using ComparisionResultType = std::common_comparison_category_t< std::compare_three_way_result_t< ArithmaticParameterTypes >... >;
 
         const FactorType factor;
         
         constexpr StrongFactor( FactorType factor ) : factor( factor ) {}
-        constexpr StrongFactor( auto factor ) : factor( factor ) {}
+        template< typename ParameterType >
+        constexpr StrongFactor( ParameterType factor_ ) : factor( 
+                std::in_place_type_t< InternalFactorType >{}, 
+                std::in_place_type_t< typename std::remove_reference< decltype( factor_ ) > >{}, 
+                factor_ 
+            ) {}
 
         constexpr virtual std::string_view to_string() const override final {
             return Utilities::to_string( factor );
         }
 
         constexpr ThisType operator*( const auto other ) {
-            return ThisType{ *std::get_if< decltype( other ) >( &factor ) * other };
+            return ThisType{ *Warp::Utilities::get_if< decltype( other ) >( factor.get_pointer() ) * other };
         }
         constexpr ThisType operator/( const auto other ) {
-            return ThisType{ *std::get_if< decltype( other ) >( &factor ) / other };
+            return ThisType{ *Warp::Utilities::get_if< decltype( other ) >( factor.get_pointer() ) / other };
         }
         constexpr ThisType operator+( const auto other ) {
-            return ThisType{ *std::get_if< decltype( other ) >( &factor ) + other };
+            return ThisType{ *Warp::Utilities::get_if< decltype( other ) >( factor.get_pointer() ) + other };
         }
         constexpr ThisType operator-( const auto other ) {
-            return ThisType{ *std::get_if< decltype( other ) >( &factor ) - other };
+            return ThisType{ *Warp::Utilities::get_if< decltype( other ) >( factor.get_pointer() ) - other };
         }
         constexpr ComparisionResultType operator<=>( const auto other ) {
-            return factor.operator<=>( other );
+            return ( *factor.get_pointer() ).operator<=>( other );
         }
     };
 
