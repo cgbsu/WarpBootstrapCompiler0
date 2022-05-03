@@ -20,7 +20,6 @@ namespace Warp::Utilities
     template< 
             size_t IndexParameterConstant, 
             typename QueryParameterType, 
-            typename CurrentParameterType, 
             typename... ParameterTypes 
         >
     struct FindTypeIndex 
@@ -32,18 +31,50 @@ namespace Warp::Utilities
             >::type_index;
     };
 
-    template< 
+    /*template< 
             size_t IndexParameterConstant, 
             typename QueryParameterType, 
-            typename... ParameterTypes 
         >
     struct FindTypeIndex< 
             IndexParameterConstant, 
             QueryParameterType, 
+            QueryParameterType 
+        > {
+        constexpr static const size_t type_index = IndexParameterConstant;
+    };*/
+
+
+    template< 
+            size_t IndexParameterConstant, 
+            typename QueryParameterType, 
+            typename CurrentParameterType, 
+            typename... ParameterTypes 
+        > requires ( std::is_same< QueryParameterType, CurrentParameterType >::value == true )
+    struct FindTypeIndex< 
+            IndexParameterConstant, 
             QueryParameterType, 
+            CurrentParameterType, 
             ParameterTypes... 
         > {
         constexpr static const size_t type_index = IndexParameterConstant;
+    };
+
+
+
+    template< 
+            size_t IndexParameterConstant, 
+            typename QueryParameterType, 
+            typename CurrentParameterType, 
+            typename... ParameterTypes 
+        >
+    struct FindTypeIndexDecay
+    {
+        constexpr static const size_t type_index = FindTypeIndex< 
+                IndexParameterConstant, 
+                std::decay_t< QueryParameterType >, 
+                CurrentParameterType, 
+                std::decay_t< ParameterTypes >... 
+            >::type_index;
     };
 
     template< 
@@ -320,7 +351,7 @@ namespace Warp::Utilities
     struct AutoVariant
     {
         template< typename ParameterType >
-        constexpr static size_t type_index = FindTypeIndex< 
+        constexpr static size_t type_index = FindTypeIndexDecay< 
                         0, 
                         ParameterType, 
                         ParameterTypes... 
@@ -430,17 +461,17 @@ namespace Warp::Utilities
             >( variant ).result;
     }
 
-    template< auto VisitorParameterConstant, typename... ParameterTypes >
+    /*template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
                 const AutoVariant< ParameterTypes... >* variant 
             ) noexcept {
         const AutoVariant< ParameterTypes... >& refrence = *variant;
         return visit( refrence );
-    }
+    }*/
 
     template< typename QueryParameterType, typename... VariantAlternativeParameterTypes >
     constexpr static QueryParameterType* get_if( AutoVariant< VariantAlternativeParameterTypes... >* variant ) {
-        if( decltype( FindTypeIndex< 0, QueryParameterType, VariantAlternativeParameterTypes... >{} )::type_index == variant.index() )
+        if( decltype( FindTypeIndexDecay< 0, QueryParameterType, VariantAlternativeParameterTypes... >{} )::type_index == variant.index() )
             return static_cast< QueryParameterType* >( variant.get_data() );
         return nullptr;
     }

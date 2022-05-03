@@ -64,10 +64,10 @@ namespace Warp::AbstractSyntaxTree
 
 
     using InternalVariantType = Utilities::AutoVariant< 
-            Node< Warp::Parser::ExpressionOperator::FactorMultiply >, 
-            Node< Warp::Parser::ExpressionOperator::FactorDivide >, 
-            Node< Warp::Parser::ExpressionOperator::SumAdd >, 
-            Node< Warp::Parser::ExpressionOperator::SumSubtract >, 
+            // Node< Warp::Parser::ExpressionOperator::FactorMultiply >, 
+            // Node< Warp::Parser::ExpressionOperator::FactorDivide >, 
+            // Node< Warp::Parser::ExpressionOperator::SumAdd >, 
+            // Node< Warp::Parser::ExpressionOperator::SumSubtract >, 
             Node< NodeType::Literal > 
         >;
 
