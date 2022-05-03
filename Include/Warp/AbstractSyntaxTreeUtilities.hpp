@@ -9,12 +9,17 @@ namespace Warp::Utilities
     template< auto NodeTag >
     constexpr Warp::AbstractSyntaxTree::VariantType allocate_node( auto... constructor_arguments )
     {
-        return Warp::AbstractSyntaxTree::VariantType { 
-                new Warp::AbstractSyntaxTree::InternalVariantType { 
-                        std::in_place_type_t< Warp::AbstractSyntaxTree::Node< NodeTag > >{}, 
-                        constructor_arguments... 
-                    }
-            };
+        using NodeInPlaceType = std::in_place_type_t< 
+                Warp::AbstractSyntaxTree::Node< 
+                        NodeTag 
+                    > 
+            >;
+        return Warp::AbstractSyntaxTree::VariantType ( 
+                std::in_place_type_t< Warp::AbstractSyntaxTree::InternalVariantType >{}, 
+                NodeInPlaceType{}, 
+                //std::in_place_type_t< Warp::AbstractSyntaxTree::Node< NodeTag > >{}, 
+                constructor_arguments... 
+            );
     }
 
 

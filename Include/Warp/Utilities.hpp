@@ -489,7 +489,7 @@ namespace Warp::Utilities
         template< typename AlternativeParameterType, typename... InitializersParameterTypes >
         constexpr AutoVariant( std::in_place_type_t< AlternativeParameterType >, InitializersParameterTypes... initializers ) noexcept
                 : data( static_cast< void* >( new AlternativeParameterType( 
-                        //std::forward< InitializersParameterTypes >( initializers )... ) 
+                        // std::forward( initializers )... ) 
                         initializers... 
                     ) ) ), 
                 alternative_index( type_index< AlternativeParameterType > ) {}
