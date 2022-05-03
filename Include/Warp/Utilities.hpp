@@ -11,6 +11,34 @@
 namespace Warp::Utilities
 {
 
+    template< auto FirstConstantParameter, auto... SeriesConstantParameters >
+    struct TakeOneFromTemplateSeries {
+        constexpr static auto first = FirstConstantParameter;
+        using NextType = TakeOneFromTemplateSeries< SeriesConstantParameters... >;
+    };
+
+    template< auto... ElementParameterConstants >
+    struct RawTemplateArray
+    {
+        using ElementType = decltype( 
+                TakeOneFromTemplateSeries< ElementParameterConstants... >::first 
+            );
+        constexpr static auto size = sizeof...( ElementParameterConstants );
+        constexpr static ElementType array[ size ] = { ElementParameterConstants... };
+        constexpr static ElementType* pointer = array;
+    };
+
+    template< typename FirstParameterType, typename... ParameterTypes >
+    struct TakeFirstType {
+        using Type = FirstParameterType;
+        using NextType = TakeFirstType< ParameterTypes... >;
+    };
+
+    template< typename FirstParameterType >//, typename... ParameterTypes >
+    struct TakeFirstType< FirstParameterType > {
+        using Type = FirstParameterType;
+    };
+
 
     template< typename UncleanParmaeterType >
     using CleanType = typename std::remove_reference< 
@@ -19,62 +47,103 @@ namespace Warp::Utilities
 
     template< 
             size_t IndexParameterConstant, 
+            bool SameParameterConstant, 
             typename QueryParameterType, 
+            typename CurrentParameterType, 
             typename... ParameterTypes 
-        >
+        > 
     struct FindTypeIndex 
     {
         constexpr static const size_t type_index = FindTypeIndex< 
                 IndexParameterConstant + 1, 
+                std::is_same< QueryParameterType, typename TakeFirstType< ParameterTypes... >::Type >::value, 
                 QueryParameterType, 
                 ParameterTypes... 
             >::type_index;
     };
 
-    /*template< 
-            size_t IndexParameterConstant, 
-            typename QueryParameterType, 
-        >
-    struct FindTypeIndex< 
-            IndexParameterConstant, 
-            QueryParameterType, 
-            QueryParameterType 
-        > {
-        constexpr static const size_t type_index = IndexParameterConstant;
-    };*/
-
-
     template< 
             size_t IndexParameterConstant, 
             typename QueryParameterType, 
-            typename CurrentParameterType, 
             typename... ParameterTypes 
-        > requires ( std::is_same< QueryParameterType, CurrentParameterType >::value == true )
+        > 
     struct FindTypeIndex< 
             IndexParameterConstant, 
+            true, 
             QueryParameterType, 
-            CurrentParameterType, 
+            QueryParameterType, 
             ParameterTypes... 
         > {
         constexpr static const size_t type_index = IndexParameterConstant;
     };
-
-
+/*
+    template< 
+            size_t IndexParameterConstant, 
+            bool Meep, 
+            typename QueryParameterType, 
+            typename OtherParameterType 
+        > 
+    struct FindTypeIndex< 
+            IndexParameterConstant, 
+            Meep, 
+            QueryParameterType, 
+            OtherParameterType 
+        > {
+        constexpr static const size_t type_index = IndexParameterConstant;
+    };
+*/
 
     template< 
             size_t IndexParameterConstant, 
             typename QueryParameterType, 
             typename CurrentParameterType, 
             typename... ParameterTypes 
-        >
+        > requires( sizeof...( ParameterTypes ) > 0 )
     struct FindTypeIndexDecay
     {
+        using QueryType = std::decay_t< QueryParameterType >;
         constexpr static const size_t type_index = FindTypeIndex< 
                 IndexParameterConstant, 
-                std::decay_t< QueryParameterType >, 
+                std::is_same< QueryType, std::decay_t< CurrentParameterType > >::value, 
+                QueryType, 
                 CurrentParameterType, 
                 std::decay_t< ParameterTypes >... 
             >::type_index;
+    };
+
+    template< 
+            size_t IndexParameterConstant, 
+            typename QueryParameterType, 
+            typename CurrentParameterType 
+        >
+    struct FindTypeIndexDecay< 
+                IndexParameterConstant, 
+                QueryParameterType, 
+                CurrentParameterType 
+            > {
+        constexpr static const size_t type_index = IndexParameterConstant;
+    };
+
+
+    template< 
+            typename QueryParameterType, 
+            typename AlternativeParameterType, 
+            bool EnableParameterConstant 
+        >
+    struct EnableInject {
+        using Type = AlternativeParameterType;
+    };
+
+    template< 
+            typename QueryParameterType, 
+            typename AlternativeParameterType 
+        >
+    struct EnableInject <
+                QueryParameterType, 
+                AlternativeParameterType, 
+                true 
+            > {
+        using Type = QueryParameterType;
     };
 
     template< 
@@ -83,27 +152,42 @@ namespace Warp::Utilities
             typename CurrentParameterType, 
             typename... ParameterTypes 
         >
-    struct IndexToType
+    struct IndexToTypeImplementation 
     {
-        using Type = typename IndexToType< 
+        // constexpr const static size_t next_index = CurrentIndexParameterConstant + 1;
+        using NextType = typename IndexToTypeImplementation< 
                 IndexParameterConstant, 
                 CurrentIndexParameterConstant + 1, 
                 ParameterTypes ...
             >::Type;
+        using Type = EnableInject< CurrentParameterType, NextType, IndexParameterConstant == CurrentIndexParameterConstant >::Type;
     };
 
     template< 
             size_t IndexParameterConstant, 
-            typename CurrentParameterType, 
+            size_t CurrentParameterConstant, 
+            typename CurrentParameterType 
+        >
+    struct IndexToTypeImplementation< 
+                IndexParameterConstant, 
+                CurrentParameterConstant, 
+                CurrentParameterType 
+            > {
+        using Type = CurrentParameterType;
+    };
+
+    template< 
+            size_t IndexParameterConstant, 
+            size_t StartIndexParameter, 
             typename... ParameterTypes 
         >
-    struct IndexToType< 
-            IndexParameterConstant, 
-            IndexParameterConstant, 
-            CurrentParameterType, 
-            ParameterTypes... 
-        > {
-        using Type = CurrentParameterType;
+    struct IndexToType
+    {
+        using Type = typename IndexToTypeImplementation< 
+                IndexParameterConstant, 
+                StartIndexParameter, 
+                ParameterTypes ...
+            >::Type;
     };
 
 
