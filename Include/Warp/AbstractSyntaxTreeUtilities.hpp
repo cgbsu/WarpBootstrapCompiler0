@@ -74,11 +74,12 @@ namespace Warp::Utilities
                    /* << tabs*/ << "\t" << child_nodes[ 1 ] \
                    /* << tabs*/ << "\t}\n" \
                    /* << tabs*/ << "}\n"; \
-                return std::string_view{ buffer.str() }; \
+                   return NotSoUniquePointer< const char* >{ std::string_view{ buffer.str() }.data() }; \
             } \
         }
 
                 // std::string_view tabs = make_tabs( tabs_ ); \
+                // return std::string_view{ buffer.str() }; 
 
     DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::FactorMultiply );
     DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::FactorDivide );
@@ -98,17 +99,17 @@ namespace Warp::Utilities
                     << "Node< " << Utilities::to_string< Warp::AbstractSyntaxTree::NodeType >( 
                             Warp::AbstractSyntaxTree::NodeType::Literal ).to_string_view() 
                     << ">{" << node->value.to_string() << "}\n";
-            return std::string_view{ buffer.str() };
+            // return std::string_view{ buffer.str() };
+                   return NotSoUniquePointer< const char* >{ std::string_view{ buffer.str() }.data() };
         }
     };
 
 
     std::string_view tree_to_string( const Warp::AbstractSyntaxTree::VariantType node )
     {
-        StringableTrait< void >* stringable = nullptr;
-        Utilities::visit< [ & ]( auto underyling_node ) {
-                return StringableTrait< decltype( underyling_node ) >{ underyling_node }.to_string();
-            } >( *node.get_pointer() );
+        StringableTrait< void >* stringable = Utilities::visit< []( auto underyling_node ) {
+                return new StringableTrait< decltype( underyling_node ) >{ underyling_node };//.to_string();
+            } >( node.get_pointer() );//*node.get_pointer() );
         std::string_view string = stringable->to_string();
         delete stringable;
         return string;

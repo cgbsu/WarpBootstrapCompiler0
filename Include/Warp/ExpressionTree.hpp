@@ -33,7 +33,7 @@ namespace Warp::AbstractSyntaxTree
             ) {}
 
         constexpr virtual std::string_view to_string() const override final {
-            return Utilities::to_string( factor );
+            return Utilities::to_string( factor.get_pointer() );
         }
 
         constexpr ThisType operator*( const auto other ) {
