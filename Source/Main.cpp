@@ -126,12 +126,49 @@ constexpr ctpg::parser factor_parser(
 
 void print_tree( Warp::AbstractSyntaxTree::VariantType& variant );
 
+// Warp::Parser::ExpressionOperator::FactorMultiply
+// Warp::Parser::ExpressionOperator::FactorDivide
+// Warp::Parser::ExpressionOperator::SumAdd
+// Warp::Parser::ExpressionOperator::SumSubtract
+
 struct LR
 {
-    template< auto NodeType >
-    auto operator()( const Warp::AbstractSyntaxTree::Node< NodeType >& node )
+    auto operator()( const Warp::AbstractSyntaxTree::Node< Warp::Parser::ExpressionOperator::FactorMultiply >& node )
     {
-        return "LR\n";
+        std::cout << "TIMES\n";
+        /*return Warp::Utilities::visit< 
+            [&]( auto x ) {
+                std::cout << "LR " << x->operation << "\n"; 
+                print_tree( node.left.get_data() ); 
+                return print_tree( node.right.get_data() ); 
+            } >( node );*/;
+        return 0;
+    }
+    auto operator()( const Warp::AbstractSyntaxTree::Node< Warp::Parser::ExpressionOperator::FactorDivide >& node )
+    {
+        std::cout << "DIV\n";
+        /*return Warp::Utilities::visit< 
+            [&]( auto x ) {
+                std::cout << "LR " << x->operation << "\n"; 
+                print_tree( node.left.get_data() ); 
+                return print_tree( node.right.get_data() ); 
+            } >( node );*/;
+        return 0;
+    }
+    auto operator()( const Warp::AbstractSyntaxTree::Node< Warp::Parser::ExpressionOperator::SumAdd >& node )
+    {
+        std::cout << "PLUS\n";
+        /*return Warp::Utilities::visit< 
+            [&]( auto x ) {
+                std::cout << "LR " << x->operation << "\n"; 
+                print_tree( node.left.get_data() ); 
+                return print_tree( node.right.get_data() ); 
+            } >( node );*/;
+        return 0;
+    }
+    auto operator()( const Warp::AbstractSyntaxTree::Node< Warp::Parser::ExpressionOperator::SumSubtract >& node )
+    {
+        std::cout << "SUB\n";
         /*return Warp::Utilities::visit< 
             [&]( auto x ) {
                 std::cout << "LR " << x->operation << "\n"; 
@@ -143,7 +180,7 @@ struct LR
 
     auto operator()( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node )
     {
-        std::cout << "B\n";
+        std::cout << "LITERAL\n";
         return 0;
         /*const typename std::remove_pointer< decltype( node.value.factor.get_pointer() ) >::type& ptr = *node.value.factor.get_pointer();
         return Warp::Utilities::visit< 
@@ -157,7 +194,7 @@ struct LR
 void print_tree( Warp::AbstractSyntaxTree::VariantType& variant )
 {
     const typename std::remove_pointer< decltype( variant.get_pointer() ) >::type& ptr = *variant.get_pointer();
-    // Warp::Utilities::visit< []( auto x ) { return LR{}( x ); }>( ptr );
+    Warp::Utilities::visit< []( auto x ) { LR r; return r( x ); }>( ptr );
 }
 
 // constexpr ctpg::parser literal_parser( 

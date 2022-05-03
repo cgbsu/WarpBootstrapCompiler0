@@ -31,7 +31,7 @@ namespace Warp::Utilities
     template< typename FirstParameterType, typename... ParameterTypes >
     struct TakeFirstType {
         using Type = FirstParameterType;
-        using NextType = TakeFirstType< ParameterTypes... >;
+        // using NextType = TakeFirstType< ParameterTypes... >;
     };
 
     template< typename FirstParameterType >//, typename... ParameterTypes >
@@ -39,6 +39,15 @@ namespace Warp::Utilities
         using Type = FirstParameterType;
     };
 
+    template< typename QueryParameterType, typename AlternativeParameterType, bool EnableParameterConstant >
+    struct EnableIf {
+        using Type = AlternativeParameterType;
+    };
+
+    template< typename QueryParameterType, typename AlternativeParameterType >
+    struct EnableIf< QueryParameterType, AlternativeParameterType, true > {
+        using Type = QueryParameterType;
+    };
 
     template< typename UncleanParmaeterType >
     using CleanType = typename std::remove_reference< 
@@ -51,12 +60,22 @@ namespace Warp::Utilities
             typename QueryParameterType, 
             typename CurrentParameterType, 
             typename... ParameterTypes 
-        > 
+        > requires( sizeof...( ParameterTypes ) > 0 ) // If this is not true, something is wrong //
     struct FindTypeIndex 
     {
+        constexpr const static bool has_trailing_types = sizeof...( ParameterTypes ) > 0;
+        using CompareType = EnableIf< 
+                typename TakeFirstType< ParameterTypes...  >::Type, 
+                typename std::add_pointer< QueryParameterType >::type, 
+                has_trailing_types 
+            >::Type;
+
         constexpr static const size_t type_index = FindTypeIndex< 
                 IndexParameterConstant + 1, 
-                std::is_same< QueryParameterType, typename TakeFirstType< ParameterTypes... >::Type >::value, 
+                std::is_same< 
+                        QueryParameterType, 
+                        CompareType 
+                    >::value, 
                 QueryParameterType, 
                 ParameterTypes... 
             >::type_index;
@@ -66,14 +85,15 @@ namespace Warp::Utilities
             size_t IndexParameterConstant, 
             typename QueryParameterType, 
             typename... ParameterTypes 
-        > 
+        >
     struct FindTypeIndex< 
             IndexParameterConstant, 
             true, 
             QueryParameterType, 
             QueryParameterType, 
             ParameterTypes... 
-        > {
+        >
+    {
         constexpr static const size_t type_index = IndexParameterConstant;
     };
 /*
@@ -115,7 +135,7 @@ namespace Warp::Utilities
             size_t IndexParameterConstant, 
             typename QueryParameterType, 
             typename CurrentParameterType 
-        >
+        > requires( std::is_same< QueryParameterType, CurrentParameterType >::value == true )
     struct FindTypeIndexDecay< 
                 IndexParameterConstant, 
                 QueryParameterType, 
