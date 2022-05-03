@@ -74,12 +74,11 @@ namespace Warp::Utilities
                    /* << tabs*/ << "\t" << child_nodes[ 1 ] \
                    /* << tabs*/ << "\t}\n" \
                    /* << tabs*/ << "}\n"; \
-                   return NotSoUniquePointer< const char* >{ std::string_view{ buffer.str() }.data() }; \
+                return std::string_view{ buffer.str() }; \
             } \
         }
 
                 // std::string_view tabs = make_tabs( tabs_ ); \
-                // return std::string_view{ buffer.str() }; 
 
     DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::FactorMultiply );
     DEFINE_STRINGABLE_FOR_BI_NODE_TYPE( Parser::ExpressionOperator::FactorDivide );
@@ -99,8 +98,7 @@ namespace Warp::Utilities
                     << "Node< " << Utilities::to_string< Warp::AbstractSyntaxTree::NodeType >( 
                             Warp::AbstractSyntaxTree::NodeType::Literal ).to_string_view() 
                     << ">{" << node->value.to_string() << "}\n";
-            // return std::string_view{ buffer.str() };
-                   return NotSoUniquePointer< const char* >{ std::string_view{ buffer.str() }.data() };
+            return std::string_view{ buffer.str() };
         }
     };
 

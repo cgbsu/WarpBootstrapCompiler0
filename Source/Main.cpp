@@ -124,6 +124,71 @@ constexpr ctpg::parser factor_parser(
            )
 );
 
+void print_tree( Warp::AbstractSyntaxTree::VariantType& variant );
+
+struct LR
+{
+    template< auto NodeType >
+    auto operator()( const Warp::AbstractSyntaxTree::Node< NodeType >& node )
+    {
+        return "LR\n";
+        /*return Warp::Utilities::visit< 
+            [&]( auto x ) {
+                std::cout << "LR " << x->operation << "\n"; 
+                print_tree( node.left.get_data() ); 
+                return print_tree( node.right.get_data() ); 
+            } >( node );*/;
+        return 0;
+    }
+
+    auto operator()( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node )
+    {
+        std::cout << "B\n";
+        return 0;
+        /*const typename std::remove_pointer< decltype( node.value.factor.get_pointer() ) >::type& ptr = *node.value.factor.get_pointer();
+        return Warp::Utilities::visit< 
+                []( auto y ) {
+                    std::cout << "TERM " << y << "\n"; return 0; 
+                } >( ptr );*/
+    }
+
+};
+
+void print_tree( Warp::AbstractSyntaxTree::VariantType& variant )
+{
+    const typename std::remove_pointer< decltype( variant.get_pointer() ) >::type& ptr = *variant.get_pointer();
+    // Warp::Utilities::visit< []( auto x ) { return LR{}( x ); }>( ptr );
+}
+
+// constexpr ctpg::parser literal_parser( 
+//         factor, 
+//         ctpg::terms( 
+//                 natural_number_term 
+//             ), 
+//         ctpg::nterms( factor ), 
+//         ctpg::rules( 
+//                 factor( natural_number_term ) 
+//                         >= []( auto token ) {
+//                                 return Warp::Utilities::allocate_integral_literal_node< size_t >( token );
+//                             } 
+//                 )
+//     );
+
+
+// int main( int argc, char** args )
+// {
+//     std::string input{ "123" };
+//     // if( 
+//         auto parse_result = literal_parser.parse( 
+//                         // ctpg::parse_options{}.set_verbose(), 
+//                         ctpg::buffers::string_buffer( input.c_str() ), std::cerr 
+//                 ); 
+//                 std::cout << ( parse_result.has_value() == true ) << "\n";
+//                 std::cout << parse_result.value() << "\n";
+//     // ) return parse_result.value();
+//     return 0;
+// }
+
 int main( int argc, char** args )
 {
     std::cout << "Hello world! Please enter your expression: ";
@@ -138,7 +203,7 @@ int main( int argc, char** args )
                 )
             // parse_result.value();
             // std::cout << "Result: " << Warp::Utilities::tree_to_string( parse_result.value() ) << "\n";
-            Warp::Utilities::to_string( parse_result.value() );
+            print_tree( parse_result.value() );
         else
             std::cerr << "Error failed to parse!\n";
         std::cout << "Enter prompt please: ";

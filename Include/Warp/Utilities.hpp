@@ -5,8 +5,6 @@
 
 #include <Warp/Tokens.hpp>
 
-// #include <ThirdParty/ctp/ctp.hpp>
-
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_HPP
 
@@ -430,7 +428,7 @@ namespace Warp::Utilities
 
     template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
-            const AutoVariant< ParameterTypes... >* variant 
+            const AutoVariant< ParameterTypes... >& variant 
         ) noexcept;
 
     template< typename... ParameterTypes >
@@ -454,7 +452,7 @@ namespace Warp::Utilities
         {
             visit< []( auto* data_ ) {
                 delete static_cast< decltype( data_ ) >( data_ );
-                return nullptr; }>( this );//*this );
+                return nullptr; }>( *this );
         }
         constexpr const size_t index() const noexcept {
             return alternative_index;
@@ -469,8 +467,8 @@ namespace Warp::Utilities
 
 
     template< typename AlternativeType >
-    constexpr bool holds_alternative( auto* variant ) {
-        return decltype( variant )::template type_index< AlternativeType >() == variant->index();
+    constexpr bool holds_alternative( auto variant ) {
+        return decltype( variant )::template type_index< AlternativeType >() == variant.index();
     }
 
     template< 
@@ -484,15 +482,15 @@ namespace Warp::Utilities
     {
         ReturnParameterType result;
         constexpr VisitImplementation( 
-                const AutoVariant< ParameterTypes... >* variant//& variant 
+                const AutoVariant< ParameterTypes... >& variant 
             ) noexcept : result( 
-            ( IndexParameterConstant == variant->index() ) ? 
+            ( IndexParameterConstant == variant.index() ) ? 
                 VisitorParameterConstant( static_cast< 
                         IndexToType< 
                                 IndexParameterConstant, 
                                 0, 
                                 ParameterTypes... >::Type* 
-                    >( variant->get_data() ) ) 
+                    >( variant.get_data() ) ) 
             : 
             VisitImplementation< 
                     ReturnParameterType, 
@@ -519,19 +517,19 @@ namespace Warp::Utilities
     {
         ReturnParameterType result;
         constexpr VisitImplementation( 
-                const AutoVariant< ParameterTypes... >* variant//& variant 
+                const AutoVariant< ParameterTypes... >& variant 
             ) noexcept : result( VisitorParameterConstant( static_cast< 
                         IndexToType< 
                                 MaximumParameterConstant, 
                                 0, 
                                 ParameterTypes... >::Type* 
-                    >( variant->get_data() ) )
+                    >( variant.get_data() ) )
                 ) {}
     };
 
     template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
-            const AutoVariant< ParameterTypes... >* variant//& variant 
+            const AutoVariant< ParameterTypes... >& variant 
         ) noexcept
     {
         
@@ -565,32 +563,20 @@ namespace Warp::Utilities
     template< typename StorageType >
     struct NotSoUniquePointer
     {
-        constexpr NotSoUniquePointer() : pointer( nullptr ) {
-                        //ctp::print(  " MEEP Null\n" );
-
-        }
-        constexpr NotSoUniquePointer( StorageType* pointer ) noexcept : pointer( pointer ) {
-            //ctp::print(  "MEEP PTR\n" );
-
-        }
+        constexpr NotSoUniquePointer() : pointer( nullptr ) {}
+        constexpr NotSoUniquePointer( StorageType* pointer ) noexcept : pointer( pointer ) {}
 
         template< typename... InitializersParameterTypes >
         constexpr NotSoUniquePointer( std::in_place_type_t< StorageType >, InitializersParameterTypes... initializers ) noexcept
-                : pointer( new StorageType( std::forward< InitializersParameterTypes >( initializers )... ) ) {
-                                //ctp::print(  "MEEP iINIT\n" );
-
-                }
+                : pointer( new StorageType( std::forward< InitializersParameterTypes >( initializers )... ) ) {}
 
         constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ) {
-            //ctp::print(  "MEEP COPY\n" );
             ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
         }
         constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ) {
-            //ctp::print(  "MEEP move\n" );
             other.pointer = nullptr;
         }
         constexpr ~NotSoUniquePointer() noexcept {
-            //ctp::print(  "MEEP delete\n" );
             delete pointer; 
         }
         constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept
@@ -616,43 +602,19 @@ namespace Warp::Utilities
             StorageType* pointer;
     };
 
-    constexpr const char* constexpr_string_copy( std::integral auto index, const char* string, auto... characters )
-    {
-        if( string[ index ] == '\0' ) {
-            //ctp::print( "AAAAAAAA" );
-            //ctp::print( string[ index ] );
-            new char[ sizeof...( characters ) ]{ characters... };
-        }
-        return constexpr_string_copy( 
-                index + 1, 
-                string, 
-                characters..., 
-                string[ index ] 
-            );
-    }
-
     template<>
     struct NotSoUniquePointer< const char* >
     {
-        constexpr NotSoUniquePointer() : pointer( nullptr ) {
-            //ctp::print(  "Null\n" );
-        }
-        constexpr NotSoUniquePointer( auto... string ) noexcept : pointer( new char[ sizeof...( string ) ]{ string... } ) {
-            //ctp::print(  "chars\n" );
-        }
-        constexpr NotSoUniquePointer( const char* string ) noexcept : pointer( constexpr_string_copy( 0, string ) ) {
-            //ctp::print(  "ptr\n" );
-        }
+        constexpr NotSoUniquePointer() : pointer( nullptr ) {}
+        constexpr NotSoUniquePointer( auto... string ) noexcept : pointer( new char[ sizeof...( string ) ]{ string... } ) {}
+        constexpr NotSoUniquePointer( const char* string ) noexcept : pointer( string ) {}
         constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ) {
-            //ctp::print(  "Copy\n" );
             ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
         }
         constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ) {
-            //ctp::print(  "move\n" );
             other.pointer = nullptr;
         }
         constexpr ~NotSoUniquePointer() noexcept {
-            //ctp::print(  "delete\n" );
             delete pointer; 
         }
         constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept
@@ -798,20 +760,19 @@ namespace Warp::Utilities
 
     template< typename... AlternativeParameterTypes >
     constexpr HeapStringType to_string( const AutoVariant< AlternativeParameterTypes... >* to_stringify ) {
-//        const AutoVariant< AlternativeParameterTypes... >& refrence = static_cast< const AutoVariant< AlternativeParameterTypes... >& >( to_stringify );
-//        return to_string( to_stringify );
-//    }
+        const AutoVariant< AlternativeParameterTypes... >& refrence = *to_stringify;
+        return to_string( to_stringify );
+    }
 
-//    template< typename... AlternativeParameterTypes >
-//    constexpr HeapStringType to_string( const AutoVariant< AlternativeParameterTypes... >& to_stringify ) {
+    template< typename... AlternativeParameterTypes >
+    constexpr HeapStringType to_string( const AutoVariant< AlternativeParameterTypes... >& to_stringify ) {
         return visit( []( auto data ) { return to_string< decltype( data ) >( data ); }, to_stringify );
     }
 
 
     template< typename PointerParameterType >
     constexpr HeapStringType to_string( NotSoUniquePointer< PointerParameterType > to_stringify ) {
-        const typename std::remove_reference< PointerParameterType >::type* p = to_stringify.get_pointer();
-        return to_string( p );//to_stringify.get_pointer() );
+        return to_string( to_stringify.get_pointer() );
     }
 
 
