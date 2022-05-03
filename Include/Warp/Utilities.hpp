@@ -54,82 +54,76 @@ namespace Warp::Utilities
             typename std::remove_pointer< UncleanParmaeterType >::type 
                 >::type;
 
-    template< typename... ParameterTypes >
+    template< typename QueryParameterType, typename... ParameterTypes >
     struct Compare 
     {
-        constexpr const static bool has_trailing_types = false;        
+        constexpr const static bool value = std::is_same< 
+                QueryParameterType, 
+                typename TakeFirstType< ParameterTypes...  >::Type 
+            >::value;
     };
-    template< typename... ParameterTypes >
-    struct Compare 
-    {
-        constexpr const static bool has_trailing_types = false;        
+
+    template< typename QueryParameterType >
+    struct Compare< QueryParameterType > {
+        //static_assert( false, "YOU SHOULDENT BE HERE" );
+        constexpr const static bool value = false;        
+    };
+
+    template< 
+            auto FirstValueParameterConstant, 
+            auto SecondValueParameterConstant, 
+            bool SentryParameterConstant 
+        >
+    struct Value {
+        constexpr const static auto value = SecondValueParameterConstant;
+    };
+
+    template< 
+            auto FirstValueParameterConstant, 
+            auto SecondValueParameterConstant 
+        >
+    struct Value <
+                FirstValueParameterConstant, 
+                SecondValueParameterConstant, 
+                true 
+            > {
+        constexpr const static auto value = FirstValueParameterConstant;
     };
 
     template< 
             size_t IndexParameterConstant, 
-            size_t NumberOfTrailingTypesParameterConstant, 
-            bool SameParameterConstant, 
             typename QueryParameterType, 
             typename CurrentParameterType, 
             typename... ParameterTypes 
-        > requires( sizeof...( ParameterTypes ) > 0 ) // If this is not true, something is wrong //
+        >
     struct FindTypeIndex 
     {
-        constexpr const static size_t number_of_trailing_types = sizeof...( ParameterTypes )
-        constexpr const static bool has_trailing_types = sizeof...( ParameterTypes ) > 0;
-        using CompareType = EnableIf< 
-                typename TakeFirstType< ParameterTypes...  >::Type, 
-                void, // typename std::add_pointer< QueryParameterType >::type, 
-                has_trailing_types 
-            >::Type;
-
-        constexpr static const size_t type_index = FindTypeIndex< 
-                IndexParameterConstant + 1, 
-                number_of_trailing_types, 
-                std::is_same< 
+        constexpr static const bool has_type = std::is_same< QueryParameterType, CurrentParameterType >::value;
+        //Compare< QueryParameterType, ParameterTypes... >::value;
+        constexpr static const size_t type_index = Value< 
+                IndexParameterConstant, 
+                FindTypeIndex< 
+                        IndexParameterConstant + 1, 
                         QueryParameterType, 
-                        CompareType 
-                    >::value, 
-                QueryParameterType, 
-                ParameterTypes... 
-            >::type_index;
+                        ParameterTypes... 
+                    >::type_index, 
+                has_type 
+            >::value;
     };
-
-    template< 
-            size_t IndexParameterConstant, 
-            size_t NumberOfTrailingTypesParameterConstant, 
-            typename QueryParameterType, 
-            typename... ParameterTypes 
-        >
-    struct FindTypeIndex< 
-            IndexParameterConstant, 
-            NumberOfTrailingTypesParameterConstant, 
-            true, 
-            QueryParameterType, 
-            QueryParameterType, 
-            ParameterTypes... 
-        >
-    {
-        constexpr static const size_t type_index = IndexParameterConstant;
-    };
-
     template< 
             size_t IndexParameterConstant, 
             typename QueryParameterType, 
-            typename... ParameterTypes 
+            typename CurrentParameterType 
         >
     struct FindTypeIndex< 
             IndexParameterConstant, 
-            0, 
-            true, 
             QueryParameterType, 
-            QueryParameterType, 
-            ParameterTypes... 
+            CurrentParameterType 
         >
     {
-        constexpr static const size_t type_index = IndexParameterConstant;
+        constexpr static const bool has_type = std::is_same< QueryParameterType, CurrentParameterType >::value;
+        constexpr static const size_t type_index = Value< IndexParameterConstant, -1, has_type >::value;
     };
-
 /*
     template< 
             size_t IndexParameterConstant, 
@@ -150,7 +144,6 @@ namespace Warp::Utilities
     template< 
             size_t IndexParameterConstant, 
             typename QueryParameterType, 
-            typename CurrentParameterType, 
             typename... ParameterTypes 
         > requires( sizeof...( ParameterTypes ) > 0 )
     struct FindTypeIndexDecay
@@ -158,9 +151,7 @@ namespace Warp::Utilities
         using QueryType = std::decay_t< QueryParameterType >;
         constexpr static const size_t type_index = FindTypeIndex< 
                 IndexParameterConstant, 
-                std::is_same< QueryType, std::decay_t< CurrentParameterType > >::value, 
                 QueryType, 
-                CurrentParameterType, 
                 std::decay_t< ParameterTypes >... 
             >::type_index;
     };
