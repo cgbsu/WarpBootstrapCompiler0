@@ -26,7 +26,7 @@ namespace Warp::Utilities
                         Warp::AbstractSyntaxTree::NodeType::Literal 
                     > 
             >;
-        using NoRef = std::remove_reference< DataLiteralType >::type;
+        using NoRef = DataLiteralType;//std::remove_reference< DataLiteralType >::type;
         auto literal = Warp::AbstractSyntaxTree::LiteralType { 
                 Utilities::to_integral< NoRef >( data ) 
             };

@@ -23,7 +23,7 @@ namespace Warp::Utilities
             typename CurrentParameterType, 
             typename... ParameterTypes 
         >
-    struct FindTypeIndex
+    struct FindTypeIndex 
     {
         constexpr static const size_t type_index = FindTypeIndex< 
                 IndexParameterConstant + 1, 
@@ -329,8 +329,9 @@ namespace Warp::Utilities
         template< typename AlternativeParameterType, typename... InitializersParameterTypes >
         constexpr AutoVariant( std::in_place_type_t< AlternativeParameterType >, InitializersParameterTypes... initializers ) noexcept
                 : data( static_cast< void* >( new AlternativeParameterType( 
-                        std::forward< InitializersParameterTypes >( initializers )... ) 
-                    ) ), 
+                        //std::forward< InitializersParameterTypes >( initializers )... ) 
+                        initializers... 
+                    ) ) ), 
                 alternative_index( type_index< AlternativeParameterType > ) {}
         constexpr ~AutoVariant() noexcept
         {

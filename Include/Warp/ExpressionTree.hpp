@@ -28,7 +28,7 @@ namespace Warp::AbstractSyntaxTree
         template< typename ParameterType >
         constexpr StrongFactor( ParameterType factor_ ) : factor( 
                 std::in_place_type_t< InternalFactorType >{}, 
-                std::in_place_type_t< typename std::remove_reference< decltype( factor_ ) > >{}, 
+                std::in_place_type_t< typename std::remove_reference< decltype( factor_ ) >::type >{}, 
                 factor_ 
             ) {}
 
