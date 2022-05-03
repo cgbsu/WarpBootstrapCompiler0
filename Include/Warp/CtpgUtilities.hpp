@@ -6,24 +6,6 @@
 
 namespace Warp::Utilities
 {
-
-    template< auto FirstConstantParameter, auto... SeriesConstantParameters >
-    struct TakeOneFromTemplateSeries {
-        constexpr static auto first = FirstConstantParameter;
-        using NextType = TakeOneFromTemplateSeries< SeriesConstantParameters... >;
-    };
-
-    template< auto... ElementParameterConstants >
-    struct RawTemplateArray
-    {
-        using ElementType = decltype( 
-                TakeOneFromTemplateSeries< ElementParameterConstants... >::first 
-            );
-        constexpr static auto size = sizeof...( ElementParameterConstants );
-        constexpr static ElementType array[ size ] = { ElementParameterConstants... };
-        constexpr static ElementType* pointer = array;
-    };
-
     template< 
             auto ArrayParameterConstant, 
             size_t IndexParameterConstant, 

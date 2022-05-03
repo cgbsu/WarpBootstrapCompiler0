@@ -107,9 +107,10 @@ namespace Warp::Utilities
 
     std::string_view tree_to_string( const Warp::AbstractSyntaxTree::VariantType node )
     {
-        StringableTrait< void >* stringable = Utilities::visit< []( auto underyling_node ) {
-                return new StringableTrait< decltype( underyling_node ) >{ underyling_node };//.to_string();
-            } >( node.get_pointer() );//*node.get_pointer() );
+        StringableTrait< void >* stringable = Utilities::visit< [ & ]( auto underyling_node ) {
+                StringableTrait< void >* p = new StringableTrait< decltype( underyling_node ) >{ underyling_node };//.to_string();
+                return p;
+            } >( *node.get_pointer() );
         std::string_view string = stringable->to_string();
         delete stringable;
         return string;
