@@ -127,7 +127,7 @@ constexpr ctpg::parser factor_parser(
 int main( int argc, char** args )
 {
     std::cout << "Hello world! Please enter your expression: ";
-    for( std::string input = "4*10+2"; input != "thanks :)"; std::getline( std::cin, input ) )
+    for( std::string input = "2"/*"4*10+2"*/; input != "thanks :)"; std::getline( std::cin, input ) )
     {
         std::cout << "Got: " << input << "\n";
         if( auto parse_result = factor_parser.parse( 
@@ -136,8 +136,8 @@ int main( int argc, char** args )
                     ); 
                     parse_result.has_value() == true 
                 )
-            parse_result.value();
-            // std::cout << "Result: " << Warp::Utilities::tree_to_string( parse_result.value() ) << "\n";
+            // parse_result.value();
+            std::cout << "Result: " << Warp::Utilities::tree_to_string( parse_result.value() ) << "\n";
         else
             std::cerr << "Error failed to parse!\n";
         std::cout << "Enter prompt please: ";

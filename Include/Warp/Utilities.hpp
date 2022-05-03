@@ -417,6 +417,7 @@ namespace Warp::Utilities
             const AutoVariant< ParameterTypes... >& variant 
         ) noexcept
     {
+        
         using FirstAlternativeType = typename IndexToType< 0, 0, ParameterTypes... >::Type;
         FirstAlternativeType* substitute = nullptr;
         using ReturnType = decltype( VisitorParameterConstant( substitute ) );
