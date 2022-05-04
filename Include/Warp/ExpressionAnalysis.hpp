@@ -27,8 +27,18 @@ namespace Warp::Analysis
     template< typename ExpressionParameterType >
     ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node )
     {
-        return Warp::Utilities::visit< []( auto value_pointer ) { 
-                return *value_pointer; //is_of_type< ExpressionParameterType >( *value_pointer ); 
+        using FactorType = Warp::Utilities::CleanType< decltype( *node.value.factor.get_pointer() ) >;
+        size_t size_t_index = FactorType::template type_index< size_t >;
+        size_t long_long_int_index = FactorType::template type_index< signed long long int >;
+        std::cout << "TEST: " << size_t_index << "\n";
+        std::cout << "TEST: " << long_long_int_index << "\n";
+        std::cout << "INDEX: " << node.value.factor->index() << "\n";
+            // std::cout << "Test: " << Warp::Utilities::type_name< std::decay_t< size_t > >() << "\n";
+            // std::cout << "Test: " << Warp::Utilities::type_name< std::decay_t< signed long long int > >() << "\n";
+        return Warp::Utilities::visit< []( auto value_pointer ) {
+            std::cout << "compute_value_of_expression got: " << Warp::Utilities::type_name< decltype( *value_pointer ) >() << "\n";
+                ExpressionParameterType data = *value_pointer;
+                return data; //is_of_type< ExpressionParameterType >( *value_pointer ); 
             } >( to_const_reference( node.value.factor ) );
         // return 0;
     }
