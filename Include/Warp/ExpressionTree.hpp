@@ -126,30 +126,33 @@ namespace Warp::AbstractSyntaxTree
     struct Node< NodeType::Literal > : public BaseNode< NodeType::Literal >
     {
         const LiteralType value;
-        constexpr Node( LiteralType value ) : value( value ) {}
-        constexpr Node( auto value ) : value( value ) {}
-        constexpr Node( Node< NodeType::Literal > const& other ) : value( other.value ) {}
+        constexpr Node( LiteralType value ) noexcept : value( value ) {}
+        constexpr Node( auto value ) noexcept : value( value ) {}
+        constexpr Node( Node< NodeType::Literal > const& other ) noexcept : value( other.value ) {}
     };
 
 
-    #define DEFINE_BI_NODE( VALUE ) \
+    #define DEFINE_BI_NODE( VALUE, OPERATOR ) \
         template<> \
         struct Node< VALUE > : public LeftRight< VALUE > \
         { \
             using BaseType = LeftRight< VALUE >; \
+            constexpr static const auto operate( auto left_value, auto right_value ) noexcept { \
+                return left_value OPERATOR right_value; \
+            } \
             constexpr static const Warp::Parser::ExpressionOperator operation = VALUE ; \
             constexpr Node( \
                     const VariantType left, \
                     const VariantType right \
-                ) : BaseType( left, right ) {} \
-            constexpr Node( Node< VALUE > const& other ) \
+                ) noexcept : BaseType( left, right ) {} \
+            constexpr Node( Node< VALUE > const& other ) noexcept \
                     : BaseType( other.left, other.right ) {} \
         }
 
-    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::FactorMultiply );
-    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::FactorDivide );
-    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::SumAdd );
-    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::SumSubtract );
+    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::FactorMultiply, * );
+    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::FactorDivide, / );
+    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::SumAdd, + );
+    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::SumSubtract, - );
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_TREE_HPP

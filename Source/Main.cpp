@@ -7,7 +7,7 @@
 #include <memory>
 #include <any>
 
-#include <Warp/AbstractSyntaxTreeUtilities.hpp>
+#include <Warp/ExpressionAnalysis.hpp>
 
 using namespace Warp::Parser;
 
