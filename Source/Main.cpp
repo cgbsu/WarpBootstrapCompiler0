@@ -138,7 +138,7 @@ int main( int argc, char** args )
                 )
         {
             // const auto& result = ;
-            auto data = Warp::Analysis::abstract_syntax_tree_callback< Warp::Analysis::compute_value_of_expression< size_t > >( parse_result.value() );
+            auto data = Warp::Analysis::abstract_syntax_tree_callback< Warp::Analysis::Memes, size_t >( parse_result.value() );
             std::cout << "\nResult: " 
                     << data 
                     << "\n\n";

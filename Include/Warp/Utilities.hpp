@@ -10,6 +10,41 @@
 
 namespace Warp::Utilities
 {
+    // Courtesy of: https://stackoverflow.com/questions/81870/is-it-possible-to-print-a-variables-type-in-standard-c
+    #include <type_traits>
+    #include <typeinfo>
+    #ifndef _MSC_VER
+    #   include <cxxabi.h>
+    #endif
+    #include <memory>
+    #include <string>
+    #include <cstdlib>
+
+    template <class T>
+    std::string friendly_type_name()
+    {
+        typedef typename std::remove_reference<T>::type TR;
+        std::unique_ptr<char, void(*)(void*)> own
+            (
+    #ifndef _MSC_VER
+                    abi::__cxa_demangle(typeid(TR).name(), nullptr,
+                                            nullptr, nullptr),
+    #else
+                    nullptr,
+    #endif
+                    std::free
+            );
+        std::string r = own != nullptr ? own.get() : typeid(TR).name();
+        if (std::is_const<TR>::value)
+            r += " const";
+        if (std::is_volatile<TR>::value)
+            r += " volatile";
+        if (std::is_lvalue_reference<T>::value)
+            r += "&";
+        else if (std::is_rvalue_reference<T>::value)
+            r += "&&";
+        return r;
+    }
 
     template< auto FirstConstantParameter, auto... SeriesConstantParameters >
     struct TakeOneFromTemplateSeries {
@@ -50,9 +85,9 @@ namespace Warp::Utilities
     };
 
     template< typename UncleanParmaeterType >
-    using CleanType = typename std::remove_reference< 
+    using CleanType = std::decay_t< typename std::remove_reference< 
             typename std::remove_pointer< UncleanParmaeterType >::type 
-                >::type;
+                >::type >;
 
     template< typename QueryParameterType, typename... ParameterTypes >
     struct Compare 
@@ -110,6 +145,57 @@ namespace Warp::Utilities
                 has_type 
             >::value;
     };
+
+
+
+    template< 
+            size_t IndexParameterConstant, 
+            typename QueryParameterType, 
+            typename... ParameterTypes 
+        >
+    struct FindTypeIndex< 
+            IndexParameterConstant, 
+            QueryParameterType, 
+            QueryParameterType, 
+            ParameterTypes... 
+        >
+    {
+        constexpr static const bool has_type = std::is_same< QueryParameterType, QueryParameterType >::value;
+        //Compare< QueryParameterType, ParameterTypes... >::value;
+        constexpr static const size_t type_index = IndexParameterConstant;
+    };
+
+    template< bool, auto valuep, typename A, typename B >
+    struct Error
+    {
+        constexpr const static auto value = valuep;
+        //static_assert( false, "Type not in parameter pack!" );
+    };
+
+
+    template< auto valuep, typename A, typename B >
+    struct Error< false, valuep, A, B >
+    {
+        constexpr const static auto value = valuep;
+        // static_assert( false, "Type not in parameter pack!" );
+    };
+
+    template< 
+            size_t IndexParameterConstant, 
+            typename QueryParameterType//, 
+            // typename CurrentParameterType 
+        >
+    struct FindTypeIndex< 
+            IndexParameterConstant, 
+            QueryParameterType, 
+            QueryParameterType
+            // CurrentParameterType 
+        >
+    {
+        constexpr static const bool has_type = true;//std::is_same< QueryParameterType, CurrentParameterType >::value;
+        constexpr static const size_t type_index = IndexParameterConstant; //Value< IndexParameterConstant, Error< has_type, 42, QueryParameterType, QueryParameterType >::value, has_type >::value;
+    };
+
     template< 
             size_t IndexParameterConstant, 
             typename QueryParameterType, 
@@ -118,12 +204,14 @@ namespace Warp::Utilities
     struct FindTypeIndex< 
             IndexParameterConstant, 
             QueryParameterType, 
-            CurrentParameterType 
+            CurrentParameterType
         >
     {
-        constexpr static const bool has_type = std::is_same< QueryParameterType, CurrentParameterType >::value;
-        constexpr static const size_t type_index = Value< IndexParameterConstant, -1, has_type >::value;
+        static_assert( std::is_same< QueryParameterType, CurrentParameterType >::value, "Type not in type list\n" );
+        constexpr static const bool has_type = std::is_same< QueryParameterType, CurrentParameterType >::value;//std::is_same< QueryParameterType, CurrentParameterType >::value;
+        constexpr static const size_t type_index = IndexParameterConstant; //Value< IndexParameterConstant, Error< has_type, 64, QueryParameterType, QueryParameterType >::value, has_type >::value;
     };
+
 /*
     template< 
             size_t IndexParameterConstant, 
@@ -148,11 +236,10 @@ namespace Warp::Utilities
         > requires( sizeof...( ParameterTypes ) > 0 )
     struct FindTypeIndexDecay
     {
-        using QueryType = std::decay_t< QueryParameterType >;
         constexpr static const size_t type_index = FindTypeIndex< 
                 IndexParameterConstant, 
-                QueryType, 
-                std::decay_t< ParameterTypes >... 
+                CleanType< std::decay_t< QueryParameterType > >, 
+                CleanType< std::decay_t< ParameterTypes > >... 
             >::type_index;
     };
 
@@ -476,29 +563,57 @@ namespace Warp::Utilities
             const AutoVariant< ParameterTypes... >& variant 
         ) noexcept;
 
+    template< typename X,    /*, auto out = []( const X& x ) -> const X& { 
+            std::cout << "TYPE: " 
+                    << friendly_type_name< std::decay_t<    decltype( x ) > >() 
+                    << " ALTERNATIVE INDEX SET: " << x << "\n"; 
+            return x; 
+        }, 
+        auto sep = []( std::string s ) { return std::string{ "ALT: " } + s + std::string{ "\n" }; },*/
+        typename... Alts >
+    const auto& print_i( const X& p, std::in_place_type_t< Alts >... ) {
+        /*( std::cout << "SHOW ALTS\n" << ... << sep( friendly_type_name< Alts >() ) ) << "\n";
+        out( p );
+        std::cout << "Should be " <<  FindTypeIndexDecay< 
+                        0, 
+                        CleanType< X >, 
+                        Alts... 
+                    >::type_index << "\n";
+        std::cout << "</i>\n";*/
+        return p;
+    }
+
     template< typename... ParameterTypes >
     struct AutoVariant
     {
+        using ThisType = AutoVariant< ParameterTypes... >;
+
         template< typename ParameterType >
         constexpr static size_t type_index = FindTypeIndexDecay< 
                         0, 
                         ParameterType, 
                         ParameterTypes... 
                     >::type_index;
-
+        constexpr AutoVariant() noexcept = delete;
         template< typename AlternativeParameterType, typename... InitializersParameterTypes >
         constexpr AutoVariant( std::in_place_type_t< AlternativeParameterType >, InitializersParameterTypes... initializers ) noexcept
                 : data( static_cast< void* >( new AlternativeParameterType( 
-                        // std::forward( initializers )... ) 
-                        initializers... 
-                    ) ) ), 
-                alternative_index( type_index< AlternativeParameterType > ) {}
+                        std::forward< InitializersParameterTypes >( initializers )... ) 
+                        // initializers... 
+                    ) ),// ), 
+                alternative_index( print_i( type_index< AlternativeParameterType >, std::in_place_type_t< ParameterTypes >{}... ) ) {}
         constexpr ~AutoVariant() noexcept
         {
             visit< []( auto* data_ ) {
-                delete static_cast< decltype( data_ ) >( data_ );
-                return nullptr; }>( *this );
+                    delete static_cast< decltype( data_ ) >( data_ );
+                    return nullptr; 
+                }>( *this );
         }
+        constexpr AutoVariant( const AutoVariant& other ) noexcept = default;
+        constexpr AutoVariant( AutoVariant&& other ) noexcept = default;
+        constexpr ThisType& operator=( const ThisType& other ) = default;
+        constexpr ThisType& operator=( ThisType&& other ) = default;
+
         constexpr const size_t index() const noexcept {
             return alternative_index;
         }
@@ -696,12 +811,13 @@ namespace Warp::Utilities
 
     using HeapStringType = NotSoUniquePointer< const char* >;
 
-    template< std::integral ParameterType >
+    template< std::integral ParameterType >//, auto out = []( ParameterType val ) { std::cout << "VAL: " << val << "\n"; return 0; } >
     constexpr ParameterType to_integral( std::string_view integer_token )
     {
         ParameterType sum = 0;
         for( auto digit : integer_token )
             sum = ( sum * 10 ) + digit - '0';
+        // out( sum );
         return sum;
     }
 
@@ -828,43 +944,6 @@ namespace Warp::Utilities
             return to_string();
         }
     };
-
-
-    // Courtesy of: https://stackoverflow.com/questions/81870/is-it-possible-to-print-a-variables-type-in-standard-c
-    #include <type_traits>
-    #include <typeinfo>
-    #ifndef _MSC_VER
-    #   include <cxxabi.h>
-    #endif
-    #include <memory>
-    #include <string>
-    #include <cstdlib>
-
-    template <class T>
-    std::string type_name()
-    {
-        typedef typename std::remove_reference<T>::type TR;
-        std::unique_ptr<char, void(*)(void*)> own
-            (
-    #ifndef _MSC_VER
-                    abi::__cxa_demangle(typeid(TR).name(), nullptr,
-                                            nullptr, nullptr),
-    #else
-                    nullptr,
-    #endif
-                    std::free
-            );
-        std::string r = own != nullptr ? own.get() : typeid(TR).name();
-        if (std::is_const<TR>::value)
-            r += " const";
-        if (std::is_volatile<TR>::value)
-            r += " volatile";
-        if (std::is_lvalue_reference<T>::value)
-            r += "&";
-        else if (std::is_rvalue_reference<T>::value)
-            r += "&&";
-        return r;
-    }
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_UTILITES_HPP

@@ -37,7 +37,7 @@ namespace Warp::Utilities
         return Warp::AbstractSyntaxTree::VariantType { 
                 std::in_place_type_t< Warp::AbstractSyntaxTree::InternalVariantType >{}, 
                 NodeInPlaceType{}, 
-                Utilities::to_integral< NoRef >( data ) 
+                Warp::AbstractSyntaxTree::LiteralType{ Utilities::to_integral< NoRef >( data ) } 
             };
         //         new Warp::AbstractSyntaxTree::InternalVariantType { 
         //                 NodeInPlaceType{}, 

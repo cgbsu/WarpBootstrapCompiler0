@@ -14,7 +14,7 @@ namespace Warp::AbstractSyntaxTree
     };
 
     template< typename... ArithmaticParameterTypes >
-    struct StrongFactor : public Warp::Utilities::ConstexprStringable
+    struct StrongFactor
     {
 
         using InternalFactorType = Warp::Utilities::AutoVariant< ArithmaticParameterTypes... >;
@@ -31,10 +31,10 @@ namespace Warp::AbstractSyntaxTree
                 std::in_place_type_t< typename std::remove_reference< decltype( factor_ ) >::type >{}, 
                 factor_ 
             ) {}
-
-        constexpr virtual std::string_view to_string() const override final {
-            return std::string_view{ "STRONG FACTOR PLACE HOLDER" };//return Utilities::to_string( factor );
-        }
+        constexpr StrongFactor( const StrongFactor& other ) noexcept = default;
+        constexpr StrongFactor( StrongFactor&& other ) noexcept = default;
+        constexpr ThisType& operator=( const ThisType& other ) = default;
+        constexpr ThisType& operator=( ThisType&& other ) = default;
 
         constexpr ThisType operator*( const auto other ) {
             return ThisType{ *Warp::Utilities::get_if< decltype( other ) >( factor.get_pointer() ) * other };
@@ -127,7 +127,7 @@ namespace Warp::AbstractSyntaxTree
     {
         const LiteralType value;
         constexpr Node( LiteralType value ) noexcept : value( value ) {}
-        constexpr Node( auto value ) noexcept : value( value ) {}
+        constexpr Node( std::integral auto value ) noexcept : value( value ) {}
         constexpr Node( Node< NodeType::Literal > const& other ) noexcept : value( other.value ) {}
     };
 
