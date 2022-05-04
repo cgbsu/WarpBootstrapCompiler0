@@ -5,29 +5,32 @@
 
 namespace Warp::Analysis
 {
-    const auto& to_const_reference( auto variant ) {
+    const auto& to_const_reference( const auto& variant ) {
         const typename std::remove_pointer< decltype( variant.get_pointer() ) >::type& node = *variant.get_pointer();
         return node;
     }
+
 
     template< auto FeedbackParameterConstant >
     auto abstract_syntax_tree_callback( const Warp::AbstractSyntaxTree::VariantType& variant )
     {
         const auto& node = to_const_reference( variant );
+        //Soooo... I have to fix this later... its pretty gross... //
+        // const typename std::remove_pointer< decltype( variant.get_pointer() ) >::type& node = variant.get_pointer();
         return Warp::Utilities::visit< []( auto raw_node_pointer ) { 
-            std::cout << Warp::Utilities::type_name< decltype( *raw_node_pointer ) >();
+            std::cout << "abstract_syntax_tree_callback got: " << Warp::Utilities::type_name< decltype( *raw_node_pointer ) >() << "\n";
                 const decltype( *raw_node_pointer )& ref = *raw_node_pointer;
                 return FeedbackParameterConstant( ref ); 
             }>( node );
     }
 
     template< typename ExpressionParameterType >
-    auto compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node )
+    ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node )
     {
-        // return Warp::Utilities::visit< [ & ]( const auto& value_pointer ) { 
-        //         return *value_pointer; //is_of_type< ExpressionParameterType >( *value_pointer ); 
-        //     } >( to_const_reference( node.value.factor ) );
-        return 0;
+        return Warp::Utilities::visit< []( auto value_pointer ) { 
+                return *value_pointer; //is_of_type< ExpressionParameterType >( *value_pointer ); 
+            } >( to_const_reference( node.value.factor ) );
+        // return 0;
     }
 
     template< typename ExpressionParameterType, Warp::Parser::ExpressionOperator OperatorParameterConstant >
