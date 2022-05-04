@@ -160,120 +160,8 @@ std::string type_name()
     return r;
 }
 
-
-// using NodeInfoType = std::tuple< size_t, std::string >;
-
-struct Meep {
-    size_t a;
-    std::string b;
-};
-
-using NodeInfoType = Meep;
-
-template< size_t OffsetLengthParameterConstant, size_t LevelParameterConstant, size_t ParanetLeftParameterConstant, bool EnableParameterConstant >
-NodeInfoType print_tree( const Warp::AbstractSyntaxTree::VariantType& variant );
-
-// Warp::Parser::ExpressionOperator::FactorMultiply
-// Warp::Parser::ExpressionOperator::FactorDivide
-// Warp::Parser::ExpressionOperator::SumAdd
-// Warp::Parser::ExpressionOperator::SumSubtract
-
-std::string make_duplicate_string( const size_t amount_of_duplicates, char character_to_duplicate = 'd' )
-{
-    std::string buffer = "";
-    for( size_t ii = 0; ii < amount_of_duplicates; ++ii )
-        buffer += character_to_duplicate;
-    return buffer;
-}
-
-
-size_t getlen( Meep m ) {
-    return m.a;
-}
-
-std::string getstr( Meep m ) {
-    return m.b;
-}
-
-// A really ugly functor. //
-template< size_t OffsetLengthParameterConstant, size_t LevelParameterConstant, size_t ParanetLeftParameterConstant, bool EnableParameterConstant >
-struct NodeToString
-{
-    NodeInfoType result;
-    constexpr const static bool enabled = ( LevelParameterConstant < 80 );
-    NodeToString( const auto& node )
-    {
-        const auto operation_heap_string = Warp::Utilities::to_string( std::remove_reference< decltype( node ) >::type::operation );
-        auto operation = operation_heap_string.to_string_view();
-        std::stringstream output;
-        const auto left = print_tree< OffsetLengthParameterConstant * 2, LevelParameterConstant + 1, 0, enabled >( node.left );
-        const auto right = print_tree< OffsetLengthParameterConstant * 2,  LevelParameterConstant + 1, 0, enabled >( node.right );
-        const auto left_length = getlen( left );
-        const auto right_length = getlen( right );
-        const size_t next_length = left_length + right_length;
-
-        const std::string this_offset = make_duplicate_string( OffsetLengthParameterConstant, ' ' );
-        const std::string offset = make_duplicate_string( left_length, ' ' );
-        const std::string half_offset = make_duplicate_string(  right_length, ' ' );
-        output << "/" << operation << "\\"  << offset 
-        << getstr( right ) << offset  << getstr( left ) ;
-        // << ( ( is_left == true && parent_left == true ) ? "\n" : "" );
-        result = NodeInfoType{ getlen( right ), output.str() };
-    }
-
-    NodeToString( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node  )
-    {
-        // std::cout << "L::"  << "parent_left: " << parent_left << " : is_left: " << is_left << "\n";
-        std::stringstream output;
-        const std::string offset = make_duplicate_string( OffsetLengthParameterConstant, ' ' );
-        output << offset << *static_cast< size_t* >( node.value.factor.get_pointer()->get_data() ) ;
-        result = NodeInfoType{ OffsetLengthParameterConstant, output.str() };
-    }
-
-};
-
-
-template< size_t OffsetLengthParameterConstant, size_t LevelParameterConstant, size_t ParanetLeftParameterConstant >
-struct NodeToString< 
-        OffsetLengthParameterConstant, 
-        LevelParameterConstant, 
-        ParanetLeftParameterConstant, 
-        false 
-    >
-{
-    NodeInfoType result;
-    NodeToString( const auto& node ) {
-        result = NodeInfoType{ 0, "Recursion depth exceeded" };
-    }
-
-    NodeToString( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node  )
-    {
-        std::stringstream output;
-        const std::string offset = make_duplicate_string( OffsetLengthParameterConstant, ' ' );
-        output << offset << *static_cast< size_t* >( node.value.factor.get_pointer()->get_data() ) ;
-        result = NodeInfoType{ OffsetLengthParameterConstant, output.str() };
-    }
-
-};
-
-template< size_t OffsetLengthParameterConstant, size_t LevelParameterConstant, size_t ParanetLeftParameterConstant, bool EnableParameterConstant >
-NodeInfoType print_tree( const Warp::AbstractSyntaxTree::VariantType& variant )
-{
-        const typename std::remove_pointer< decltype( variant.get_pointer() ) >::type& ptr = *variant.get_pointer();
-        return Warp::Utilities::visit< []( auto x ) { 
-                const std::string offset = make_duplicate_string( OffsetLengthParameterConstant, ' ' );
-                return NodeToString< OffsetLengthParameterConstant, LevelParameterConstant, ParanetLeftParameterConstant, EnableParameterConstant >( *x ).result; 
-            }>( ptr );    
-}
-
 int main( int argc, char** args )
 {
-        std::stringstream buffer;
-    buffer << "test" << "\n";
-    std::cout << buffer.str();
-    buffer << "another_test";
-    buffer << buffer.str() << "\n";
-
     std::cout << "Hello world! Please enter your expression: ";
     for( std::string input = "2"/*"4*10+2"*/; input != "thanks :)"; std::getline( std::cin, input ) )
     {
@@ -285,11 +173,7 @@ int main( int argc, char** args )
                     parse_result.has_value() == true 
                 )
         {
-            // parse_result.value();
-            // std::cout << "Result: " << Warp::Utilities::tree_to_string( parse_result.value() ) << "\n";
-            const auto& r= parse_result.value();
-            std::cout << getstr( print_tree< 1, 0, 0, true >( r ) );
-            std::cout << "\n";
+            const auto& result = parse_result.value();
         }
         else
             std::cerr << "Error failed to parse!\n";
