@@ -512,8 +512,8 @@ namespace Warp::Utilities
 
 
     template< typename AlternativeType >
-    constexpr bool holds_alternative( auto variant ) {
-        return decltype( variant )::template type_index< AlternativeType >() == variant.index();
+    constexpr bool holds_alternative( const auto& variant ) {
+        return std::remove_reference_t< std::decay_t< decltype( variant ) > >::template type_index< AlternativeType > == variant.index();
     }
 
     template< 
