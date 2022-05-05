@@ -64,7 +64,7 @@ namespace Warp::AbstractSyntaxTree
     struct Node< NodeType::Literal >;
 
 
-    using InternalVariantType = Utilities::AutoVariant< 
+    using InternalNodeVariantType = Utilities::AutoVariant< 
             Node< Warp::Parser::ExpressionOperator::FactorMultiply >, 
             Node< Warp::Parser::ExpressionOperator::FactorDivide >, 
             Node< Warp::Parser::ExpressionOperator::SumAdd >, 
@@ -72,7 +72,7 @@ namespace Warp::AbstractSyntaxTree
             Node< NodeType::Literal > 
         >;
 
-    using VariantType = Utilities::NotSoUniquePointer< InternalVariantType >;
+    using NodeVariantType = Utilities::NotSoUniquePointer< InternalNodeVariantType >;
 
 
     using LiteralType = StrongFactor< size_t, signed long long int >;
@@ -117,9 +117,9 @@ namespace Warp::AbstractSyntaxTree
     template< auto TagParameterConstant >
     struct LeftRight : public BaseNode< TagParameterConstant >
     {
-        const VariantType left;
-        const VariantType right;
-        constexpr LeftRight( const VariantType left, const VariantType right ) 
+        const NodeVariantType left;
+        const NodeVariantType right;
+        constexpr LeftRight( const NodeVariantType left, const NodeVariantType right ) 
                 : left( left ), right( right ) {}    
     };
 
@@ -152,8 +152,8 @@ namespace Warp::AbstractSyntaxTree
             } \
             constexpr static const Warp::Parser::ExpressionOperator operation = VALUE ; \
             constexpr Node( \
-                    const VariantType left, \
-                    const VariantType right \
+                    const NodeVariantType left, \
+                    const NodeVariantType right \
                 ) noexcept : BaseType( left, right ) {} \
             constexpr Node( Node< VALUE > const& other ) noexcept \
                     : BaseType( other.left, other.right ) {} \

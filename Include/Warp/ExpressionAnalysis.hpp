@@ -14,22 +14,6 @@ namespace Warp::Analysis
         // ML = 3 ?
     };
 
-    // Keeping this in mind... may add later... 
-    // enum class TreeType : size_t {
-    //     Expression = 0, 
-    //     Constraint = 1 
-    // };
-
-    // template< auto ExecutorTypeParameterConstant > 
-    // struct Executor {};
-
-    // template< auto ExecutorTypeParameterConstant >
-    // auto make_executor( Warp::AbstractSyntaxTree::VariantType ) -> Executor< ExecutorTypeParameterConstant > 
-    // {
-        
-    // }
-
-
     template< typename... VariantParameterTypes >
     const auto& to_const_reference( const Warp::Utilities::NotSoUniquePointer< Warp::Utilities::AutoVariant< VariantParameterTypes... > >& variant ) {
         const typename std::remove_pointer< decltype( variant.get_pointer() ) >::type& node = *variant.get_pointer();
@@ -49,7 +33,7 @@ namespace Warp::Analysis
     };
 
     template< template< typename, auto > typename FeedbackParameterType, typename ReturnParameterType >
-    ReturnParameterType abstract_syntax_tree_callback( const Warp::AbstractSyntaxTree::VariantType& variant )
+    ReturnParameterType abstract_syntax_tree_callback( const Warp::AbstractSyntaxTree::NodeVariantType& variant )
     {
         const auto& node = to_const_reference( variant );
         return Warp::Utilities::visit< []( auto raw_node_pointer ) { 
@@ -78,7 +62,7 @@ namespace Warp::Analysis
     {
         static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node )
         {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::VariantType& from ) -> ExpressionParameterType { 
+            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> ExpressionParameterType { 
                     return abstract_syntax_tree_callback< Computer, ExpressionParameterType >( from ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;

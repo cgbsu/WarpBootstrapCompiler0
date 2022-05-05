@@ -52,7 +52,7 @@ namespace Warp::Parser
     template<>
     struct Term< NonTerminalTerms::Factor >
     {
-        using StorageType = Warp::AbstractSyntaxTree::VariantType;
+        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
         constexpr static const char name[] = "Factor";
         constexpr static const auto term = ctpg::nterm< StorageType >( name );
     };
@@ -60,7 +60,7 @@ namespace Warp::Parser
     template<>
     struct Term< NonTerminalTerms::Sum >
     {
-        using StorageType = Warp::AbstractSyntaxTree::VariantType;
+        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
         constexpr static const char name[] = "Sum";
         constexpr static const auto term = ctpg::nterm< StorageType >( name );
     };
@@ -68,7 +68,7 @@ namespace Warp::Parser
     template<>
     struct Term< NonTerminalTerms::ParenthesisScope >
     {
-        using StorageType = Warp::AbstractSyntaxTree::VariantType;
+        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
         constexpr static const char name[] = "ParenthesisScope";
         constexpr static const auto term = ctpg::nterm< StorageType >( name );
     };

@@ -12,15 +12,15 @@ namespace Warp::Utilities
     ** https://github.com/riscygeek/constexpr_suff/blob/master/include/unique_ptr.hpp */
 
 
-    template< typename StorageType >
+    template< typename StorageParameterType >
     struct NotSoUniquePointer
     {
         constexpr NotSoUniquePointer() : pointer( nullptr ) {}
-        constexpr NotSoUniquePointer( StorageType* pointer ) noexcept : pointer( pointer ) {}
+        constexpr NotSoUniquePointer( StorageParameterType* pointer ) noexcept : pointer( pointer ) {}
 
         template< typename... InitializersParameterTypes >
-        constexpr NotSoUniquePointer( std::in_place_type_t< StorageType >, InitializersParameterTypes... initializers ) noexcept
-                : pointer( new StorageType( std::forward< InitializersParameterTypes >( initializers )... ) ) {}
+        constexpr NotSoUniquePointer( std::in_place_type_t< StorageParameterType >, InitializersParameterTypes... initializers ) noexcept
+                : pointer( new StorageParameterType( std::forward< InitializersParameterTypes >( initializers )... ) ) {}
 
         constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ) {
             ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
@@ -43,15 +43,15 @@ namespace Warp::Utilities
             other.pointer = nullptr;
             return *this;
         }
-        constexpr StorageType* operator->() const noexcept {
+        constexpr StorageParameterType* operator->() const noexcept {
             return pointer;
         }
 
-        constexpr const StorageType* get_pointer() const noexcept {
+        constexpr const StorageParameterType* get_pointer() const noexcept {
             return pointer;
         }
         protected: 
-            StorageType* pointer;
+            StorageParameterType* pointer;
     };
 
     template<>
@@ -102,6 +102,19 @@ namespace Warp::Utilities
     };
 
     using HeapStringType = NotSoUniquePointer< const char* >;
+
+    // namespace Detail
+    // {
+    //     template< typename >
+    //     struct VectorPlaceHolder {};
+    //     template< typename, size_t >
+    //     struct ArrayPlaceHolder {};
+    // }
+    // template< typename StorageParameterType, size_t SizeParamterConstant >
+    // struct NotSoUniquePointer< Detail::ArrayPlaceHolder< StorageParameterType, SizeParamterConstant > >
+    // {
+        
+    // };
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_NOT_SO_UNIQUE_POINTER_HPP

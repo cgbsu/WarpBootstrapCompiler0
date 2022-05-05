@@ -7,7 +7,7 @@ DEFAULT_FILE = "simplify_log.txt"
 
 REPLACE_LIST = {
     "'" : '', 
-    "Warp::Utilities::NotSoUniquePointer<Warp::Utilities::AutoVariant<Warp::AbstractSyntaxTree::Node<Warp::Parser::ExpressionOperator::FactorMultiply>, Warp::AbstractSyntaxTree::Node<Warp::Parser::ExpressionOperator::FactorDivide>, Warp::AbstractSyntaxTree::Node<Warp::Parser::ExpressionOperator::SumAdd>, Warp::AbstractSyntaxTree::Node<Warp::Parser::ExpressionOperator::SumSubtract>, Warp::AbstractSyntaxTree::Node<Warp::AbstractSyntaxTree::NodeType::Literal> >" : "VariantType", 
+    "Warp::Utilities::NotSoUniquePointer<Warp::Utilities::AutoVariant<Warp::AbstractSyntaxTree::Node<Warp::Parser::ExpressionOperator::FactorMultiply>, Warp::AbstractSyntaxTree::Node<Warp::Parser::ExpressionOperator::FactorDivide>, Warp::AbstractSyntaxTree::Node<Warp::Parser::ExpressionOperator::SumAdd>, Warp::AbstractSyntaxTree::Node<Warp::Parser::ExpressionOperator::SumSubtract>, Warp::AbstractSyntaxTree::Node<Warp::AbstractSyntaxTree::NodeType::Literal> >" : "NodeVariantType", 
     "Warp::Parser::ExpressionOperator::" : '', 
     "Warp::AbstractSyntaxTree::" : '', 
     "Warp::AbstractSyntaxTree::NodeType::" : '' 
