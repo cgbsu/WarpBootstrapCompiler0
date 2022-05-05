@@ -11,10 +11,6 @@
 
 using namespace Warp::Parser;
 
-constexpr char char_cast( Warp::Parser::ExpressionOperator operation ) {
-    return static_cast< char >( operation );
-}
-
 constexpr ctpg::nterm< Warp::AbstractSyntaxTree::VariantType > factor( "Factor" );
 constexpr ctpg::nterm< Warp::AbstractSyntaxTree::VariantType > sum( "Sum" );
 constexpr ctpg::nterm< Warp::AbstractSyntaxTree::VariantType > parenthesis_scope( "ParenthesisScope" );
@@ -22,21 +18,30 @@ constexpr ctpg::nterm< Warp::AbstractSyntaxTree::VariantType > parenthesis_scope
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
 constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
 
-constexpr ctpg::char_term plus_term( 
-        char_cast( Warp::Parser::ExpressionOperator::SumAdd ), 1, ctpg::associativity::ltor 
+constexpr ctpg::char_term plus_term( Warp::Utilities::to_char( 
+            Warp::Parser::ExpressionOperator::SumAdd ), 1, ctpg::associativity::ltor 
     );
-constexpr ctpg::char_term minus_term( 
-        char_cast( Warp::Parser::ExpressionOperator::SumSubtract ), 1, ctpg::associativity::ltor 
+constexpr ctpg::char_term minus_term( Warp::Utilities::to_char( 
+            Warp::Parser::ExpressionOperator::SumSubtract ), 1, ctpg::associativity::ltor 
     );
-constexpr ctpg::char_term multiply_term( 
-        char_cast( Warp::Parser::ExpressionOperator::FactorMultiply ), 2, ctpg::associativity::ltor 
+constexpr ctpg::char_term multiply_term( Warp::Utilities::to_char( 
+            Warp::Parser::ExpressionOperator::FactorMultiply ), 2, ctpg::associativity::ltor 
     );
-constexpr ctpg::char_term divide_term( 
-        char_cast( Warp::Parser::ExpressionOperator::FactorDivide ), 2, ctpg::associativity::ltor 
+constexpr ctpg::char_term divide_term( Warp::Utilities::to_char( 
+            Warp::Parser::ExpressionOperator::FactorDivide ), 2, ctpg::associativity::ltor 
     );
-constexpr ctpg::char_term left_parenthesis_term( '(', 3, ctpg::associativity::ltor );
-constexpr ctpg::char_term right_parenthesis_term( ')', 3, ctpg::associativity::ltor );
 
+
+constexpr ctpg::char_term left_parenthesis_term( Warp::Utilities::to_char( 
+            Warp::Parser::ScopeOperators::OpenParenthesis ), 4, ctpg::associativity::ltor 
+    );
+constexpr ctpg::char_term right_parenthesis_term( Warp::Utilities::to_char( 
+            Warp::Parser::ScopeOperators::CloseParenthesis ), 4, ctpg::associativity::ltor 
+    );
+
+constexpr ctpg::string_term and_term( and_operator, 6, ctpg::associativity::ltor );
+constexpr ctpg::string_term or_term( and_operator, 5, ctpg::associativity::ltor );
+constexpr ctpg::char_term not_term( not_operator, 4, ctpg::associativity::ltor );
 
 /* Before you ask... no, I could not use unique_ptr, in fact I could not manage ****
 ** the memory, for why you cant use unique_ptr see: ********************************

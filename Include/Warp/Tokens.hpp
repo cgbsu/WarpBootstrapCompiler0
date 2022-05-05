@@ -1,20 +1,20 @@
 namespace Warp::Parser
 {
-    constexpr static char star_token = '*';
-    constexpr static char forward_slash_token = '/';
-    constexpr static char plus_token = '+';
-    constexpr static char minus_token = '-';
-    constexpr static char caret_token = '^';
-    constexpr static char colon_token = ':';
+    constexpr static const char star_token = '*';
+    constexpr static const char forward_slash_token = '/';
+    constexpr static const char plus_token = '+';
+    constexpr static const char minus_token = '-';
+    constexpr static const char caret_token = '^';
+    constexpr static const char colon_token = ':';
 
-    constexpr static char open_parenthesis = '(';
-    constexpr static char close_parenthesis = ')';
-    constexpr static char open_curly_bracket = '{';
-    constexpr static char close_curly_bracket = '}';
-    constexpr static char open_square_bracket = '[';
-    constexpr static char close_square_bracket = ']';
-    constexpr static char open_angle_bracket = '<';
-    constexpr static char close_angle_bracket = '>';
+    constexpr static const char open_parenthesis = '(';
+    constexpr static const char close_parenthesis = ')';
+    constexpr static const char open_curly_bracket = '{';
+    constexpr static const char close_curly_bracket = '}';
+    constexpr static const char open_square_bracket = '[';
+    constexpr static const char close_square_bracket = ']';
+    constexpr static const char open_angle_bracket = '<';
+    constexpr static const char close_angle_bracket = '>';
 
     enum class ExpressionOperator : char 
     {
@@ -36,4 +36,12 @@ namespace Warp::Parser
         OpenAngleBracket = open_angle_bracket, 
         CloseAngleBracket = close_angle_bracket 
     };
+
+    constexpr static const char and_operator[] = "&&";
+    constexpr static const char or_operator[] = "||";
+    constexpr static const char not_operator = '!';
+
+    // Note: Consider addition of other operators, 
+    // such as implies ->, and if and only if (iff) <->
+    // or some intersting stuff with union, in and "there exits"
 }

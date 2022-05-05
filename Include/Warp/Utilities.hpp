@@ -820,6 +820,16 @@ namespace Warp::Utilities
         return to_string( static_cast< UnderylingType >( to_stringify ) );
     }
 
+    template< typename = char >
+    constexpr char to_char( char from ) {
+        return from;
+    }
+
+    template< Enumaration EnumerationParameterType >
+    constexpr char to_char( EnumerationParameterType from ) {
+        using UnderylingType = std::underlying_type_t< decltype( from ) >;
+        return to_char( static_cast< UnderylingType >( from ) );
+    }
 
     template< 
             std::integral IntegralParameterType, 
