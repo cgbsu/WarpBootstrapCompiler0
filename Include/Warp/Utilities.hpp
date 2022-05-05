@@ -1,9 +1,14 @@
-#include <iostream>
-#include <string>
-#include <type_traits>
-#include <utility>
-
 #include <Warp/Tokens.hpp>
+
+#ifndef _MSC_VER
+#   include <cxxabi.h>
+#endif
+#include <memory>
+#include <string>
+#include <cstdlib>
+
+#include <ctpg.hpp>
+
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_HPP
@@ -11,15 +16,6 @@
 namespace Warp::Utilities
 {
     // Courtesy of: https://stackoverflow.com/questions/81870/is-it-possible-to-print-a-variables-type-in-standard-c
-    #include <type_traits>
-    #include <typeinfo>
-    #ifndef _MSC_VER
-    #   include <cxxabi.h>
-    #endif
-    #include <memory>
-    #include <string>
-    #include <cstdlib>
-
     template <class T>
     std::string friendly_type_name()
     {
@@ -699,6 +695,13 @@ namespace Warp::Utilities
         return nullptr;
     }
 
+    /* Before you ask... no, I could not use unique_ptr, in fact I could not manage ****
+    ** the memory, for why you cant use unique_ptr see: ********************************
+    ** See: https://github.com/cplusplus/papers/issues/961 *****************************
+    ** and http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2273r0.pdf *********
+    ** https://github.com/riscygeek/constexpr_suff/blob/master/include/unique_ptr.hpp */
+
+
     template< typename StorageType >
     struct NotSoUniquePointer
     {
@@ -924,15 +927,52 @@ namespace Warp::Utilities
     constexpr HeapStringType to_string( NotSoUniquePointer< PointerParameterType > to_stringify ) {
         return to_string( to_stringify.get_pointer() );
     }
-
-
-    struct ConstexprStringable
+    
+    template< 
+        auto ArrayParameterConstant, 
+        size_t IndexParameterConstant, 
+        size_t ArrayLengthParameterConstant, 
+        auto... ElementParameterConstants 
+    >
+    struct ToRawTemplateArrayImplementation
     {
-        constexpr virtual std::string_view to_string() const = 0;
-        constexpr operator std::string_view() const {
-            return to_string();
-        }
+        using ResultType = typename ToRawTemplateArrayImplementation< 
+                ArrayParameterConstant, 
+                IndexParameterConstant + 1, 
+                ArrayLengthParameterConstant, 
+                ElementParameterConstants..., 
+                ArrayParameterConstant[ IndexParameterConstant % ArrayLengthParameterConstant ] 
+            >::ResultType;
     };
+
+    template< 
+            auto ArrayParameterConstant, 
+            size_t IndexParameterConstant, 
+            auto... ElementParameterConstants 
+        >
+    struct ToRawTemplateArrayImplementation< 
+            ArrayParameterConstant, 
+            IndexParameterConstant, 
+            IndexParameterConstant, 
+            ElementParameterConstants... 
+        >
+    {
+        using ResultType = RawTemplateArray< 
+                ElementParameterConstants... 
+            >;
+    };
+
+    template< auto ArrayParameterConstant >
+    struct ToRawTemplateArray
+    {
+        using ResultType = typename ToRawTemplateArrayImplementation< 
+                ArrayParameterConstant, 
+                0, 
+                // std::strlen( ArrayParameterConstant ) 
+                ctpg::utils::str_len( ArrayParameterConstant ) + 1
+            >::ResultType;
+    };
+
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_UTILITES_HPP

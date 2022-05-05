@@ -1,3 +1,13 @@
+#include <iostream>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <typeinfo>
+#include <any>
+
+#ifndef WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP
+#define WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP
+
 namespace Warp::Parser
 {
     constexpr static const char star_token = '*';
@@ -40,8 +50,6 @@ namespace Warp::Parser
     constexpr static const char and_operator[] = "&&";
     constexpr static const char or_operator[] = "||";
     constexpr static const char not_operator = '!';
-
-    // Note: Consider addition of other operators, 
-    // such as implies ->, and if and only if (iff) <->
-    // or some intersting stuff with union, in and "there exits"
 }
+
+#endif // WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP

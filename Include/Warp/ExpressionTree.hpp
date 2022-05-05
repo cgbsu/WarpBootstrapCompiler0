@@ -1,4 +1,4 @@
-#include <Warp/CtpgUtilities.hpp>
+#include <Warp/Utilities.hpp>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_TREE_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_TREE_HPP
@@ -135,10 +135,10 @@ namespace Warp::AbstractSyntaxTree
     template<>
     struct Node< NodeType::Identifier > : public BaseNode< NodeType::Identifier >
     {
-        const LiteralType value;
-        constexpr Node( LiteralType value ) noexcept : value( value ) {}
-        constexpr Node( std::integral auto value ) noexcept : value( value ) {}
-        constexpr Node( Node< NodeType::Literal > const& other ) noexcept : value( other.value ) {}
+        const Warp::Utilities::HeapStringType name;
+        constexpr Node( Warp::Utilities::HeapStringType name ) noexcept : name( name ) {}
+        constexpr Node( const auto... name_characters ) noexcept : name( name_characters... ) {}
+        constexpr Node( Node< NodeType::Identifier > const& other ) noexcept : name( other.name ) {}
     };
 
 

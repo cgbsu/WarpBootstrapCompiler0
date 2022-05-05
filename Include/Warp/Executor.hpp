@@ -1,0 +1,10 @@
+#include <Warp/ExpressionAnaysis.hpp>
+
+#ifndef WARP_BOOTSTRAP_COMPILER_HEADER_EXECUTOR_HPP
+#define WARP_BOOTSTRAP_COMPILER_HEADER_EXECUTOR_HPP
+
+namespace Warp::Execution
+{
+}
+
+#endif // WARP_BOOTSTRAP_COMPILER_HEADER_EXECUTOR_HPP

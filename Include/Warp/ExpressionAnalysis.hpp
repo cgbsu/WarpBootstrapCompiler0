@@ -1,10 +1,35 @@
-#include <Warp/AbstractSyntaxTreeUtilities.hpp>
+#include <Warp/Parser.hpp>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_ANYLSIS_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_ANYLSIS_HPP
 
 namespace Warp::Analysis
 {
+
+    enum class ExecutorType : size_t 
+    {
+        Standard = 0 
+        // TODO: GPGPUShader = 1 
+        // QuantumSimulator = 2 ?
+        // ML = 3 ?
+    };
+
+    // Keeping this in mind... may add later... 
+    // enum class TreeType : size_t {
+    //     Expression = 0, 
+    //     Constraint = 1 
+    // };
+
+    // template< auto ExecutorTypeParameterConstant > 
+    // struct Executor {};
+
+    // template< auto ExecutorTypeParameterConstant >
+    // auto make_executor( Warp::AbstractSyntaxTree::VariantType ) -> Executor< ExecutorTypeParameterConstant > 
+    // {
+        
+    // }
+
+
     template< typename... VariantParameterTypes >
     const auto& to_const_reference( const Warp::Utilities::NotSoUniquePointer< Warp::Utilities::AutoVariant< VariantParameterTypes... > >& variant ) {
         const typename std::remove_pointer< decltype( variant.get_pointer() ) >::type& node = *variant.get_pointer();
