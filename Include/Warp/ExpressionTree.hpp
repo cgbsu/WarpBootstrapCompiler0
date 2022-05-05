@@ -10,7 +10,8 @@ namespace Warp::AbstractSyntaxTree
     {
         Factor = 'F', 
         Sum = 'S', 
-        Literal = 'L' 
+        Literal = 'L', 
+        Identifier = 'I' 
     };
 
     template< typename... ArithmaticParameterTypes >
@@ -124,6 +125,15 @@ namespace Warp::AbstractSyntaxTree
 
     template<>
     struct Node< NodeType::Literal > : public BaseNode< NodeType::Literal >
+    {
+        const LiteralType value;
+        constexpr Node( LiteralType value ) noexcept : value( value ) {}
+        constexpr Node( std::integral auto value ) noexcept : value( value ) {}
+        constexpr Node( Node< NodeType::Literal > const& other ) noexcept : value( other.value ) {}
+    };
+
+    template<>
+    struct Node< NodeType::Identifier > : public BaseNode< NodeType::Identifier >
     {
         const LiteralType value;
         constexpr Node( LiteralType value ) noexcept : value( value ) {}

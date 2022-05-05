@@ -16,6 +16,8 @@ constexpr ctpg::nterm< Warp::AbstractSyntaxTree::VariantType > sum( "Sum" );
 constexpr ctpg::nterm< Warp::AbstractSyntaxTree::VariantType > parenthesis_scope( "ParenthesisScope" );
 
 constexpr char natural_number_regex[] = "[0-9][0-9]*";
+
+// TODO: Find a nice way to set up operatore precedence.
 constexpr ctpg::regex_term< natural_number_regex > natural_number_term( "NaturalNumber" );
 
 constexpr ctpg::char_term plus_term( Warp::Utilities::to_char( 
