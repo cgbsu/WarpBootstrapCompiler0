@@ -563,26 +563,6 @@ namespace Warp::Utilities
             const AutoVariant< ParameterTypes... >& variant 
         ) noexcept;
 
-    template< typename X,    /*, auto out = []( const X& x ) -> const X& { 
-            std::cout << "TYPE: " 
-                    << friendly_type_name< std::decay_t<    decltype( x ) > >() 
-                    << " ALTERNATIVE INDEX SET: " << x << "\n"; 
-            return x; 
-        }, 
-        auto sep = []( std::string s ) { return std::string{ "ALT: " } + s + std::string{ "\n" }; },*/
-        typename... Alts >
-    const auto& print_i( const X& p, std::in_place_type_t< Alts >... ) {
-        /*( std::cout << "SHOW ALTS\n" << ... << sep( friendly_type_name< Alts >() ) ) << "\n";
-        out( p );
-        std::cout << "Should be " <<  FindTypeIndexDecay< 
-                        0, 
-                        CleanType< X >, 
-                        Alts... 
-                    >::type_index << "\n";
-        std::cout << "</i>\n";*/
-        return p;
-    }
-
     template< typename... ParameterTypes >
     struct AutoVariant
     {
@@ -599,9 +579,8 @@ namespace Warp::Utilities
         constexpr AutoVariant( std::in_place_type_t< AlternativeParameterType >, InitializersParameterTypes... initializers ) noexcept
                 : data( static_cast< void* >( new AlternativeParameterType( 
                         std::forward< InitializersParameterTypes >( initializers )... ) 
-                        // initializers... 
-                    ) ),// ), 
-                alternative_index( print_i( type_index< AlternativeParameterType >, std::in_place_type_t< ParameterTypes >{}... ) ) {}
+                    ) ), 
+                alternative_index( type_index< AlternativeParameterType > ) {}
         constexpr ~AutoVariant() noexcept
         {
             visit< []( auto* data_ ) {

@@ -30,20 +30,11 @@ namespace Warp::Utilities
                         Warp::AbstractSyntaxTree::NodeType::Literal 
                     > 
             >;
-        using NoRef = DataLiteralType;
-        // auto literal = Warp::AbstractSyntaxTree::LiteralType { 
-        //         Utilities::to_integral< NoRef >( data ) 
-        //     };
         return Warp::AbstractSyntaxTree::VariantType { 
                 std::in_place_type_t< Warp::AbstractSyntaxTree::InternalVariantType >{}, 
                 NodeInPlaceType{}, 
-                Warp::AbstractSyntaxTree::LiteralType{ Utilities::to_integral< NoRef >( data ) } 
+                Warp::AbstractSyntaxTree::LiteralType{ Utilities::to_integral< DataLiteralType >( data ) } 
             };
-        //         new Warp::AbstractSyntaxTree::InternalVariantType { 
-        //                 NodeInPlaceType{}, 
-        //                 literal 
-        //             }
-        //     };
     }
 
 }
