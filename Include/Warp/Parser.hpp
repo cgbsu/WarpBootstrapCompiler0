@@ -6,74 +6,6 @@
 
 namespace Warp::Parser
 {
-    enum class RegexLiteralTerms {
-        NaturalNumber = 0, 
-        Identifier = 1
-    };
-
-    enum class NonTerminalTerms {
-        Factor = 0, 
-        Sum = 1, 
-        ParenthesisScope = 2, 
-    };
-
-    template< auto LiteralParameterTypeParameterConstant >
-    struct Term {};
-
-    template<>
-    struct Term< RegexLiteralTerms::NaturalNumber >
-    {
-        constexpr const static char regex[] = "[0-9][0-9]*";
-        constexpr const static char name[] = "NaturalNumber";
-        constexpr const static auto term = ctpg::regex_term< regex >{ name };
-        constexpr const static auto literal_type = RegexLiteralTerms::NaturalNumber;
-    };
-
-    template<>
-    struct Term< RegexLiteralTerms::Identifier >
-    {
-        constexpr const static char regex[] = "[a-zA-Z\\_][a-zA-Z0-9\\_]*";
-        constexpr const static char name[] = "Identifier";
-        constexpr const static auto term = ctpg::regex_term< regex >{ name };
-        constexpr const static auto literal_type = RegexLiteralTerms::Identifier;
-    };
-
-    template< auto TypeParameterConstant = RegexLiteralTerms::NaturalNumber >
-    struct DefaultTypes {
-        using Type = size_t;
-    };
-
-    template<>
-    struct DefaultTypes< RegexLiteralTerms::Identifier > {
-        using Type = Warp::Utilities::HeapStringType;
-    };
-
-    // Convert enum value to string? I know there is a library to do this.
-    template<>
-    struct Term< NonTerminalTerms::Factor >
-    {
-        using StorageType = Warp::AbstractSyntaxTree::VariantType;
-        constexpr static const char name[] = "Factor";
-        constexpr static const auto term = ctpg::nterm< StorageType >( name );
-    };
-
-    template<>
-    struct Term< NonTerminalTerms::Sum >
-    {
-        using StorageType = Warp::AbstractSyntaxTree::VariantType;
-        constexpr static const char name[] = "Sum";
-        constexpr static const auto term = ctpg::nterm< StorageType >( name );
-    };
-
-    template<>
-    struct Term< NonTerminalTerms::ParenthesisScope >
-    {
-        using StorageType = Warp::AbstractSyntaxTree::VariantType;
-        constexpr static const char name[] = "ParenthesisScope";
-        constexpr static const auto term = ctpg::nterm< StorageType >( name );
-    };
-
-
     template< template< auto > typename TypeResolverParameterType = DefaultTypes >
     struct WarpParser
     {
@@ -84,7 +16,9 @@ namespace Warp::Parser
         constexpr static const auto sum = term< NonTerminalTerms::Sum >;
         constexpr static const auto parenthesis_scope = term< NonTerminalTerms::ParenthesisScope >;
 
-        // TODO: Find a nice way to set up operatore precedence.
+        constexpr static const auto identifier_term = term< RegexLiteralTerms::Identifier >;
+
+        // TODO: Find a nice way to set up operator precedence and unclutter this.
         constexpr static const auto plus_term = ctpg::char_term( Warp::Utilities::to_char( 
                     ExpressionOperator::SumAdd ), 1, ctpg::associativity::ltor 
             );
@@ -121,6 +55,7 @@ namespace Warp::Parser
                         plus_term, 
                         minus_term, 
                         term< RegexLiteralTerms::NaturalNumber >, 
+                        identifier_term, 
                         left_parenthesis_term, 
                         right_parenthesis_term 
                     ), 
