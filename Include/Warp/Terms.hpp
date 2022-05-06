@@ -260,6 +260,31 @@ namespace Warp::Parser
                 );
         }
     };
+
+
+    template< auto PriorityParameterConstant, auto... TermParameterConstants >
+    struct TermBuilder< 
+            void, 
+            PriorityParameterConstant, 
+            TermParameterConstants... 
+        >
+    {
+        constexpr static const auto priority = PriorityParameterConstant;
+        using ThisType = TermBuilder< void, PriorityParameterConstant, TermParameterConstants... >;
+        template< auto NextPriorityParameterConstant = PriorityParameterConstant + 1 >
+        struct Next
+        {
+            template< auto... NextTermsParameterConstant >
+            using TermsType = TermBuilder< 
+                    ThisType, 
+                    NextPriorityParameterConstant, 
+                    NextTermsParameterConstant... 
+                >;
+        };
+        constexpr static auto to_tuple() {
+            return std::tuple( forward_term< PriorityParameterConstant, TermParameterConstants >()... );
+        }
+    };
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP

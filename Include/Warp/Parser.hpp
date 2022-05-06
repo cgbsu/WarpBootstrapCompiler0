@@ -20,46 +20,69 @@ namespace Warp::Parser
         constexpr static const auto identifier_term = term< RegexLiteralTerms::Identifier >;
 
         // TODO: Find a nice way to set up operator precedence and unclutter this.
-        constexpr static const auto plus_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ExpressionOperator::SumAdd ), 1, ctpg::associativity::ltor 
-            );
-        constexpr static const auto minus_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ExpressionOperator::SumSubtract ), 1, ctpg::associativity::ltor 
-            );
-        constexpr static const auto multiply_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ExpressionOperator::FactorMultiply ), 2, ctpg::associativity::ltor 
-            );
-        constexpr static const auto divide_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ExpressionOperator::FactorDivide ), 2, ctpg::associativity::ltor 
-            );
-        constexpr static const auto left_parenthesis_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ScopeOperators::OpenParenthesis ), 4, ctpg::associativity::ltor 
-            );
-        constexpr static const auto right_parenthesis_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ScopeOperators::CloseParenthesis ), 4, ctpg::associativity::ltor 
-            );
+        // constexpr static const auto plus_term = ctpg::char_term( Warp::Utilities::to_char( 
+        //             ExpressionOperator::SumAdd ), 1, ctpg::associativity::ltor 
+        //     );
+        // constexpr static const auto minus_term = ctpg::char_term( Warp::Utilities::to_char( 
+        //             ExpressionOperator::SumSubtract ), 1, ctpg::associativity::ltor 
+        //     );
+        // constexpr static const auto multiply_term = ctpg::char_term( Warp::Utilities::to_char( 
+        //             ExpressionOperator::FactorMultiply ), 2, ctpg::associativity::ltor 
+        //     );
+        // constexpr static const auto divide_term = ctpg::char_term( Warp::Utilities::to_char( 
+        //             ExpressionOperator::FactorDivide ), 2, ctpg::associativity::ltor 
+        //     );
+        // constexpr static const auto left_parenthesis_term = ctpg::char_term( Warp::Utilities::to_char( 
+        //             ScopeOperators::OpenParenthesis ), 4, ctpg::associativity::ltor 
+        //     );
+        // constexpr static const auto right_parenthesis_term = ctpg::char_term( Warp::Utilities::to_char( 
+        //             ScopeOperators::CloseParenthesis ), 4, ctpg::associativity::ltor 
+        //     );
+
 
         template< auto ParameterConstant >
         using ResolvedType = typename TypeResolverParameterType< ParameterConstant >::Type;
 
         constexpr static const auto parser = ctpg::parser( 
                 factor, 
-                ctpg::terms( 
-                        multiply_term, 
-                        divide_term, 
-                        plus_term, 
-                        minus_term, 
-                        term< RegexLiteralTerms::NaturalNumber >, 
-                        identifier_term, 
-                        left_parenthesis_term, 
-                        right_parenthesis_term 
-                    ), 
-                ctpg::nterms( 
-                        factor, 
-                        sum, 
-                        parenthesis_scope //, 
-                        // function_alternative 
-                    ), 
+                typename TermBuilder< 
+                        void
+                        1, 
+                        Warp::Utilities::to_char( ExpressionOperator::SumAdd ), 
+                        Warp::Utilities::to_char( ExpressionOperator::SumSubtract ) 
+                    >::Next< 2 >::TermsType< 
+                            Warp::Utilities::to_char( ExpressionOperator::FactorMultiply ), 
+                            Warp::Utilities::to_char( ExpressionOperator::FactorDivide ) 
+                        >::Next< 3 >::TermsType< 
+                                Warp::Utilities::to_char( ScopeOperators::OpenParenthesis ), 
+                                Warp::Utilities::to_char( ScopeOperators::CloseParenthesis ) 
+                            >::Next< TermBuilderType::NoPriority >::TermsType< 
+                                    RegexLiteralTerms::Identifier, 
+                                    RegexLiteralTerms::NaturalNumber 
+                                >::to_tuple(), 
+                // ctpg::terms( 
+                //         multiply_term, 
+                //         divide_term, 
+                //         plus_term, 
+                //         minus_term, 
+                //         term< RegexLiteralTerms::NaturalNumber >, 
+                //         identifier_term, 
+                //         left_parenthesis_term, 
+                //         right_parenthesis_term 
+                //     ), 
+                // ctpg::nterms( 
+                //         factor, 
+                //         sum, 
+                //         parenthesis_scope //, 
+                //         // function_alternative 
+                    // ), 
+                TermBuilder< 
+                        void
+                        TermBuilderType::NoPriority, 
+                        NonTerminalTerms::Factor, 
+                        NonTerminalTerms::Sum, 
+                        NonTerminalTerms::ParenthesisScope 
+                    >::to_tuple(), 
                 ctpg::rules( 
                         factor( term< RegexLiteralTerms::NaturalNumber > ) 
                                 >= []( auto token ) {
