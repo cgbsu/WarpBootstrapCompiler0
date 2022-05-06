@@ -378,6 +378,14 @@ namespace Warp::Utilities
         constexpr static const bool value = true;
     };
 
+    template< auto QueryParameterConstant >
+    struct HasConstant< 
+                QueryParameterConstant, 
+                QueryParameterConstant 
+            > {
+        constexpr static const bool value = true;
+    };
+
     template< 
             auto QueryParameterConstant, 
             auto CurrentParameterConstant 
