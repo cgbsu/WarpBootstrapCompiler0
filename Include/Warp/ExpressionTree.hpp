@@ -10,6 +10,8 @@ namespace Warp::AbstractSyntaxTree
     {
         Factor = 'F', 
         Sum = 'S', 
+        Comparison = 'C', 
+        LogicalOperation = 'B', 
         Literal = 'L', 
         Identifier = 'I' 
     };
@@ -142,15 +144,15 @@ namespace Warp::AbstractSyntaxTree
     };
 
 
-    #define DEFINE_BI_NODE( VALUE, OPERATOR ) \
+    #define DEFINE_BI_NODE( OPERATION_TYPE, VALUE, LEFT_OPERHAND_TYPE, RIGHT_OPERHAND_TYPE, OPERATOR ) \
         template<> \
         struct Node< VALUE > : public LeftRight< VALUE > \
         { \
             using BaseType = LeftRight< VALUE >; \
-            constexpr static const auto operate( auto left_value, auto right_value ) noexcept { \
+            constexpr static const auto operate( LEFT_OPERHAND_TYPE left_value, RIGHT_OPERHAND_TYPE right_value ) noexcept { \
                 return left_value OPERATOR right_value; \
             } \
-            constexpr static const Warp::Parser::ExpressionOperator operation = VALUE ; \
+            constexpr static OPERATION_TYPE operation = VALUE ; \
             constexpr Node( \
                     const NodeVariantType left, \
                     const NodeVariantType right \
@@ -159,10 +161,32 @@ namespace Warp::AbstractSyntaxTree
                     : BaseType( other.left, other.right ) {} \
         }
 
-    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::FactorMultiply, * );
-    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::FactorDivide, / );
-    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::SumAdd, + );
-    DEFINE_BI_NODE( Warp::Parser::ExpressionOperator::SumSubtract, - );
+    #define DEFINE_BI_NODE_CUSTOM_OPERATION( OPERATION_TYPE, VALUE, LEFT_OPERHAND_TYPE, RIGHT_OPERHAND_TYPE, CUSTOM_OPERATION ) \
+        template<> \
+        struct Node< VALUE > : public LeftRight< VALUE > \
+        { \
+            using BaseType = LeftRight< VALUE >; \
+            constexpr static const auto operate( LEFT_OPERHAND_TYPE left_value, RIGHT_OPERHAND_TYPE right_value ) noexcept { \
+                return CUSTOM_OPERATION( left_value, right_value ); \
+            } \
+            constexpr static OPERATION_TYPE operation = VALUE ; \
+            constexpr Node( \
+                    const NodeVariantType left, \
+                    const NodeVariantType right \
+                ) noexcept : BaseType( left, right ) {} \
+            constexpr Node( Node< VALUE > const& other ) noexcept \
+                    : BaseType( other.left, other.right ) {} \
+        }
+
+
+    DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::FactorMultiply, auto, auto, * );
+    DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::FactorDivide, auto, auto, / );
+    DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::SumAdd, auto, auto, + );
+    DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::SumSubtract, auto, auto, - );
+    DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalAnd, bool, bool, && );
+    DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalOr, bool, bool, || );
+    DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalBiConditional, bool, bool, == );
+    DEFINE_BI_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalImplies, bool, bool, Warp::Utilities::logical_implies );
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_TREE_HPP

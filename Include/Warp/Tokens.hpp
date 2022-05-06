@@ -32,6 +32,14 @@ namespace Warp::Parser
         ExponentRaise = caret_token 
     };
 
+    enum class BooleanOperator
+    {
+        LogicalAnd = 0, 
+        LogicalOr = 1, 
+        LogicalBiConditional = 2, 
+        LogicalImplies = 3
+    };
+
     enum class ScopeOperators : char 
     {
         OpenParenthesis = open_parenthesis, 

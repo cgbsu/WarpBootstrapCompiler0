@@ -33,6 +33,11 @@ namespace Warp::Utilities
             return 1;
         return base * raise( base, power - 1 );
     }
+
+
+    constexpr const bool logical_implies( const bool left, const bool right ) { 
+        return ( left == right || ( right == true ) );
+    }
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_MATHEMATICAL_HPP

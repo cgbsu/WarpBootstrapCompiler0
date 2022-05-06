@@ -52,16 +52,6 @@ namespace Warp::Parser
             constexpr const static auto term = ctpg::nterm< STORAGE_TYPE >{ name }; \
         }
 
-
-    #define STRING_PRIORITY_TERM( TYPE, STRING, PRIORITY ) \
-        template<> \
-        struct Term< StringTerms:: TYPE > \
-        { \
-            constexpr const static char name[] = #TYPE ; \
-            constexpr const static char string[] = STRING ; \
-            constexpr const static auto term = ctpg::string_term{ string, PRIORITY, ctpg::associativity::ltor }; \
-        }
-
     #define STRING_TERM( TYPE, STRING ) \
         template<> \
         struct Term< StringTerms:: TYPE > \
@@ -88,10 +78,10 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( LogicalOperation, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Comparison, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Negation, Warp::AbstractSyntaxTree::NodeVariantType );
-    STRING_PRIORITY_TERM( And, "&&" );
-    STRING_PRIORITY_TERM( Or, "||" );
-    STRING_PRIORITY_TERM( BiCondition, "<->" );
-    STRING_PRIORITY_TERM( Implies, "->" );
+    STRING_TERM( And, "&&" );
+    STRING_TERM( Or, "||" );
+    STRING_TERM( BiCondition, "<->" );
+    STRING_TERM( Implies, "->" );
     STRING_TERM( True, "true" );
     STRING_TERM( False, "false" );
 
@@ -250,6 +240,35 @@ namespace Warp::Parser
             >::term;
     }
 
+    template< 
+            typename PreviousParameterType, 
+            auto PriorityParameterConstant, 
+            auto TermParameterConstant, 
+            bool HasTermParameterConstant = false 
+        >
+    struct TermGetter
+    {
+        static_assert( 
+                HasTermParameterConstant && std::is_same< PreviousParameterType, void >::value, 
+                "Attempt to access term that was not in the specified set of terms" 
+            );
+        
+        constexpr static const auto term = PreviousParameterType::template get_term< TermParameterConstant >();
+    };
+
+    template< 
+            typename PreviousParameterType, 
+            auto PriorityParameterConstant, 
+            auto TermParameterConstant 
+        >
+    struct TermGetter< 
+                PreviousParameterType, 
+                PriorityParameterConstant, 
+                TermParameterConstant, 
+                true 
+            > {
+        constexpr static const auto term = forward_term< PriorityParameterConstant, TermParameterConstant >();
+    };
 
     template< typename PreviousParameterType, auto PriorityParameterConstant, auto... TermParameterConstants >
     struct TermBuilder
@@ -266,6 +285,20 @@ namespace Warp::Parser
                     NextTermsParameterConstant... 
                 >;
         };
+
+        template< auto TermParameterConstant >
+        constexpr static auto get_term()
+        {
+            return TermGetter< 
+                    PreviousParameterType, 
+                    TermParameterConstant, 
+                    Warp::Utilities::HasConstant< 
+                            TermParameterConstant, 
+                            TermParameterConstants... 
+                        >::value 
+                >::term;
+        }
+        
         constexpr static auto to_tuple()
         {
             return std::tuple_cat( 
@@ -276,6 +309,7 @@ namespace Warp::Parser
     };
 
 
+      // Warp::Utilities::HasConstant< QueryParameterConstant, TermParameterConstants
     template< auto PriorityParameterConstant, auto... TermParameterConstants >
     struct TermBuilder< 
             void, 
@@ -295,9 +329,24 @@ namespace Warp::Parser
                     NextTermsParameterConstant... 
                 >;
         };
+
+        template< auto TermParameterConstant >
+        constexpr static auto get_term()
+        {
+            return TermGetter< 
+                    void, 
+                    TermParameterConstant, 
+                    Warp::Utilities::HasConstant< 
+                            TermParameterConstant, 
+                            TermParameterConstants... 
+                        >::value 
+                >::term;
+        }
+
         constexpr static auto to_tuple() {
             return std::tuple( forward_term< PriorityParameterConstant, TermParameterConstants >()... );
         }
+
     };
 
     /*

@@ -308,6 +308,29 @@ namespace Warp::Utilities
                 ctpg::utils::str_len( ArrayParameterConstant ) + 1
             >::ResultType;
     };
+
+    template< auto QueryParameterConstant, auto CurrentParameterConstant, auto... ParameterConstants >
+    struct HasConstant {
+        constexpr static const bool value = HasConstant< QueryParameterConstant, ParameterConstants... >::value;
+    };
+
+    template< 
+            auto QueryParameterConstant, 
+            auto... ParameterConstants
+        >
+    struct HasConstant< 
+                QueryParameterConstant, 
+                QueryParameterConstant, 
+                ParameterConstants... 
+            > {
+        constexpr static const bool value = true;
+    };
+
+    template< auto QueryParameterConstant, auto CurrentParameterConstant >
+    struct HasConstant< QueryParameterConstant, CurrentParameterConstant > {
+        constexpr static const bool value = ( QueryParameterConstant == CurrentParameterConstant );
+    };
+
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_TEMPLATE_UTILITIES_HPP
