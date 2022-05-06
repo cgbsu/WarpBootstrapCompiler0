@@ -103,18 +103,102 @@ namespace Warp::Utilities
 
     using HeapStringType = NotSoUniquePointer< const char* >;
 
-    // namespace Detail
-    // {
-    //     template< typename >
-    //     struct VectorPlaceHolder {};
-    //     template< typename, size_t >
-    //     struct ArrayPlaceHolder {};
-    // }
-    // template< typename StorageParameterType, size_t SizeParamterConstant >
-    // struct NotSoUniquePointer< Detail::ArrayPlaceHolder< StorageParameterType, SizeParamterConstant > >
-    // {
-        
-    // };
+    namespace Detail
+    {
+        template< typename >
+        struct VectorPlaceHolder {};
+        template< typename, size_t >
+        struct ArrayPlaceHolder {};
+    }
+
+    template< typename StorageParameterType >
+    constexpr StorageParameterType* copy_append( 
+            const size_t index, 
+            const size_t size, 
+            StorageParameterType* from, 
+            StorageParameterType* to, 
+            const StorageParameterType& to_append 
+        )
+    {
+        if( from == nullptr || to == nullptr )
+            return nullptr;
+        if( index < size ) {
+            to[ index ] = from[ index ];
+            return copy_append( index + 1, size, from, to, to_append );
+        }
+        to[ size ] = to_append;
+        return to;
+    }
+
+
+    template< typename StorageParameterType >
+    struct NotSoUniquePointer< Detail::VectorPlaceHolder< StorageParameterType > >
+    {
+        constexpr NotSoUniquePointer() : pointer( nullptr ), size( 0 ) {}
+
+        constexpr NotSoUniquePointer( auto... array ) noexcept : 
+                pointer( new StorageParameterType[ sizeof...( array ) ]{ array... } ), size( sizeof...( array ) ) {}
+
+        constexpr NotSoUniquePointer( const NotSoUniquePointer& other, const StorageParameterType& to_append ) noexcept : 
+                pointer( copy_append( 0, other.size, new StorageParameterType[ other.size + 1 ], other.pointer, to_append ) ), 
+                size( other.size + 1 )
+        {}
+
+        constexpr NotSoUniquePointer( NotSoUniquePointer&& other, const StorageParameterType& to_append ) noexcept : 
+                pointer( copy_append( 0, other.size, new StorageParameterType[ other.size + 1 ], other.pointer, to_append ) ), 
+                size( other.size + 1 )
+        {}
+
+        constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ), size( other.size ) {
+            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
+        }
+        constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ), size( other.size ) {
+            other.pointer = nullptr;
+        }
+        constexpr ~NotSoUniquePointer() noexcept {
+            delete pointer; 
+        }
+
+        constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept
+        {
+            pointer = other.pointer;
+            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
+            size = other.size;
+            return *this;
+        }
+        constexpr NotSoUniquePointer& operator=( NotSoUniquePointer&& other ) noexcept
+        {
+            pointer = other.pointer;
+            other.pointer = nullptr;
+            size = other.size;
+            return *this;
+        }
+        constexpr StorageParameterType* operator->() const noexcept {
+            return pointer;
+        }
+
+        constexpr const StorageParameterType* get_pointer() const noexcept {
+            return pointer;
+        }
+
+
+        constexpr const StorageParameterType& get( size_t index ) const noexcept {
+            return pointer[ index ];
+        }
+
+        constexpr const StorageParameterType& operator[]( size_t index ) const noexcept {
+            return get( index );
+        }
+
+
+        protected: 
+            size_t size;
+            StorageParameterType* pointer;
+    };
+
+    template< typename StorageParameterType >
+    using VectorType = NotSoUniquePointer< Detail::VectorPlaceHolder< StorageParameterType > >;
+
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_NOT_SO_UNIQUE_POINTER_HPP
