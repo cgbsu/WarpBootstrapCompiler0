@@ -9,36 +9,6 @@ namespace Warp::Parser
     template< template< auto > typename TypeResolverParameterType = DefaultTypes >
     struct WarpParser
     {
-        template< auto ParameterConstant >
-        constexpr const static auto term = Term< ParameterConstant >::term;
-
-        constexpr static const auto factor = term< NonTerminalTerms::Factor >;
-        constexpr static const auto sum = term< NonTerminalTerms::Sum >;
-        constexpr static const auto parenthesis_scope = term< NonTerminalTerms::ParenthesisScope >;
-        // constexpr static const auto function_alternative = term< NonTerminalTerms::FunctionAlternative >;
-
-        constexpr static const auto identifier_term = term< RegexLiteralTerms::Identifier >;
-
-        // TODO: Find a nice way to set up operator precedence and unclutter this.
-        constexpr static const auto plus_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ExpressionOperator::SumAdd ), 1, ctpg::associativity::ltor 
-            );
-        constexpr static const auto minus_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ExpressionOperator::SumSubtract ), 1, ctpg::associativity::ltor 
-            );
-        // constexpr static const auto TermsType::get_term< ExpressionOperator::FactorMultiply >() = ctpg::char_term( Warp::Utilities::to_char( 
-        //             ExpressionOperator::FactorMultiply ), 2, ctpg::associativity::ltor 
-        //     );
-        constexpr static const auto divide_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ExpressionOperator::FactorDivide ), 2, ctpg::associativity::ltor 
-            );
-        constexpr static const auto left_parenthesis_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ScopeOperators::OpenParenthesis ), 4, ctpg::associativity::ltor 
-            );
-        constexpr static const auto right_parenthesis_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ScopeOperators::CloseParenthesis ), 4, ctpg::associativity::ltor 
-            );
-
         using TermsType = typename TermBuilder< 
                 void, 
                 1, 
@@ -67,37 +37,47 @@ namespace Warp::Parser
         constexpr static const auto non_terminal_terms = NonTerminalTermsType::to_tuple();
 
         template< auto ParameterConstant >
+        constexpr const static auto term = TermsType::get_term< ParameterConstant >();
+
+        template< auto ParameterConstant >
+        constexpr const static auto non_terminal_term = NonTerminalTermsType::get_term< ParameterConstant >();
+
+        template< auto ParameterConstant >
         using ResolvedType = typename TypeResolverParameterType< ParameterConstant >::Type;
 
         constexpr static const auto parser = ctpg::parser( 
-                factor, 
+                non_terminal_term< NonTerminalTerms::Factor >, 
                 // ctpg::terms( 
-                //         TermsType::get_term< ExpressionOperator::FactorMultiply >(), 
-                //         divide_term, 
-                //         plus_term, 
-                //         minus_term, 
+                //         term< ExpressionOperator::FactorMultiply >, 
+                //         term< ExpressionOperator::FactorDivide >, 
+                //         term< ExpressionOperator::SumAdd >, 
+                //         term< ExpressionOperator::SumSubtract >, 
                 //         term< RegexLiteralTerms::NaturalNumber >, 
-                //         identifier_term, 
-                //         left_parenthesis_term, 
-                //         right_parenthesis_term  
+                //         term< RegexLiteralTerms::Identifier >, 
+                //         term< ScopeOperators::OpenParenthesis >, 
+                //         term< ScopeOperators::CloseParenthesis >  
                 //     ), 
                 terms, 
                 // ctpg::nterms( 
-                //         factor, 
-                //         sum, 
-                //         parenthesis_scope //, 
+                //         non_terminal_term< NonTerminalTerms::Factor >, 
+                //         non_terminal_term< NonTerminalTerms::Sum >, 
+                //         non_terminal_term< NonTerminalTerms::ParenthesisScope > //, 
                 //         // function_alternative 
                 //     ), 
                 non_terminal_terms, 
                 ctpg::rules( 
-                        factor( term< RegexLiteralTerms::NaturalNumber > ) 
+                        non_terminal_term< NonTerminalTerms::Factor >( term< RegexLiteralTerms::NaturalNumber > ) 
                                 >= []( auto token ) {
                                         return Warp::Utilities::allocate_integral_literal_node< 
                                                 ResolvedType< RegexLiteralTerms::NaturalNumber > 
                                             >( token );
                                     }, 
-                        factor( factor, TermsType::get_term< ExpressionOperator::FactorMultiply >(), term< RegexLiteralTerms::NaturalNumber > ) 
-                                >= []( auto current_factor, auto, const auto& next_token )
+                        non_terminal_term< NonTerminalTerms::Factor >( 
+                                    non_terminal_term< NonTerminalTerms::Factor >, 
+                                    term< ExpressionOperator::FactorMultiply >, 
+                                    term< RegexLiteralTerms::NaturalNumber > 
+                                ) 
+                            >= []( auto current_factor, auto, const auto& next_token )
                                     {
                                         return Warp::Utilities::allocate_node< ExpressionOperator::FactorMultiply >( 
                                                 current_factor, 
@@ -106,8 +86,12 @@ namespace Warp::Parser
                                                     >( next_token )
                                             );
                                     }, 
-                        factor( factor, divide_term, term< RegexLiteralTerms::NaturalNumber > ) 
-                                >= []( auto current_factor, auto, const auto& next_token )
+                        non_terminal_term< NonTerminalTerms::Factor >( 
+                                    non_terminal_term< NonTerminalTerms::Factor >, 
+                                    term< ExpressionOperator::FactorDivide >, 
+                                    term< RegexLiteralTerms::NaturalNumber > 
+                                ) 
+                            >= []( auto current_factor, auto, const auto& next_token )
                                     {
                                         return Warp::Utilities::allocate_node< ExpressionOperator::FactorDivide >( 
                                                 current_factor, 
@@ -116,30 +100,53 @@ namespace Warp::Parser
                                                     >( next_token )
                                             );
                                     }, 
-                        parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
-                                >= [] ( auto, auto factor, auto ) { return factor; }, 
-                        factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
-                        factor( factor, TermsType::get_term< ExpressionOperator::FactorMultiply >(), parenthesis_scope ) 
-                                >= []( auto factor, auto, auto parenthesis_scope ) 
+                        non_terminal_term< NonTerminalTerms::ParenthesisScope >( 
+                                    term< ScopeOperators::OpenParenthesis >, 
+                                    non_terminal_term< NonTerminalTerms::Factor >, 
+                                    term< ScopeOperators::CloseParenthesis > 
+                                ) 
+                            >= [] ( auto, non_terminal_term< NonTerminalTerms::Factor >, auto ) { 
+                                        return non_terminal_term< NonTerminalTerms::Factor >; 
+                                    }, 
+                        non_terminal_term< NonTerminalTerms::Factor >( 
+                                    non_terminal_term< NonTerminalTerms::ParenthesisScope > 
+                                ) 
+                            >= []( non_terminal_term< NonTerminalTerms::ParenthesisScope > ) { 
+                                        return non_terminal_term< NonTerminalTerms::ParenthesisScope >; 
+                                    }, 
+                        non_terminal_term< NonTerminalTerms::Factor >( 
+                                    non_terminal_term< NonTerminalTerms::Factor >, 
+                                    term< ExpressionOperator::FactorMultiply >, 
+                                    non_terminal_term< NonTerminalTerms::ParenthesisScope > 
+                                ) 
+                            >= []( auto non_terminal_term< NonTerminalTerms::Factor >, auto, auto non_terminal_term< NonTerminalTerms::ParenthesisScope > ) 
                                     {
                                         return Warp::Utilities::allocate_node< ExpressionOperator::FactorMultiply >( 
-                                                factor, 
-                                                parenthesis_scope 
+                                                non_terminal_term< NonTerminalTerms::Factor >, 
+                                                non_terminal_term< NonTerminalTerms::ParenthesisScope > 
                                             );
                                     }, 
-                        factor( factor, divide_term, parenthesis_scope ) 
-                                >= []( auto factor, auto, auto parenthesis_scope ) 
+                        non_terminal_term< NonTerminalTerms::Factor >( 
+                                        non_terminal_term< NonTerminalTerms::Factor >, 
+                                        term< ExpressionOperator::FactorDivide >, 
+                                        non_terminal_term< NonTerminalTerms::ParenthesisScope > 
+                                    ) 
+                                >= []( auto non_terminal_term< NonTerminalTerms::Factor >, auto, auto non_terminal_term< NonTerminalTerms::ParenthesisScope > ) 
                                     {
                                         return Warp::Utilities::allocate_node< ExpressionOperator::FactorDivide >( 
-                                                factor, 
-                                                parenthesis_scope 
+                                                non_terminal_term< NonTerminalTerms::Factor >, 
+                                                non_terminal_term< NonTerminalTerms::ParenthesisScope > 
                                             );
                                     }, 
-                        factor( sum ) 
-                                >= []( auto sum ) {
-                                    return sum;
-                                }, 
-                        sum( factor, plus_term, factor ) 
+                        non_terminal_term< NonTerminalTerms::Factor >( non_terminal_term< NonTerminalTerms::Sum > ) 
+                                >= []( auto sum > ) {
+                                        return non_terminal_term< NonTerminalTerms::Sum >;
+                                    }, 
+                        non_terminal_term< NonTerminalTerms::Sum >( 
+                                        non_terminal_term< NonTerminalTerms::Factor >, 
+                                        term< ExpressionOperator::SumAdd >, 
+                                        non_terminal_term< NonTerminalTerms::Factor > 
+                                    ) 
                                 >= []( auto current_sum, auto, const auto& next_token ) 
                                     {
                                         return Warp::Utilities::allocate_node< ExpressionOperator::SumAdd >( 
@@ -147,7 +154,11 @@ namespace Warp::Parser
                                                 next_token 
                                             );
                                     }, 
-                        sum( factor, minus_term, factor ) 
+                        non_terminal_term< NonTerminalTerms::Sum >( 
+                                        non_terminal_term< NonTerminalTerms::Factor >, 
+                                        term< ExpressionOperator::SumSubtract >, 
+                                        non_terminal_term< NonTerminalTerms::Factor > 
+                                    ) 
                                 >= []( auto current_sum, auto, const auto& next_token )
                                     {
                                         return Warp::Utilities::allocate_node< ExpressionOperator::SumSubtract >( 
