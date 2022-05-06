@@ -285,6 +285,33 @@ namespace Warp::Parser
             return std::tuple( forward_term< PriorityParameterConstant, TermParameterConstants >()... );
         }
     };
+
+    /*
+                   typename TermBuilder< 
+                        void
+                        1, 
+                        Warp::Utilities::to_char( ExpressionOperator::SumAdd ), 
+                        Warp::Utilities::to_char( ExpressionOperator::SumSubtract ) 
+                    >::Next< 2 >::TermsType< 
+                            Warp::Utilities::to_char( ExpressionOperator::FactorMultiply ), 
+                            Warp::Utilities::to_char( ExpressionOperator::FactorDivide ) 
+                        >::Next< 3 >::TermsType< 
+                                Warp::Utilities::to_char( ScopeOperators::OpenParenthesis ), 
+                                Warp::Utilities::to_char( ScopeOperators::CloseParenthesis ) 
+                            >::Next< TermBuilderType::NoPriority >::TermsType< 
+                                    RegexLiteralTerms::Identifier, 
+                                    RegexLiteralTerms::NaturalNumber 
+                                >::to_tuple(), 
+ */
+ /*
+                 TermBuilder< 
+                        void
+                        TermBuilderType::NoPriority, 
+                        NonTerminalTerms::Factor, 
+                        NonTerminalTerms::Sum, 
+                        NonTerminalTerms::ParenthesisScope 
+                    >::to_tuple(), 
+*/
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP
