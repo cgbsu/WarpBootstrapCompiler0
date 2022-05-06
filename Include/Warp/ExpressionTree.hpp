@@ -13,7 +13,8 @@ namespace Warp::AbstractSyntaxTree
         Comparison = 'C', 
         LogicalOperation = 'B', 
         Literal = 'L', 
-        Identifier = 'I' 
+        Identifier = 'I', 
+        BooleanLiteral = 'b' 
     };
 
     template< typename... ArithmaticParameterTypes >
@@ -64,6 +65,12 @@ namespace Warp::AbstractSyntaxTree
     struct Node< Warp::Parser::ExpressionOperator::SumAdd >;
     struct Node< Warp::Parser::ExpressionOperator::SumSubtract >;
     struct Node< NodeType::Literal >;
+    struct Node< NodeType::BooleanLiteral >;
+    struct Node< NodeType::Identifier >;
+    struct Node< Warp::Parser::BooleanOperator::LogicalAnd >;
+    struct Node< Warp::Parser::BooleanOperator::LogicalOr >;
+    struct Node< Warp::Parser::BooleanOperator::LogicalBiConditional >;
+    struct Node< Warp::Parser::BooleanOperator::LogicalImplies >;
 
 
     using InternalNodeVariantType = Utilities::AutoVariant< 
@@ -71,7 +78,13 @@ namespace Warp::AbstractSyntaxTree
             Node< Warp::Parser::ExpressionOperator::FactorDivide >, 
             Node< Warp::Parser::ExpressionOperator::SumAdd >, 
             Node< Warp::Parser::ExpressionOperator::SumSubtract >, 
-            Node< NodeType::Literal > 
+            Node< NodeType::Literal >, 
+            Node< NodeType::BooleanLiteral >, 
+            Node< NodeType::Identifier >, 
+            Node< Warp::Parser::BooleanOperator::LogicalAnd >, 
+            Node< Warp::Parser::BooleanOperator::LogicalOr >, 
+            Node< Warp::Parser::BooleanOperator::LogicalBiConditional >, 
+            Node< Warp::Parser::BooleanOperator::LogicalImplies > 
         >;
 
     using NodeVariantType = Utilities::NotSoUniquePointer< InternalNodeVariantType >;
@@ -125,6 +138,7 @@ namespace Warp::AbstractSyntaxTree
                 : left( left ), right( right ) {}    
     };
 
+
     template<>
     struct Node< NodeType::Literal > : public BaseNode< NodeType::Literal >
     {
@@ -132,6 +146,14 @@ namespace Warp::AbstractSyntaxTree
         constexpr Node( LiteralType value ) noexcept : value( value ) {}
         constexpr Node( std::integral auto value ) noexcept : value( value ) {}
         constexpr Node( Node< NodeType::Literal > const& other ) noexcept : value( other.value ) {}
+    };
+
+    template<>
+    struct Node< NodeType::BooleanLiteral > : public BaseNode< NodeType::BooleanLiteral >
+    {
+        const bool value;
+        constexpr Node( bool value ) noexcept : value( value ) {}
+        constexpr Node( Node< NodeType::BooleanLiteral > const& other ) noexcept : value( other.value ) {}
     };
 
     template<>

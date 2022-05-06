@@ -82,6 +82,7 @@ namespace Warp::Parser
     STRING_TERM( Or, "||" );
     STRING_TERM( BiCondition, "<->" );
     STRING_TERM( Implies, "->" );
+    STRING_TERM( Not, "!" );
     STRING_TERM( True, "true" );
     STRING_TERM( False, "false" );
 
@@ -89,7 +90,6 @@ namespace Warp::Parser
             auto PriorityParameterConstant, 
             typename ParameterType,  
             ParameterType NodeTypeParameterConstant
-            // auto AssociativityParameterConstant = ctpg::associativity::ltor
         >
     struct TermForwarder
     {
@@ -222,14 +222,7 @@ namespace Warp::Parser
             auto TermParameterConstant, 
             bool HasTermParameterConstant = false 
         >
-    struct TermGetter
-    {
-        // TODO: Need to know if this is the last term to check to assert this, otherwise it will not evaluate any term in the set of last terms //
-        // static_assert( 
-        //         ( HasTermParameterConstant == false ) && ( std::is_same< PreviousParameterType, void >::value == true ), 
-        //         "Error::TermGetter< typename, auto, auto, bool >: Attempt to access term that was not in the specified set of terms." 
-        //     );
-        
+    struct TermGetter {
         constexpr static const auto term = PreviousParameterType::template get_term< TermParameterConstant >();
     };
 
@@ -246,21 +239,7 @@ namespace Warp::Parser
             > {
         constexpr static const auto term = forward_term< PriorityParameterConstant, TermParameterConstant >();
     };
-
-
-    // template< 
-    //         auto PriorityParameterConstant, 
-    //         auto TermParameterConstant 
-    //     >
-    // struct TermGetter< 
-    //             void, 
-    //             PriorityParameterConstant, 
-    //             TermParameterConstant, 
-    //             false 
-    //         > {
-    //     // constexpr static const void term = void;//forward_term< PriorityParameterConstant, TermParameterConstant >();
-    // };
-
+    
     #define SPECIALIZE_TERM_BUILDER( TO_TUPLE, PREVIOUS_TYPE ) \
         using ThisType = TermBuilder< PREVIOUS_TYPE, PriorityParameterConstant, TermParameterConstants... >; \
         template< auto NextPriorityParameterConstant > \

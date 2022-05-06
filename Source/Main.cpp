@@ -16,10 +16,11 @@ int main( int argc, char** args )
                     parse_result.has_value() == true 
                 )
         {
-            auto data = Warp::Analysis::abstract_syntax_tree_callback< Warp::Analysis::Computer, size_t >( parse_result.value() );
-            std::cout << "\nResult: " 
-                    << data 
-                    << "\n\n";
+            std::cout << "Have result!\n";
+            // auto data = Warp::Analysis::abstract_syntax_tree_callback< Warp::Analysis::Computer, size_t >( parse_result.value() );
+            // std::cout << "\nResult: " 
+            //         << data 
+            //         << "\n\n";
         }
         else
             std::cerr << "Error failed to parse!\n";

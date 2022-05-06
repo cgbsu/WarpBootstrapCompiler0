@@ -12,6 +12,7 @@ namespace Warp::Parser
         using enum ExpressionOperator;
         using enum ScopeOperators;
         using enum RegexLiteralTerms;
+        using enum StringTerms;
         using enum NonTerminalTerms;
 
         using TermsType = EasySafeTermsType< 
@@ -21,18 +22,27 @@ namespace Warp::Parser
                     FactorMultiply, 
                     FactorDivide 
                 >::AddOnePriority< 
-                        OpenParenthesis, 
-                        CloseParenthesis 
-                    >::NoPriority< 
-                            Identifier, 
-                            NaturalNumber 
-                        >;
+                        And, 
+                        Or, 
+                        Not, 
+                        BiCondition, 
+                        Implies 
+                    >::AddOnePriority< 
+                            OpenParenthesis, 
+                            CloseParenthesis 
+                        >::NoPriority< 
+                                Identifier, 
+                                NaturalNumber,  
+                                True, 
+                                False 
+                            >;
 
         using NonTerminalTermsType = SafeTermsType< 
                 TermBuilderType::NoPriority, 
                 Factor, 
                 Sum, 
-                ParenthesisScope 
+                ParenthesisScope, 
+                LogicalOperation 
             >;
 
         template< auto ParameterConstant >
