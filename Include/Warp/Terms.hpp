@@ -97,57 +97,49 @@ namespace Warp::Parser
                 Warp::Utilities::to_char( NodeTypeParameterConstant ), 
                 PriorityParameterConstant, 
                 ctpg::associativity::ltor 
-                // AssociativityParameterConstant
             );
     };
 
     template< 
             auto PriorityParameterConstant, 
             RegexLiteralTerms NodeTypeParameterConstant
-            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
         >
     struct TermForwarder< 
                 PriorityParameterConstant, 
                 RegexLiteralTerms, 
                 NodeTypeParameterConstant
-                // AssociativityParameterConstant 
             > {
         using TermDataType = Term< NodeTypeParameterConstant >;
         constexpr const static auto term = ctpg::regex_term< TermDataType::regex >{ 
                 TermDataType::name, 
-                PriorityParameterConstant//, 
-                // ctpg::associativity::ltor 
+                PriorityParameterConstant  
             };
     };
 
     template< 
             auto PriorityParameterConstant, 
             NonTerminalTerms NodeTypeParameterConstant
-            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
         >
     struct TermForwarder< 
                 PriorityParameterConstant, 
                 NonTerminalTerms, 
                 NodeTypeParameterConstant
-                // AssociativityParameterConstant 
             > {
         using TermDataType = Term< NodeTypeParameterConstant >;
         constexpr const static auto term = ctpg::nterm< typename TermDataType::StorageType >{ 
                 TermDataType::name, 
-                PriorityParameterConstant//, 
+                PriorityParameterConstant  
             };
     };
 
     template< 
             auto PriorityParameterConstant, 
             StringTerms NodeTypeParameterConstant
-            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
         >
     struct TermForwarder< 
                 PriorityParameterConstant, 
                 StringTerms, 
                 NodeTypeParameterConstant
-                // AssociativityParameterConstant 
             > {
         using TermDataType = Term< NodeTypeParameterConstant >;
         constexpr const static auto term = ctpg::string_term{ 
@@ -166,13 +158,11 @@ namespace Warp::Parser
     template< 
             typename ParameterType, 
             ParameterType NodeTypeParameterConstant
-            // auto AssociativityParameterConstant = ctpg::associativity::ltor
         >
     struct TermForwarder< 
                 TermBuilderType::NoPriority, 
                 ParameterType, 
                 NodeTypeParameterConstant
-                // AssociativityParameterConstant 
             > {
         constexpr static const auto term = ctpg::char_term( 
                 Warp::Utilities::to_char( NodeTypeParameterConstant ) 
@@ -181,13 +171,11 @@ namespace Warp::Parser
 
     template< 
             RegexLiteralTerms NodeTypeParameterConstant 
-            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
         >
     struct TermForwarder< 
                 TermBuilderType::NoPriority, 
                 RegexLiteralTerms, 
                 NodeTypeParameterConstant
-                // AssociativityParameterConstant 
             > {
         using TermDataType = Term< NodeTypeParameterConstant >;
         constexpr const static auto term = ctpg::regex_term< TermDataType::regex >{ TermDataType::name };
@@ -195,49 +183,36 @@ namespace Warp::Parser
 
     template< 
             NonTerminalTerms NodeTypeParameterConstant
-            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
         >
     struct TermForwarder< 
                 TermBuilderType::NoPriority, 
                 NonTerminalTerms, 
                 NodeTypeParameterConstant
-                // AssociativityParameterConstant 
             > {
         using TermDataType = Term< NodeTypeParameterConstant >;
         constexpr const static auto term = ctpg::nterm< typename TermDataType::StorageType >{ TermDataType::name };
     };
 
-    template< 
-            StringTerms NodeTypeParameterConstant
-            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
-        >
+    template< StringTerms NodeTypeParameterConstant >
     struct TermForwarder< 
                 TermBuilderType::NoPriority, 
                 StringTerms, 
                 NodeTypeParameterConstant
-                // AssociativityParameterConstant 
             > {
         using TermDataType = Term< NodeTypeParameterConstant >;
         constexpr const static auto term = ctpg::string_term{ TermDataType::string };
     };
 
-
-
     template< 
             auto PriorityParameterConstant, 
-            auto TermTypeParameterParameterConstant//, 
-            // auto AssociativityParameterConstant = ctpg::associativity::ltor
+            auto TermTypeParameterParameterConstant  
         >
     constexpr auto forward_term()
     {
         return TermForwarder< 
                 PriorityParameterConstant, 
                 decltype( TermTypeParameterParameterConstant ), 
-                // Warp::Utilities::CleanType< 
-                        // std::decay_t< decltype( TermTypeParameterParameterConstant ), 
-                    // >, 
-                TermTypeParameterParameterConstant//, 
-                // AssociativityParameterConstant 
+                TermTypeParameterParameterConstant  
             >::term;
     }
 
@@ -249,10 +224,11 @@ namespace Warp::Parser
         >
     struct TermGetter
     {
-        static_assert( 
-                HasTermParameterConstant && std::is_same< PreviousParameterType, void >::value, 
-                "Attempt to access term that was not in the specified set of terms" 
-            );
+        // TODO: Need to know if this is the last term to check to assert this, otherwise it will not evaluate any term in the set of last terms //
+        // static_assert( 
+        //         ( HasTermParameterConstant == false ) && ( std::is_same< PreviousParameterType, void >::value == true ), 
+        //         "Error::TermGetter< typename, auto, auto, bool >: Attempt to access term that was not in the specified set of terms." 
+        //     );
         
         constexpr static const auto term = PreviousParameterType::template get_term< TermParameterConstant >();
     };
@@ -276,7 +252,7 @@ namespace Warp::Parser
     {
         constexpr static const auto priority = PriorityParameterConstant;
         using ThisType = TermBuilder< PreviousParameterType, PriorityParameterConstant, TermParameterConstants... >;
-        template< auto NextPriorityParameterConstant >//= PriorityParameterConstant + 1 >
+        template< auto NextPriorityParameterConstant >
         struct Next
         {
             template< auto... NextTermsParameterConstant >
@@ -292,6 +268,7 @@ namespace Warp::Parser
         {
             return TermGetter< 
                     PreviousParameterType, 
+                    PriorityParameterConstant, 
                     TermParameterConstant, 
                     Warp::Utilities::HasConstant< 
                             TermParameterConstant, 
@@ -309,8 +286,6 @@ namespace Warp::Parser
         }
     };
 
-
-      // Warp::Utilities::HasConstant< QueryParameterConstant, TermParameterConstants
     template< auto PriorityParameterConstant, auto... TermParameterConstants >
     struct TermBuilder< 
             void, 
@@ -320,7 +295,7 @@ namespace Warp::Parser
     {
         constexpr static const auto priority = PriorityParameterConstant;
         using ThisType = TermBuilder< void, PriorityParameterConstant, TermParameterConstants... >;
-        template< auto NextPriorityParameterConstant  >// = PriorityParameterConstant + 1 >
+        template< auto NextPriorityParameterConstant  >
         struct Next
         {
             template< auto... NextTermsParameterConstant >
@@ -336,6 +311,7 @@ namespace Warp::Parser
         {
             return TermGetter< 
                     void, 
+                    PriorityParameterConstant, 
                     TermParameterConstant, 
                     Warp::Utilities::HasConstant< 
                             TermParameterConstant, 
@@ -349,33 +325,6 @@ namespace Warp::Parser
         }
 
     };
-
-    /*
-                   typename TermBuilder< 
-                        void
-                        1, 
-                        Warp::Utilities::to_char( ExpressionOperator::SumAdd ), 
-                        Warp::Utilities::to_char( ExpressionOperator::SumSubtract ) 
-                    >::Next< 2 >::TermsType< 
-                            Warp::Utilities::to_char( ExpressionOperator::FactorMultiply ), 
-                            Warp::Utilities::to_char( ExpressionOperator::FactorDivide ) 
-                        >::Next< 3 >::TermsType< 
-                                Warp::Utilities::to_char( ScopeOperators::OpenParenthesis ), 
-                                Warp::Utilities::to_char( ScopeOperators::CloseParenthesis ) 
-                            >::Next< TermBuilderType::NoPriority >::TermsType< 
-                                    RegexLiteralTerms::Identifier, 
-                                    RegexLiteralTerms::NaturalNumber 
-                                >::to_tuple(), 
- */
- /*
-                 TermBuilder< 
-                        void
-                        TermBuilderType::NoPriority, 
-                        NonTerminalTerms::Factor, 
-                        NonTerminalTerms::Sum, 
-                        NonTerminalTerms::ParenthesisScope 
-                    >::to_tuple(), 
-*/
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP

@@ -34,20 +34,93 @@ namespace Warp::Utilities
         using Type = FirstParameterType;
     };
 
-    template< typename QueryParameterType, typename AlternativeParameterType, bool EnableParameterConstant >
-    struct EnableIf {
+    template< 
+            typename QueryParameterType, 
+            typename AlternativeParameterType, 
+            bool EnableParameterConstant 
+        >
+    struct EnableInject {
         using Type = AlternativeParameterType;
     };
 
-    template< typename QueryParameterType, typename AlternativeParameterType >
-    struct EnableIf< QueryParameterType, AlternativeParameterType, true > {
+    template< 
+            typename QueryParameterType, 
+            typename AlternativeParameterType 
+        >
+    struct EnableInject <
+                QueryParameterType, 
+                AlternativeParameterType, 
+                true 
+            > {
         using Type = QueryParameterType;
     };
+
+    template< 
+            template< auto > typename ToInjectIntoParameterType, 
+            auto ValueParameterConstant, 
+            auto AlternativeValueParameterConstant, 
+            bool EnableParameterConstant 
+        >
+    struct EnableInjectValue {
+        constexpr const static auto value = AlternativeValueParameterConstant;
+    };
+
+    template< 
+            template< auto > typename ToInjectIntoParameterType, 
+            auto ValueParameterConstant, 
+            auto AlternativeValueParameterConstant 
+        >
+    struct EnableInjectValue< 
+                ToInjectIntoParameterType, 
+                ValueParameterConstant, 
+                AlternativeValueParameterConstant, 
+                false  
+            > {
+        constexpr const static auto value = ToInjectIntoParameterType< ValueParameterConstant >::value;
+    };
+
+    template< 
+            auto OperationParameterConstant, 
+            auto LeftOperhandParameterConstant, 
+            auto RightOperhandParameterConstant, 
+            bool EnableParameterConstant,  
+            auto NoOperationParameterConstant 
+        >
+    struct EnableOperation {
+        constexpr const static auto value = NoOperationParameterConstant;
+    };
+
+
+    template< 
+            auto OperationParameterConstant, 
+            auto LeftOperhandParameterConstant, 
+            auto RightOperhandParameterConstant, 
+            auto NoOperationParameterConstant 
+        >
+    struct EnableOperation< 
+            OperationParameterConstant, 
+            LeftOperhandParameterConstant, 
+            RightOperhandParameterConstant, 
+            true, 
+            NoOperationParameterConstant 
+        > 
+    {
+        constexpr const static auto value = OperationParameterConstant( 
+                LeftOperhandParameterConstant, 
+                RightOperhandParameterConstant 
+            );
+    };
+
+
 
     template< typename UncleanParmaeterType >
     using CleanType = std::decay_t< typename std::remove_reference< 
             typename std::remove_pointer< UncleanParmaeterType >::type 
                 >::type >;
+
+    template< auto UncleanParmaeterConstant >
+    using CleanTypeOfValueType = CleanType< decltype( UncleanParmaeterConstant ) >;
+
 
     template< typename QueryParameterType, typename... ParameterTypes >
     struct SameAsToFirstType 
@@ -174,27 +247,6 @@ namespace Warp::Utilities
                 CurrentParameterType 
             > {
         constexpr static const size_t type_index = IndexParameterConstant;
-    };
-
-    template< 
-            typename QueryParameterType, 
-            typename AlternativeParameterType, 
-            bool EnableParameterConstant 
-        >
-    struct EnableInject {
-        using Type = AlternativeParameterType;
-    };
-
-    template< 
-            typename QueryParameterType, 
-            typename AlternativeParameterType 
-        >
-    struct EnableInject <
-                QueryParameterType, 
-                AlternativeParameterType, 
-                true 
-            > {
-        using Type = QueryParameterType;
     };
 
     template< 
@@ -326,9 +378,27 @@ namespace Warp::Utilities
         constexpr static const bool value = true;
     };
 
-    template< auto QueryParameterConstant, auto CurrentParameterConstant >
-    struct HasConstant< QueryParameterConstant, CurrentParameterConstant > {
-        constexpr static const bool value = ( QueryParameterConstant == CurrentParameterConstant );
+    template< 
+            auto QueryParameterConstant, 
+            auto CurrentParameterConstant 
+        >
+    struct HasConstant< 
+            QueryParameterConstant, 
+            CurrentParameterConstant 
+        > 
+    {
+        constexpr static const bool value = EnableOperation< 
+                []( auto left, auto right ){ return left == right; }, 
+                QueryParameterConstant, 
+                CurrentParameterConstant, 
+                false, 
+                std::is_same< 
+                        //CleanTypeOfValueType< 
+                        decltype( QueryParameterConstant ), // >, 
+                        //CleanTypeOfValueType< 
+                        decltype( CurrentParameterConstant ) // > 
+                    >::value 
+            >::value;
     };
 
 }

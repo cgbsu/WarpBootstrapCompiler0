@@ -5,18 +5,6 @@
 
 namespace Warp::Analysis
 {
-    template< typename... VariantParameterTypes >
-    const auto& to_const_reference( const Warp::Utilities::NotSoUniquePointer< Warp::Utilities::AutoVariant< VariantParameterTypes... > >& variant ) {
-        const typename std::remove_pointer< decltype( variant.get_pointer() ) >::type& node = *variant.get_pointer();
-        return node;
-    }
-
-    const auto& to_const_reference( const auto* value ) {
-        const typename std::remove_pointer< decltype( value ) >::type& node = *value;
-        return node;
-    }
-
-
     template< auto NodeTypeParameterConstant >
     struct ExtractNodeType {
         constexpr static auto node_type = NodeTypeParameterConstant;
@@ -26,7 +14,7 @@ namespace Warp::Analysis
     template< template< typename, auto > typename FeedbackParameterType, typename ReturnParameterType >
     ReturnParameterType abstract_syntax_tree_callback( const Warp::AbstractSyntaxTree::NodeVariantType& variant )
     {
-        const auto& node = to_const_reference( variant );
+        const auto& node = Warp::Utilities::to_const_reference( variant );
         return Warp::Utilities::visit< []( auto raw_node_pointer ) { 
                const decltype( *raw_node_pointer )& ref = *raw_node_pointer;
                return FeedbackParameterType< ReturnParameterType, decltype( ExtractNodeType( ref ) )::node_type >::compute_value_of_expression( ref ); 
@@ -44,7 +32,7 @@ namespace Warp::Analysis
         {
             return Warp::Utilities::visit< []( auto value_pointer ) -> ExpressionParameterType {
                     return *value_pointer;
-                } >( to_const_reference( node.value.factor ) );
+                } >( Warp::Utilities::to_const_reference( node.value.factor ) );
         }
     };
 

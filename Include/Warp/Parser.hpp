@@ -26,9 +26,9 @@ namespace Warp::Parser
         constexpr static const auto minus_term = ctpg::char_term( Warp::Utilities::to_char( 
                     ExpressionOperator::SumSubtract ), 1, ctpg::associativity::ltor 
             );
-        constexpr static const auto multiply_term = ctpg::char_term( Warp::Utilities::to_char( 
-                    ExpressionOperator::FactorMultiply ), 2, ctpg::associativity::ltor 
-            );
+        // constexpr static const auto TermsType::get_term< ExpressionOperator::FactorMultiply >() = ctpg::char_term( Warp::Utilities::to_char( 
+        //             ExpressionOperator::FactorMultiply ), 2, ctpg::associativity::ltor 
+        //     );
         constexpr static const auto divide_term = ctpg::char_term( Warp::Utilities::to_char( 
                     ExpressionOperator::FactorDivide ), 2, ctpg::associativity::ltor 
             );
@@ -39,7 +39,7 @@ namespace Warp::Parser
                     ScopeOperators::CloseParenthesis ), 4, ctpg::associativity::ltor 
             );
 
-        using TermsType = typename Warp::Parser::TermBuilder< 
+        using TermsType = typename TermBuilder< 
                 void, 
                 1, 
                 ExpressionOperator::SumAdd, 
@@ -72,7 +72,7 @@ namespace Warp::Parser
         constexpr static const auto parser = ctpg::parser( 
                 factor, 
                 // ctpg::terms( 
-                //         multiply_term, 
+                //         TermsType::get_term< ExpressionOperator::FactorMultiply >(), 
                 //         divide_term, 
                 //         plus_term, 
                 //         minus_term, 
@@ -96,10 +96,10 @@ namespace Warp::Parser
                                                 ResolvedType< RegexLiteralTerms::NaturalNumber > 
                                             >( token );
                                     }, 
-                        factor( factor, multiply_term, term< RegexLiteralTerms::NaturalNumber > ) 
+                        factor( factor, TermsType::get_term< ExpressionOperator::FactorMultiply >(), term< RegexLiteralTerms::NaturalNumber > ) 
                                 >= []( auto current_factor, auto, const auto& next_token )
                                     {
-                                        return Warp::Utilities::allocate_node< Warp::Parser::ExpressionOperator::FactorMultiply >( 
+                                        return Warp::Utilities::allocate_node< ExpressionOperator::FactorMultiply >( 
                                                 current_factor, 
                                                 Warp::Utilities::allocate_integral_literal_node< 
                                                         ResolvedType< RegexLiteralTerms::NaturalNumber > 
@@ -119,7 +119,7 @@ namespace Warp::Parser
                         parenthesis_scope( left_parenthesis_term, factor, right_parenthesis_term )
                                 >= [] ( auto, auto factor, auto ) { return factor; }, 
                         factor( parenthesis_scope ) >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
-                        factor( factor, multiply_term, parenthesis_scope ) 
+                        factor( factor, TermsType::get_term< ExpressionOperator::FactorMultiply >(), parenthesis_scope ) 
                                 >= []( auto factor, auto, auto parenthesis_scope ) 
                                     {
                                         return Warp::Utilities::allocate_node< ExpressionOperator::FactorMultiply >( 
