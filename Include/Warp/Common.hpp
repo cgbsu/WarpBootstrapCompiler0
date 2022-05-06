@@ -5,6 +5,7 @@
 #include <utility>
 #include <typeinfo>
 #include <any>
+#include <optional>
 
 #include <ctpg.hpp>
 

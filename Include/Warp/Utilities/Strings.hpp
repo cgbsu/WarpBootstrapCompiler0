@@ -5,6 +5,21 @@
 
 namespace Warp::Utilities
 {
+    constexpr std::optional< bool > to_bool( 
+            std::string_view boolean_token, 
+            std::string_view true_token, 
+            std::string_view false_token 
+        )
+    {
+        return ( 
+            boolean_token == true_token ? 
+                    std::optional{ true } : ( 
+                            boolean_token == false_token ? 
+                                    std::optional{ false } : std::nullopt 
+                    ) 
+            );
+    }
+
     template< std::integral ParameterType >//, auto out = []( ParameterType val ) { std::cout << "VAL: " << val << "\n"; return 0; } >
     constexpr ParameterType to_integral( std::string_view integer_token )
     {

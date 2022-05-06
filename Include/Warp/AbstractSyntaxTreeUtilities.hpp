@@ -33,7 +33,7 @@ namespace Warp::Utilities
     }
 
 
-    template< typename DataLiteralType >
+    template< std::integral DataLiteralType >
     constexpr Warp::AbstractSyntaxTree::NodeVariantType allocate_integral_literal_node( auto data )
     {
         using NodeInPlaceType = std::in_place_type_t< 
@@ -47,6 +47,21 @@ namespace Warp::Utilities
                 Warp::AbstractSyntaxTree::LiteralType{ Utilities::to_integral< DataLiteralType >( data ) } 
             };
     }
+
+    constexpr Warp::AbstractSyntaxTree::NodeVariantType allocate_boolean_literal_node( auto data )
+    {
+        using NodeInPlaceType = std::in_place_type_t< 
+                Warp::AbstractSyntaxTree::Node< 
+                        Warp::AbstractSyntaxTree::NodeType::BooleanLiteral 
+                    > 
+            >;
+        return Warp::AbstractSyntaxTree::NodeVariantType { 
+                std::in_place_type_t< Warp::AbstractSyntaxTree::InternalNodeVariantType >{}, 
+                NodeInPlaceType{}, 
+                Utilities::to_bool( data, Warp::Parser::true_token, Warp::Parser::false_token ).value() 
+            };
+    }
+
 
 }
 

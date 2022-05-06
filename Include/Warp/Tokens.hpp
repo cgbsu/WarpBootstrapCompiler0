@@ -12,7 +12,7 @@ namespace Warp::Parser
     constexpr static const char caret_token = '^';
     constexpr static const char colon_token = ':';
     constexpr static const char semi_colon_token = ';';
-    constexpr static const char exlimation_point = '!';
+    constexpr static const char exclimation_point = '!';
 
     constexpr static const char open_parenthesis = '(';
     constexpr static const char close_parenthesis = ')';
@@ -32,12 +32,13 @@ namespace Warp::Parser
         ExponentRaise = caret_token 
     };
 
-    enum class BooleanOperator
+    enum class BooleanOperator : char 
     {
-        LogicalAnd = 0, 
-        LogicalOr = 1, 
-        LogicalBiConditional = 2, 
-        LogicalImplies = 3
+        Not = exclimation_point, 
+        LogicalAnd, // = 0, 
+        LogicalOr, // = 1, 
+        LogicalBiConditional, // = 2, 
+        LogicalImplies //= 3
     };
 
     enum class ScopeOperators : char 
@@ -52,10 +53,19 @@ namespace Warp::Parser
         CloseAngleBracket = close_angle_bracket 
     };
 
-    // constexpr static const char and_operator[] = "&&";
-    // constexpr static const char or_operator[] = "||";
-    // constexpr static const char bi_conditional_operator[] = "<->";
-    // constexpr static const char implies_operator[] = "->";
+    constexpr static const char and_operator[] = "&&";
+    constexpr static const char or_operator[] = "||";
+    constexpr static const char bi_conditional_operator[] = "<->";
+    constexpr static const char implies_operator[] = "->";
+
+    // Unfortunatley, string concatination will just be too much of //
+    // a problem with constexpr constraint. //////////////////////////
+    #define MAKE_BOOL_VALUES( TRUE_TOKEN, FALSE_TOKEN ) \
+        constexpr static const char true_token[] = #TRUE_TOKEN ; \
+        constexpr static const char false_token[] = #FALSE_TOKEN ; \
+        constexpr static const char bool_literal_regex[] =  "(" #TRUE_TOKEN ")\\b|(" #FALSE_TOKEN ")\\b"; // This is valid C++ code, string literals next to each-otehr become one literal/string //
+
+    MAKE_BOOL_VALUES( true, false )
 
     // constexpr static const char definition_operator[] = "::";
 

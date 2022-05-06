@@ -8,7 +8,8 @@ namespace Warp::Parser
 {
     enum class RegexLiteralTerms {
         NaturalNumber = 0, 
-        Identifier = 1
+        Identifier = 1, 
+        BooleanLiteral = 2 
     };
 
     enum class NonTerminalTerms
@@ -29,8 +30,6 @@ namespace Warp::Parser
         Not = 3, 
         BiCondition = 4, 
         Implies = 5, 
-        True = 6, 
-        False = 7 
     };
 
     #define LITERAL_REGEX_TERM( TYPE, REGEX ) \
@@ -70,8 +69,10 @@ namespace Warp::Parser
         using Type = size_t;
     };
 
+    // For testing regexes for this program and many others, and for learning, thank you too https://regexr.com/ //
     LITERAL_REGEX_TERM( NaturalNumber, "[0-9][0-9]*" );
     LITERAL_REGEX_TERM( Identifier, "[a-zA-Z\\_][a-zA-Z0-9\\_]*" );
+    LITERAL_REGEX_TERM( BooleanLiteral, "(true)|(false)" ); //Originally (true)\\b|(false)\\b, ctpg seems to take care of this. //
     NON_TERMINAL_TERM( Factor, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Sum, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( ParenthesisScope, Warp::AbstractSyntaxTree::NodeVariantType );
@@ -82,9 +83,6 @@ namespace Warp::Parser
     STRING_TERM( Or, "||" );
     STRING_TERM( BiCondition, "<->" );
     STRING_TERM( Implies, "->" );
-    STRING_TERM( Not, "!" );
-    STRING_TERM( True, "true" );
-    STRING_TERM( False, "false" );
 
     template< 
             auto PriorityParameterConstant, 

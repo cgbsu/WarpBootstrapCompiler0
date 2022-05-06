@@ -22,23 +22,29 @@ namespace Warp::Parser
                     FactorMultiply, 
                     FactorDivide 
                 >::AddOnePriority< 
-                        And, 
-                        Or, 
-                        Not, 
                         BiCondition, 
                         Implies 
                     >::AddOnePriority< 
-                            OpenParenthesis, 
-                            CloseParenthesis 
-                        >::NoPriority< 
-                                Identifier, 
-                                NaturalNumber,  
-                                True, 
-                                False 
-                            >;
+                            Or 
+                        >::AddOnePriority< 
+                                And 
+                        >::AddOnePriority<  
+                                BooleanOperator::Not 
+                            >::AddOnePriority< 
+                                    OpenParenthesis, 
+                                    CloseParenthesis 
+                                >::AddOnePriority<
+                                        Identifier 
+                                    >::AddOnePriority< 
+                                            BooleanLiteral
+                                        >::NoPriority< 
+                                                NaturalNumber 
+                                            >;
 
         using NonTerminalTermsType = SafeTermsType< 
                 TermBuilderType::NoPriority, 
+                // Non Terminal Terms Begin Here, they have no //
+                // "priority" with respect to other operators  //
                 Factor, 
                 Sum, 
                 ParenthesisScope, 
@@ -62,6 +68,12 @@ namespace Warp::Parser
                 terms, 
                 non_terminal_terms, 
                 ctpg::rules( 
+
+                        // CTPG Makes it very hard to seperate all these out (see: https://github.com/peter-winter/ctpg/issues/46 ) //
+                        // I spent a good amount of time doings so I am going to annotate the different sections. ////////////////////
+
+                        //////////////////////////////// Arithmatic Expressions ////////////////////////////////
+
                         non_terminal_term< Factor >( term< NaturalNumber > ) 
                                 >= []( auto token ) {
                                         return Warp::Utilities::allocate_integral_literal_node< 
@@ -127,7 +139,16 @@ namespace Warp::Parser
                                                 current_sum, 
                                                 next_token 
                                             );
-                                    }
+                                    }, 
+                        
+                        //////////////////////////////// Boolean Expressions ////////////////////////////////
+
+                        // Probably shouldent actually ever need thes in the language, but keepoing them at least for debugging. //
+                        non_terminal_term< Factor >( term< BooleanLiteral > ) 
+                                >= []( auto token ) {
+                                    return Warp::Utilities::allocate_boolean_literal_node( token );
+                                }
+                        
                 )
         );
     };
