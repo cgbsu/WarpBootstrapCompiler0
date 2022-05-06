@@ -247,84 +247,103 @@ namespace Warp::Parser
         constexpr static const auto term = forward_term< PriorityParameterConstant, TermParameterConstant >();
     };
 
+
+    // template< 
+    //         auto PriorityParameterConstant, 
+    //         auto TermParameterConstant 
+    //     >
+    // struct TermGetter< 
+    //             void, 
+    //             PriorityParameterConstant, 
+    //             TermParameterConstant, 
+    //             false 
+    //         > {
+    //     // constexpr static const void term = void;//forward_term< PriorityParameterConstant, TermParameterConstant >();
+    // };
+
+    #define SPECIALIZE_TERM_BUILDER( TO_TUPLE, PREVIOUS_TYPE ) \
+        using ThisType = TermBuilder< PREVIOUS_TYPE, PriorityParameterConstant, TermParameterConstants... >; \
+        template< auto NextPriorityParameterConstant > \
+        struct Next \
+        { \
+            template< auto... NextTermsParameterConstant > \
+            using TermsType = TermBuilder<  \
+                    ThisType,  \
+                    NextPriorityParameterConstant,  \
+                    NextTermsParameterConstant...  \
+                >; \
+        }; \
+        template< auto OffsetParameterConstant > \
+        constexpr const static auto add_priorities = Warp::Utilities::EnableOperation<  \
+                []( auto left, auto right ) { return left + right; },  \
+                PriorityParameterConstant,  \
+                OffsetParameterConstant,  \
+                std::is_same<  \
+                        TermBuilderType,  \
+                        decltype( OffsetParameterConstant )  \
+                    >::value,  \
+                OffsetParameterConstant  \
+            >::value; \
+        template< auto OffsetParameterConstant, auto... NextTermsParameterConstants > \
+        using AddToPriority = typename ThisType::Next<  \
+                    add_priorities< OffsetParameterConstant > \
+                >::TermsType<  \
+                    NextTermsParameterConstants...  \
+                >; \
+        template< auto... NextTermsParameterConstants > \
+        using AddOnePriority = AddToPriority< 1, NextTermsParameterConstants... >; \
+        template< auto... NextTermsParameterConstants > \
+        using NoPriority = typename ThisType::Next<  \
+                TermBuilderType::NoPriority  \
+            >::TermsType<  \
+                    NextTermsParameterConstants...  \
+                >; \
+        constexpr static auto to_tuple() \
+        { \
+            TO_TUPLE \
+        } \
+        template< auto TermParameterConstant > \
+        constexpr static auto get_term() \
+        { \
+            return TermGetter< \
+                    PREVIOUS_TYPE, \
+                    PriorityParameterConstant, \
+                    TermParameterConstant, \
+                    Warp::Utilities::HasConstant< \
+                            TermParameterConstant, \
+                            TermParameterConstants... \
+                        >::value \
+                >::term; \
+        } 
+
     template< typename PreviousParameterType, auto PriorityParameterConstant, auto... TermParameterConstants >
     struct TermBuilder
     {
         constexpr static const auto priority = PriorityParameterConstant;
-        using ThisType = TermBuilder< PreviousParameterType, PriorityParameterConstant, TermParameterConstants... >;
-        template< auto NextPriorityParameterConstant >
-        struct Next
-        {
-            template< auto... NextTermsParameterConstant >
-            using TermsType = TermBuilder< 
-                    ThisType, 
-                    NextPriorityParameterConstant, 
-                    NextTermsParameterConstant... 
-                >;
-        };
-
-        template< auto TermParameterConstant >
-        constexpr static auto get_term()
-        {
-            return TermGetter< 
-                    PreviousParameterType, 
-                    PriorityParameterConstant, 
-                    TermParameterConstant, 
-                    Warp::Utilities::HasConstant< 
-                            TermParameterConstant, 
-                            TermParameterConstants... 
-                        >::value 
-                >::term;
-        }
-        
-        constexpr static auto to_tuple()
-        {
-            return std::tuple_cat( 
-                    std::tuple( forward_term< PriorityParameterConstant, TermParameterConstants >()... ), 
-                    PreviousParameterType::to_tuple() 
-                );
-        }
+        SPECIALIZE_TERM_BUILDER( 
+                return std::tuple_cat( 
+                        std::tuple( forward_term< PriorityParameterConstant, TermParameterConstants >()... ), 
+                        PreviousParameterType::to_tuple() 
+                    );, 
+                PreviousParameterType 
+            )
     };
 
     template< auto PriorityParameterConstant, auto... TermParameterConstants >
-    struct TermBuilder< 
-            void, 
-            PriorityParameterConstant, 
-            TermParameterConstants... 
-        >
+    struct TermBuilder< void, PriorityParameterConstant, TermParameterConstants... >
     {
-        constexpr static const auto priority = PriorityParameterConstant;
-        using ThisType = TermBuilder< void, PriorityParameterConstant, TermParameterConstants... >;
-        template< auto NextPriorityParameterConstant  >
-        struct Next
-        {
-            template< auto... NextTermsParameterConstant >
-            using TermsType = TermBuilder< 
-                    ThisType, 
-                    NextPriorityParameterConstant, 
-                    NextTermsParameterConstant... 
-                >;
-        };
-
-        template< auto TermParameterConstant >
-        constexpr static auto get_term()
-        {
-            return TermGetter< 
-                    void, 
-                    PriorityParameterConstant, 
-                    TermParameterConstant, 
-                    Warp::Utilities::HasConstant< 
-                            TermParameterConstant, 
-                            TermParameterConstants... 
-                        >::value 
-                >::term;
-        }
-
-        constexpr static auto to_tuple() {
-            return std::tuple( forward_term< PriorityParameterConstant, TermParameterConstants >()... );
-        }
-
+        SPECIALIZE_TERM_BUILDER( 
+                return std::tuple( forward_term< PriorityParameterConstant, TermParameterConstants >()... );, 
+                void 
+            )
     };
+
+
+    template< auto StartPriority, auto... TermParameterConstants >
+    using SafeTermsType = TermBuilder< void, StartPriority, TermParameterConstants... >;
+
+    template< auto... TermParameterConstants >
+    using EasySafeTermsType = SafeTermsType< 0, TermParameterConstants... >;
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP

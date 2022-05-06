@@ -79,6 +79,27 @@ namespace Warp::Utilities
         constexpr const static auto value = ToInjectIntoParameterType< ValueParameterConstant >::value;
     };
 
+    // template< 
+    //         auto ValueParameterConstant, 
+    //         auto AlternativeValueParameterConstant, 
+    //         bool EnableParameterConstant = false 
+    //     >
+    // struct EnableValue {
+    //     constexpr const static auto value = AlternativeValueParameterConstant;
+    // };
+
+    // template< 
+    //         auto ValueParameterConstant, 
+    //         auto AlternativeValueParameterConstant, 
+    //     >
+    // struct EnableValue< 
+    //             ValueParameterConstant, 
+    //             AlternativeValueParameterConstant, 
+    //             true 
+    //         > {
+    //     constexpr const static auto value = ValueParameterConstant;
+    // };
+
     template< 
             auto OperationParameterConstant, 
             auto LeftOperhandParameterConstant, 

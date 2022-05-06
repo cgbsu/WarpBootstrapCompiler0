@@ -14,24 +14,21 @@ namespace Warp::Parser
         using enum RegexLiteralTerms;
         using enum NonTerminalTerms;
 
-        using TermsType = typename TermBuilder< 
-                void, 
-                1, 
+        using TermsType = EasySafeTermsType< 
                 SumAdd, 
                 SumSubtract 
-            >::Next< 2 >::TermsType< 
+            >::AddOnePriority< 
                     FactorMultiply, 
                     FactorDivide 
-                >::Next< 3 >::TermsType< 
+                >::AddOnePriority< 
                         OpenParenthesis, 
                         CloseParenthesis 
-                    >::Next< TermBuilderType::NoPriority >::TermsType< 
+                    >::NoPriority< 
                             Identifier, 
                             NaturalNumber 
                         >;
 
-        using NonTerminalTermsType = TermBuilder< 
-                void, 
+        using NonTerminalTermsType = SafeTermsType< 
                 TermBuilderType::NoPriority, 
                 Factor, 
                 Sum, 
