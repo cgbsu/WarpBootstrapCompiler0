@@ -53,7 +53,7 @@ namespace Warp::Parser
                         term< RegexLiteralTerms::NaturalNumber >, 
                         identifier_term, 
                         left_parenthesis_term, 
-                        right_parenthesis_term 
+                        right_parenthesis_term  
                     ), 
                 ctpg::nterms( 
                         factor, 

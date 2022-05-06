@@ -28,7 +28,9 @@ namespace Warp::Parser
         Or = 2, 
         Not = 3, 
         BiCondition = 4, 
-        Implies = 5 
+        Implies = 5, 
+        True = 6, 
+        False = 7 
     };
 
     #define LITERAL_REGEX_TERM( TYPE, REGEX ) \
@@ -51,6 +53,15 @@ namespace Warp::Parser
         }
 
 
+    #define STRING_PRIORITY_TERM( TYPE, STRING, PRIORITY ) \
+        template<> \
+        struct Term< StringTerms:: TYPE > \
+        { \
+            constexpr const static char name[] = #TYPE ; \
+            constexpr const static char string[] = STRING ; \
+            constexpr const static auto term = ctpg::string_term{ string, PRIORITY, ctpg::associativity::ltor }; \
+        }
+
     #define STRING_TERM( TYPE, STRING ) \
         template<> \
         struct Term< StringTerms:: TYPE > \
@@ -59,6 +70,7 @@ namespace Warp::Parser
             constexpr const static char string[] = STRING ; \
             constexpr const static auto term = ctpg::string_term{ string }; \
         }
+
 
     template< auto LiteralParameterTypeParameterConstant >
     struct Term {};
@@ -76,10 +88,12 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( LogicalOperation, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Comparison, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Negation, Warp::AbstractSyntaxTree::NodeVariantType );
-    STRING_TERM( And, "&&" );
-    STRING_TERM( Or, "||" );
-    STRING_TERM( BiCondition, "<->" );
-    STRING_TERM( Implies, "->" );
+    STRING_PRIORITY_TERM( And, "&&" );
+    STRING_PRIORITY_TERM( Or, "||" );
+    STRING_PRIORITY_TERM( BiCondition, "<->" );
+    STRING_PRIORITY_TERM( Implies, "->" );
+    STRING_TERM( True, "true" );
+    STRING_TERM( False, "false" );
 
     template< 
             auto PriorityParameterConstant, 
