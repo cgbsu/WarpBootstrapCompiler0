@@ -15,7 +15,7 @@ namespace Warp::Parser
         constexpr static const auto factor = term< NonTerminalTerms::Factor >;
         constexpr static const auto sum = term< NonTerminalTerms::Sum >;
         constexpr static const auto parenthesis_scope = term< NonTerminalTerms::ParenthesisScope >;
-        constexpr static const auto function_alternative = term< NonTerminalTerms::FunctionAlternative >;
+        // constexpr static const auto function_alternative = term< NonTerminalTerms::FunctionAlternative >;
 
         constexpr static const auto identifier_term = term< RegexLiteralTerms::Identifier >;
 
@@ -39,10 +39,6 @@ namespace Warp::Parser
                     ScopeOperators::CloseParenthesis ), 4, ctpg::associativity::ltor 
             );
 
-        constexpr static const auto and_term = ctpg::string_term( and_operator, 6, ctpg::associativity::ltor );
-        constexpr static const auto or_term = ctpg::string_term( and_operator, 5, ctpg::associativity::ltor );
-        constexpr static const auto not_term = ctpg::char_term( not_operator, 4, ctpg::associativity::ltor );
-
         template< auto ParameterConstant >
         using ResolvedType = typename TypeResolverParameterType< ParameterConstant >::Type;
 
@@ -61,8 +57,8 @@ namespace Warp::Parser
                 ctpg::nterms( 
                         factor, 
                         sum, 
-                        parenthesis_scope, 
-                        function_alternative 
+                        parenthesis_scope //, 
+                        // function_alternative 
                     ), 
                 ctpg::rules( 
                         factor( term< RegexLiteralTerms::NaturalNumber > ) 

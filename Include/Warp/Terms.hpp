@@ -26,12 +26,62 @@ namespace Warp::Parser
         LetKeyword = 0, 
         And = 1, 
         Or = 2, 
-        Not = 3 
+        Not = 3, 
+        BiCondition = 4, 
+        Implies = 5 
     };
+
+    #define LITERAL_REGEX_TERM( TYPE, REGEX ) \
+        template<> \
+        struct Term< RegexLiteralTerms:: TYPE > \
+        { \
+            constexpr const static char regex[] = REGEX; \
+            constexpr const static char name[] = #TYPE ; \
+            constexpr const static auto term = ctpg::regex_term< regex >{ name }; \
+            constexpr const static auto literal_type = RegexLiteralTerms:: TYPE; \
+        }
+
+    #define NON_TERMINAL_TERM( TYPE, STORAGE_TYPE ) \
+        template<> \
+        struct Term< NonTerminalTerms:: TYPE > \
+        { \
+            using StorageType = STORAGE_TYPE ; \
+            constexpr const static char name[] = #TYPE ; \
+            constexpr const static auto term = ctpg::nterm< STORAGE_TYPE >{ name }; \
+        }
+
+
+    #define STRING_TERM( TYPE, STRING ) \
+        template<> \
+        struct Term< StringTerms:: TYPE > \
+        { \
+            constexpr const static char name[] = #TYPE ; \
+            constexpr const static char string[] = STRING ; \
+            constexpr const static auto term = ctpg::string_term{ string }; \
+        }
 
     template< auto LiteralParameterTypeParameterConstant >
     struct Term {};
 
+    template< auto TypeParameterConstant = RegexLiteralTerms::NaturalNumber >
+    struct DefaultTypes {
+        using Type = size_t;
+    };
+
+    LITERAL_REGEX_TERM( NaturalNumber, "[0-9][0-9]*" );
+    LITERAL_REGEX_TERM( Identifier, "[a-zA-Z\\_][a-zA-Z0-9\\_]*" );
+    NON_TERMINAL_TERM( Factor, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( Sum, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( ParenthesisScope, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( LogicalOperation, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( Comparison, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( Negation, Warp::AbstractSyntaxTree::NodeVariantType );
+    STRING_TERM( And, "&&" );
+    STRING_TERM( Or, "||" );
+    STRING_TERM( BiCondition, "<->" );
+    STRING_TERM( Implies, "->" );
+
+    /*
     template<>
     struct Term< RegexLiteralTerms::NaturalNumber >
     {
@@ -50,10 +100,6 @@ namespace Warp::Parser
         constexpr const static auto literal_type = RegexLiteralTerms::Identifier;
     };
 
-    template< auto TypeParameterConstant = RegexLiteralTerms::NaturalNumber >
-    struct DefaultTypes {
-        using Type = size_t;
-    };
 
     template<>
     struct DefaultTypes< RegexLiteralTerms::Identifier > {
@@ -107,20 +153,34 @@ namespace Warp::Parser
             typename TermParameterType, 
             TermParameterType RawTermParameterConstant 
         >
-    auto forward_term() {
+    struct TermForwarder
+    {
+        
+    };
+
+
+    template< 
+            auto PriorityParameterConstant, 
+            typename TermParameterType 
+        >
+    auto forward_term( TermParameterType term ) {
+        static_assert( false, "Here be dragons! Attemt to define a term using an unkown type!" );
         return 0;
     }
 
-    template< auto PriorityParameterConstant, auto RawTermParameterConstant >
-    auto forward_term() {
-        return 0;
+
+    template< 
+            auto PriorityParameterConstant, 
+            typename TermParameterType 
+        >
+    auto forward_term( TermParameterType term ) {
     }
 
     template< auto PriorityParameterConstant, auto... TermParameterConstants >
     struct TermBuilder
     {
         constexpr static const auto priority = PriorityParameterConstant;
-    };
+    };*/
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP

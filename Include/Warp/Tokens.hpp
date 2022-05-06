@@ -44,14 +44,16 @@ namespace Warp::Parser
         CloseAngleBracket = close_angle_bracket 
     };
 
-    constexpr static const char and_operator[] = "&&";
-    constexpr static const char or_operator[] = "||";
-    constexpr static const char bi_conditional_operator[] = "<->";
-    constexpr static const char implies_operator[] = "->";
+    // constexpr static const char and_operator[] = "&&";
+    // constexpr static const char or_operator[] = "||";
+    // constexpr static const char bi_conditional_operator[] = "<->";
+    // constexpr static const char implies_operator[] = "->";
 
-    constexpr static const char definition_operator[] = "::";
+    // constexpr static const char definition_operator[] = "::";
 
-    constexpr static const char let_keyword[] = "let";
+    // constexpr static const char let_keyword[] = "let";
+
+
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP

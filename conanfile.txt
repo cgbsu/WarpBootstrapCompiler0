@@ -1,6 +1,5 @@
 [requires]
 ctpg/1.3.6
-magic_enum/0.7.3
 
 [generators]
 cmake

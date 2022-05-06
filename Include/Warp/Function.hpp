@@ -10,16 +10,16 @@ namespace Warp::CompilerRuntime
     struct FunctionAlternative
     {
         const Function& function;
-        const NodeNodeVariantType& expression;
-        const NodeNodeVariantType& return_constraint;
-        const std::vector< const NodeNodeVariantType& > input_constraints;
-        const std::vector< const Function& > dependancies;
+        const Warp::AbstractSyntaxTree::NodeVariantType expression;
+        const Warp::AbstractSyntaxTree::NodeVariantType return_constraint;
+        const std::vector< Warp::AbstractSyntaxTree::NodeVariantType > input_constraints;
+        const std::vector< const Function* > dependancies;
         FunctionAlternative( 
                 const Function& function, 
-                const NodeNodeVariantType& expression, 
-                const NodeNodeVariantType& return_constraint, 
-                const std::vector< const NodeNodeVariantType& > input_constraints, 
-                const std::vector< const Function& > call 
+                const Warp::AbstractSyntaxTree::NodeVariantType expression, 
+                const Warp::AbstractSyntaxTree::NodeVariantType return_constraint, 
+                const std::vector< Warp::AbstractSyntaxTree::NodeVariantType > input_constraints, 
+                const std::vector< const Function* > call 
             ) : 
                 function( function ), 
                 expression( expression ), 
@@ -37,17 +37,17 @@ namespace Warp::CompilerRuntime
     {
         const size_t function;
         const size_t variant;
-        const std::vector< Warp::AbstractSyntaxTree::StrongFactor > inputs
-        const StrongFactor output;
+        const std::vector< Warp::AbstractSyntaxTree::LiteralType > inputs;
+        const Warp::AbstractSyntaxTree::LiteralType output;
     };
-
+    
     struct Log {
         std::vector< LogEntry > forward_inputs, backward_propigation;
     };
 
     struct Module {
         std::vector< Function > functions;
-        std::vector< NodeNodeVariantType > expressions, input_constraints, output_constraints;
+        std::vector< Warp::AbstractSyntaxTree::NodeVariantType > expressions, input_constraints, output_constraints;
     };
 }
 

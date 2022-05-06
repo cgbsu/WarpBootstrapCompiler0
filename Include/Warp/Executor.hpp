@@ -55,12 +55,6 @@ namespace Warp::Execution
 
         }
     };
-
-
-    auto make_executor( Warp::AbstractSyntaxTree::NodeVariantType )
-    {
-        return 
-    }
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_EXECUTOR_HPP
