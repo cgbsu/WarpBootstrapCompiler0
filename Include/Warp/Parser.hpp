@@ -15,6 +15,7 @@ namespace Warp::Parser
         constexpr static const auto factor = term< NonTerminalTerms::Factor >;
         constexpr static const auto sum = term< NonTerminalTerms::Sum >;
         constexpr static const auto parenthesis_scope = term< NonTerminalTerms::ParenthesisScope >;
+        constexpr static const auto function_alternative = term< NonTerminalTerms::FunctionAlternative >;
 
         constexpr static const auto identifier_term = term< RegexLiteralTerms::Identifier >;
 
@@ -31,8 +32,6 @@ namespace Warp::Parser
         constexpr static const auto divide_term = ctpg::char_term( Warp::Utilities::to_char( 
                     ExpressionOperator::FactorDivide ), 2, ctpg::associativity::ltor 
             );
-
-
         constexpr static const auto left_parenthesis_term = ctpg::char_term( Warp::Utilities::to_char( 
                     ScopeOperators::OpenParenthesis ), 4, ctpg::associativity::ltor 
             );
@@ -62,7 +61,8 @@ namespace Warp::Parser
                 ctpg::nterms( 
                         factor, 
                         sum, 
-                        parenthesis_scope 
+                        parenthesis_scope, 
+                        function_alternative 
                     ), 
                 ctpg::rules( 
                         factor( term< RegexLiteralTerms::NaturalNumber > ) 

@@ -1,4 +1,4 @@
-#include <Warp/AbstractSyntaxTreeUtilities.hpp>
+#include <Warp/Function.hpp>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP
@@ -11,10 +11,22 @@ namespace Warp::Parser
         Identifier = 1
     };
 
-    enum class NonTerminalTerms {
+    enum class NonTerminalTerms
+    {
         Factor = 0, 
         Sum = 1, 
         ParenthesisScope = 2, 
+        Comparison = 3, 
+        Negation = 4, 
+        LogicalOperation = 5 
+    };
+
+    enum class StringTerms
+    {
+        LetKeyword = 0, 
+        And = 1, 
+        Or = 2, 
+        Not = 3 
     };
 
     template< auto LiteralParameterTypeParameterConstant >
@@ -57,6 +69,7 @@ namespace Warp::Parser
         constexpr static const auto term = ctpg::nterm< StorageType >( name );
     };
 
+
     template<>
     struct Term< NonTerminalTerms::Sum >
     {
@@ -71,6 +84,42 @@ namespace Warp::Parser
         using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
         constexpr static const char name[] = "ParenthesisScope";
         constexpr static const auto term = ctpg::nterm< StorageType >( name );
+    };
+
+    template<>
+    struct Term< NonTerminalTerms::And >
+    {
+        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
+        constexpr static const char name[] = "And";
+        constexpr static const auto term = ctpg::nterm< StorageType >( name );
+    };
+
+    template<>
+    struct Term< NonTerminalTerms::Or >
+    {
+        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
+        constexpr static const char name[] = "Or";
+        constexpr static const auto term = ctpg::nterm< StorageType >( name );
+    };
+
+    template< 
+            auto PriorityParameterConstant, 
+            typename TermParameterType, 
+            TermParameterType RawTermParameterConstant 
+        >
+    auto forward_term() {
+        return 0;
+    }
+
+    template< auto PriorityParameterConstant, auto RawTermParameterConstant >
+    auto forward_term() {
+        return 0;
+    }
+
+    template< auto PriorityParameterConstant, auto... TermParameterConstants >
+    struct TermBuilder
+    {
+        constexpr static const auto priority = PriorityParameterConstant;
     };
 }
 
