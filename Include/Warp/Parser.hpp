@@ -39,7 +39,6 @@ namespace Warp::Parser
                     ScopeOperators::CloseParenthesis ), 4, ctpg::associativity::ltor 
             );
 
-        // constexpr static const auto terms = 
         using TermsType = typename Warp::Parser::TermBuilder< 
                 void, 
                 1, 
@@ -64,7 +63,7 @@ namespace Warp::Parser
                 NonTerminalTerms::ParenthesisScope 
             >;
 
-        constexpr static const auto terms_type = TermsType::to_tuple();
+        constexpr static const auto terms = TermsType::to_tuple();
         constexpr static const auto non_terminal_terms = NonTerminalTermsType::to_tuple();
 
         template< auto ParameterConstant >
@@ -72,22 +71,24 @@ namespace Warp::Parser
 
         constexpr static const auto parser = ctpg::parser( 
                 factor, 
-                ctpg::terms( 
-                        multiply_term, 
-                        divide_term, 
-                        plus_term, 
-                        minus_term, 
-                        term< RegexLiteralTerms::NaturalNumber >, 
-                        identifier_term, 
-                        left_parenthesis_term, 
-                        right_parenthesis_term  
-                    ), 
-                ctpg::nterms( 
-                        factor, 
-                        sum, 
-                        parenthesis_scope //, 
-                        // function_alternative 
-                    ), 
+                // ctpg::terms( 
+                //         multiply_term, 
+                //         divide_term, 
+                //         plus_term, 
+                //         minus_term, 
+                //         term< RegexLiteralTerms::NaturalNumber >, 
+                //         identifier_term, 
+                //         left_parenthesis_term, 
+                //         right_parenthesis_term  
+                //     ), 
+                terms, 
+                // ctpg::nterms( 
+                //         factor, 
+                //         sum, 
+                //         parenthesis_scope //, 
+                //         // function_alternative 
+                //     ), 
+                non_terminal_terms, 
                 ctpg::rules( 
                         factor( term< RegexLiteralTerms::NaturalNumber > ) 
                                 >= []( auto token ) {
