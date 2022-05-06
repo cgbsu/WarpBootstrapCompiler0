@@ -164,12 +164,13 @@ namespace Warp::Parser
     };
 
     template< 
-            char NodeTypeParameterConstant
+            typename ParameterType, 
+            ParameterType NodeTypeParameterConstant
             // auto AssociativityParameterConstant = ctpg::associativity::ltor
         >
     struct TermForwarder< 
                 TermBuilderType::NoPriority, 
-                char, 
+                ParameterType, 
                 NodeTypeParameterConstant
                 // AssociativityParameterConstant 
             > {
@@ -227,7 +228,7 @@ namespace Warp::Parser
             auto TermTypeParameterParameterConstant//, 
             // auto AssociativityParameterConstant = ctpg::associativity::ltor
         >
-    auto forward_term()
+    constexpr auto forward_term()
     {
         return TermForwarder< 
                 PriorityParameterConstant, 
@@ -275,7 +276,7 @@ namespace Warp::Parser
     {
         constexpr static const auto priority = PriorityParameterConstant;
         using ThisType = TermBuilder< PreviousParameterType, PriorityParameterConstant, TermParameterConstants... >;
-        template< auto NextPriorityParameterConstant = PriorityParameterConstant + 1 >
+        template< auto NextPriorityParameterConstant >//= PriorityParameterConstant + 1 >
         struct Next
         {
             template< auto... NextTermsParameterConstant >
@@ -319,7 +320,7 @@ namespace Warp::Parser
     {
         constexpr static const auto priority = PriorityParameterConstant;
         using ThisType = TermBuilder< void, PriorityParameterConstant, TermParameterConstants... >;
-        template< auto NextPriorityParameterConstant = PriorityParameterConstant + 1 >
+        template< auto NextPriorityParameterConstant  >// = PriorityParameterConstant + 1 >
         struct Next
         {
             template< auto... NextTermsParameterConstant >

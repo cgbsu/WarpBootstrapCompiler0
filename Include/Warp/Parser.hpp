@@ -39,6 +39,33 @@ namespace Warp::Parser
                     ScopeOperators::CloseParenthesis ), 4, ctpg::associativity::ltor 
             );
 
+        // constexpr static const auto terms = 
+        using TermsType = typename Warp::Parser::TermBuilder< 
+                void, 
+                1, 
+                ExpressionOperator::SumAdd, 
+                ExpressionOperator::SumSubtract 
+            >::Next< 2 >::TermsType< 
+                    ExpressionOperator::FactorMultiply, 
+                    ExpressionOperator::FactorDivide 
+                >::Next< 3 >::TermsType< 
+                        ScopeOperators::OpenParenthesis, 
+                        ScopeOperators::CloseParenthesis 
+                    >::Next< TermBuilderType::NoPriority >::TermsType< 
+                            RegexLiteralTerms::Identifier, 
+                            RegexLiteralTerms::NaturalNumber 
+                        >;
+
+        using NonTerminalTermsType = TermBuilder< 
+                void, 
+                TermBuilderType::NoPriority, 
+                NonTerminalTerms::Factor, 
+                NonTerminalTerms::Sum, 
+                NonTerminalTerms::ParenthesisScope 
+            >;
+
+        constexpr static const auto terms_type = TermsType::to_tuple();
+        constexpr static const auto non_terminal_terms = NonTerminalTermsType::to_tuple();
 
         template< auto ParameterConstant >
         using ResolvedType = typename TypeResolverParameterType< ParameterConstant >::Type;
