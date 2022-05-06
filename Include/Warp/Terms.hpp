@@ -81,106 +81,185 @@ namespace Warp::Parser
     STRING_TERM( BiCondition, "<->" );
     STRING_TERM( Implies, "->" );
 
-    /*
-    template<>
-    struct Term< RegexLiteralTerms::NaturalNumber >
-    {
-        constexpr const static char regex[] = "[0-9][0-9]*";
-        constexpr const static char name[] = "NaturalNumber";
-        constexpr const static auto term = ctpg::regex_term< regex >{ name };
-        constexpr const static auto literal_type = RegexLiteralTerms::NaturalNumber;
-    };
-
-    template<>
-    struct Term< RegexLiteralTerms::Identifier >
-    {
-        constexpr const static char regex[] = "[a-zA-Z\\_][a-zA-Z0-9\\_]*";
-        constexpr const static char name[] = "Identifier";
-        constexpr const static auto term = ctpg::regex_term< regex >{ name };
-        constexpr const static auto literal_type = RegexLiteralTerms::Identifier;
-    };
-
-
-    template<>
-    struct DefaultTypes< RegexLiteralTerms::Identifier > {
-        using Type = Warp::Utilities::HeapStringType;
-    };
-
-    // Convert enum value to string? I know there is a library to do this.
-    template<>
-    struct Term< NonTerminalTerms::Factor >
-    {
-        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
-        constexpr static const char name[] = "Factor";
-        constexpr static const auto term = ctpg::nterm< StorageType >( name );
-    };
-
-
-    template<>
-    struct Term< NonTerminalTerms::Sum >
-    {
-        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
-        constexpr static const char name[] = "Sum";
-        constexpr static const auto term = ctpg::nterm< StorageType >( name );
-    };
-
-    template<>
-    struct Term< NonTerminalTerms::ParenthesisScope >
-    {
-        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
-        constexpr static const char name[] = "ParenthesisScope";
-        constexpr static const auto term = ctpg::nterm< StorageType >( name );
-    };
-
-    template<>
-    struct Term< NonTerminalTerms::And >
-    {
-        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
-        constexpr static const char name[] = "And";
-        constexpr static const auto term = ctpg::nterm< StorageType >( name );
-    };
-
-    template<>
-    struct Term< NonTerminalTerms::Or >
-    {
-        using StorageType = Warp::AbstractSyntaxTree::NodeVariantType;
-        constexpr static const char name[] = "Or";
-        constexpr static const auto term = ctpg::nterm< StorageType >( name );
-    };
-
     template< 
             auto PriorityParameterConstant, 
-            typename TermParameterType, 
-            TermParameterType RawTermParameterConstant 
+            typename ParameterType,  
+            ParameterType NodeTypeParameterConstant
+            // auto AssociativityParameterConstant = ctpg::associativity::ltor
         >
     struct TermForwarder
     {
-        
+        constexpr static const auto term = ctpg::char_term( 
+                Warp::Utilities::to_char( NodeTypeParameterConstant ), 
+                PriorityParameterConstant, 
+                ctpg::associativity::ltor 
+                // AssociativityParameterConstant
+            );
+    };
+
+    template< 
+            auto PriorityParameterConstant, 
+            RegexLiteralTerms NodeTypeParameterConstant
+            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
+        >
+    struct TermForwarder< 
+                PriorityParameterConstant, 
+                RegexLiteralTerms, 
+                NodeTypeParameterConstant
+                // AssociativityParameterConstant 
+            > {
+        using TermDataType = Term< NodeTypeParameterConstant >;
+        constexpr const static auto term = ctpg::regex_term< TermDataType::regex >{ 
+                TermDataType::name, 
+                PriorityParameterConstant//, 
+                // ctpg::associativity::ltor 
+            };
+    };
+
+    template< 
+            auto PriorityParameterConstant, 
+            NonTerminalTerms NodeTypeParameterConstant
+            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
+        >
+    struct TermForwarder< 
+                PriorityParameterConstant, 
+                NonTerminalTerms, 
+                NodeTypeParameterConstant
+                // AssociativityParameterConstant 
+            > {
+        using TermDataType = Term< NodeTypeParameterConstant >;
+        constexpr const static auto term = ctpg::nterm< typename TermDataType::StorageType >{ 
+                TermDataType::name, 
+                PriorityParameterConstant//, 
+            };
+    };
+
+    template< 
+            auto PriorityParameterConstant, 
+            StringTerms NodeTypeParameterConstant
+            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
+        >
+    struct TermForwarder< 
+                PriorityParameterConstant, 
+                StringTerms, 
+                NodeTypeParameterConstant
+                // AssociativityParameterConstant 
+            > {
+        using TermDataType = Term< NodeTypeParameterConstant >;
+        constexpr const static auto term = ctpg::string_term{ 
+                TermDataType::string, 
+                PriorityParameterConstant, 
+                ctpg::associativity::ltor 
+            };
+    };
+
+    // NO PRIORITY //
+
+    enum class TermBuilderType {
+        NoPriority
+    };
+
+    template< 
+            char NodeTypeParameterConstant
+            // auto AssociativityParameterConstant = ctpg::associativity::ltor
+        >
+    struct TermForwarder< 
+                TermBuilderType::NoPriority, 
+                char, 
+                NodeTypeParameterConstant
+                // AssociativityParameterConstant 
+            > {
+        constexpr static const auto term = ctpg::char_term( 
+                Warp::Utilities::to_char( NodeTypeParameterConstant ) 
+            );
+    };
+
+    template< 
+            RegexLiteralTerms NodeTypeParameterConstant 
+            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
+        >
+    struct TermForwarder< 
+                TermBuilderType::NoPriority, 
+                RegexLiteralTerms, 
+                NodeTypeParameterConstant
+                // AssociativityParameterConstant 
+            > {
+        using TermDataType = Term< NodeTypeParameterConstant >;
+        constexpr const static auto term = ctpg::regex_term< TermDataType::regex >{ TermDataType::name };
+    };
+
+    template< 
+            NonTerminalTerms NodeTypeParameterConstant
+            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
+        >
+    struct TermForwarder< 
+                TermBuilderType::NoPriority, 
+                NonTerminalTerms, 
+                NodeTypeParameterConstant
+                // AssociativityParameterConstant 
+            > {
+        using TermDataType = Term< NodeTypeParameterConstant >;
+        constexpr const static auto term = ctpg::nterm< typename TermDataType::StorageType >{ TermDataType::name };
+    };
+
+    template< 
+            StringTerms NodeTypeParameterConstant
+            // auto AssociativityParameterConstant = ctpg::associativity::ltor 
+        >
+    struct TermForwarder< 
+                TermBuilderType::NoPriority, 
+                StringTerms, 
+                NodeTypeParameterConstant
+                // AssociativityParameterConstant 
+            > {
+        using TermDataType = Term< NodeTypeParameterConstant >;
+        constexpr const static auto term = ctpg::string_term{ TermDataType::string };
     };
 
 
-    template< 
-            auto PriorityParameterConstant, 
-            typename TermParameterType 
-        >
-    auto forward_term( TermParameterType term ) {
-        static_assert( false, "Here be dragons! Attemt to define a term using an unkown type!" );
-        return 0;
-    }
-
 
     template< 
             auto PriorityParameterConstant, 
-            typename TermParameterType 
+            auto TermTypeParameterParameterConstant//, 
+            // auto AssociativityParameterConstant = ctpg::associativity::ltor
         >
-    auto forward_term( TermParameterType term ) {
+    auto forward_term()
+    {
+        return TermForwarder< 
+                PriorityParameterConstant, 
+                decltype( TermTypeParameterParameterConstant ), 
+                // Warp::Utilities::CleanType< 
+                        // std::decay_t< decltype( TermTypeParameterParameterConstant ), 
+                    // >, 
+                TermTypeParameterParameterConstant//, 
+                // AssociativityParameterConstant 
+            >::term;
     }
 
-    template< auto PriorityParameterConstant, auto... TermParameterConstants >
+
+    template< typename PreviousParameterType, auto PriorityParameterConstant, auto... TermParameterConstants >
     struct TermBuilder
     {
         constexpr static const auto priority = PriorityParameterConstant;
-    };*/
+        using ThisType = TermBuilder< PreviousParameterType, PriorityParameterConstant, TermParameterConstants... >;
+        template< auto NextPriorityParameterConstant = PriorityParameterConstant + 1 >
+        struct Next
+        {
+            template< auto... NextTermsParameterConstant >
+            using TermsType = TermBuilder< 
+                    ThisType, 
+                    NextPriorityParameterConstant, 
+                    NextTermsParameterConstant... 
+                >;
+        };
+        constexpr static auto to_tuple()
+        {
+            return std::tuple_cat( 
+                    std::tuple( forward_term< PriorityParameterConstant, TermParameterConstants >()... ), 
+                    PreviousParameterType::to_tuple() 
+                );
+        }
+    };
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP
