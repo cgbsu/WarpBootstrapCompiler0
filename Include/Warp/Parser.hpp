@@ -151,7 +151,11 @@ namespace Warp::Parser
                                 }, 
                         non_terminal_term< LogicalOperation >( term< BooleanOperator::LogicalNot >, non_terminal_term< LogicalOperation > )
                                 >= []( auto, auto logical_expression ) {
-                                    Warp::Utilities::allocate_node< BooleanOperator::LogicalNot >( logical_expression );
+                                    return Warp::Utilities::allocate_node< BooleanOperator::LogicalNot >( logical_expression );
+                                }, 
+                        non_terminal_term< LogicalOperation >( term< BooleanOperator::LogicalNot >, term< BooleanOperator::LogicalNot >, non_terminal_term< LogicalOperation > )
+                                >= []( auto, auto, auto logical_expression ) {
+                                    return logical_expression;
                                 }
                 )
         );
