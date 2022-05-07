@@ -14,6 +14,7 @@ namespace Warp::Parser
         using enum RegexLiteralTerms;
         using enum StringTerms;
         using enum NonTerminalTerms;
+        using enum BooleanOperator;
 
         using TermsType = EasySafeTermsType< 
                 SumAdd, 
@@ -21,13 +22,13 @@ namespace Warp::Parser
             >::AddOnePriority< 
                     FactorMultiply, 
                     FactorDivide 
-                >::AddOnePriority< 
-                        BiCondition, 
-                        Implies 
-                    >::AddOnePriority< 
-                            Or 
-                        >::AddOnePriority< 
-                                And 
+                // >::AddOnePriority< 
+                //         BiCondition, 
+                //         Implies 
+                //     >::AddOnePriority< 
+                //             Or 
+                //         >::AddOnePriority< 
+                //                 And 
                         >::AddOnePriority<  
                                 BooleanOperator::LogicalNot 
                             >::AddOnePriority< 
@@ -35,9 +36,9 @@ namespace Warp::Parser
                                     CloseParenthesis 
                                 >::AddOnePriority<
                                         Identifier 
-                                    >::AddOnePriority< 
-                                            BooleanLiteral
+                                    // >::AddOnePriority< 
                                         >::NoPriority< 
+                                            BooleanLiteral, 
                                                 NaturalNumber 
                                             >;
 

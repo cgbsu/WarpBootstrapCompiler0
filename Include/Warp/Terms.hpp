@@ -6,7 +6,8 @@
 
 namespace Warp::Parser
 {
-    enum class RegexLiteralTerms {
+    enum class RegexLiteralTerms
+    {
         NaturalNumber = 0, 
         Identifier = 1, 
         BooleanLiteral = 2 
@@ -167,9 +168,7 @@ namespace Warp::Parser
             );
     };
 
-    template< 
-            RegexLiteralTerms NodeTypeParameterConstant 
-        >
+    template< RegexLiteralTerms NodeTypeParameterConstant >
     struct TermForwarder< 
                 TermBuilderType::NoPriority, 
                 RegexLiteralTerms, 

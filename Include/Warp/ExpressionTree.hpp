@@ -67,6 +67,7 @@ namespace Warp::AbstractSyntaxTree
     struct Node< NodeType::Literal >;
     struct Node< NodeType::BooleanLiteral >;
     struct Node< NodeType::Identifier >;
+    struct Node< Warp::Parser::BooleanOperator::LogicalNot >;
     struct Node< Warp::Parser::BooleanOperator::LogicalAnd >;
     struct Node< Warp::Parser::BooleanOperator::LogicalOr >;
     struct Node< Warp::Parser::BooleanOperator::LogicalBiConditional >;
@@ -81,6 +82,7 @@ namespace Warp::AbstractSyntaxTree
             Node< NodeType::Literal >, 
             Node< NodeType::BooleanLiteral >, 
             Node< NodeType::Identifier >, 
+            Node< Warp::Parser::BooleanOperator::LogicalNot >, 
             Node< Warp::Parser::BooleanOperator::LogicalAnd >, 
             Node< Warp::Parser::BooleanOperator::LogicalOr >, 
             Node< Warp::Parser::BooleanOperator::LogicalBiConditional >, 

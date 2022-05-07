@@ -35,10 +35,10 @@ namespace Warp::Parser
     enum class BooleanOperator : char 
     {
         LogicalNot = exclimation_point, 
-        LogicalAnd, // = 0, 
-        LogicalOr, // = 1, 
-        LogicalBiConditional, // = 2, 
-        LogicalImplies //= 3
+        LogicalAnd = '&', // = 0, 
+        LogicalOr = '|', // = 1, 
+        LogicalBiConditional = '@', // = 2, 
+        LogicalImplies = '#'//= 3
     };
 
     enum class ScopeOperators : char 
