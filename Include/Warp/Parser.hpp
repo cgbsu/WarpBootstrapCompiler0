@@ -50,7 +50,8 @@ namespace Warp::Parser
                 ParenthesisScope, 
                 LogicalOperation, 
                 BooleanAnd, 
-                BooleanOr  
+                BooleanOr//, 
+                // ExtendedBooleanLogic 
             >;
 
         template< auto ParameterConstant >
@@ -216,6 +217,7 @@ namespace Warp::Parser
                                 >=[] ( auto and_expression ) {
                                     return and_expression;
                                 }, 
+                        
                         non_terminal_term< LogicalOperation >( term< LogicalNot >, non_terminal_term< LogicalOperation > )
                                 >= []( auto, auto logical_expression ) {
                                     return Warp::Utilities::allocate_node< LogicalNot >( logical_expression );
@@ -223,6 +225,20 @@ namespace Warp::Parser
                         non_terminal_term< LogicalOperation >( term< LogicalNot >, term< LogicalNot >, non_terminal_term< LogicalOperation > )
                                 >= []( auto, auto, auto logical_expression ) {
                                     return logical_expression;
+                                }, 
+                        non_terminal_term< LogicalOperation >( non_terminal_term< LogicalOperation >, term< BiCondition >, non_terminal_term< LogicalOperation > )
+                                >= []( auto left, auto, auto right ) {
+                                        return std::move( Warp::Utilities::allocate_node< LogicalBiConditional >( 
+                                            left, 
+                                            right 
+                                        ) );
+                                }, 
+                        non_terminal_term< LogicalOperation >( non_terminal_term< LogicalOperation >, term< Implies >, non_terminal_term< LogicalOperation > )
+                                >= []( auto left, auto, auto right ) {
+                                        return std::move( Warp::Utilities::allocate_node< LogicalImplies >( 
+                                            left, 
+                                            right 
+                                        ) );
                                 }
                 )
         );

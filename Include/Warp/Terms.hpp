@@ -21,7 +21,8 @@ namespace Warp::Parser
         Comparison = 3, 
         LogicalOperation = 5, 
         BooleanAnd = 6, 
-        BooleanOr = 7 
+        BooleanOr = 7, 
+        ExtendedBooleanLogic = 8 
     };
 
     enum class StringTerms
