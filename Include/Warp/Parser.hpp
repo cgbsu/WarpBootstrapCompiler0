@@ -51,7 +51,7 @@ namespace Warp::Parser
                 LogicalOperation, 
                 BooleanAnd, 
                 BooleanOr//, 
-                // ExtendedBooleanLogic 
+                // BooleanParenthesisScope  
             >;
 
         template< auto ParameterConstant >
@@ -239,6 +239,18 @@ namespace Warp::Parser
                                             left, 
                                             right 
                                         ) );
+                                }, 
+                        non_terminal_term< LogicalOperation >( term< OpenParenthesis >, non_terminal_term< LogicalOperation >, term< CloseParenthesis > )
+                                >= []( auto, auto logical_expression, auto ) {
+                                    return logical_expression;
+                                }, 
+                        non_terminal_term< LogicalOperation >( term< OpenParenthesis >, non_terminal_term< BooleanAnd >, term< CloseParenthesis > )
+                                >= []( auto, auto logical_expression, auto ) {
+                                    return logical_expression;
+                                }, 
+                        non_terminal_term< LogicalOperation >( term< OpenParenthesis >, non_terminal_term< BooleanOr >, term< CloseParenthesis > )
+                                >= []( auto, auto logical_expression, auto ) {
+                                    return logical_expression;
                                 }
                 )
         );
