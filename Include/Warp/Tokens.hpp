@@ -34,7 +34,7 @@ namespace Warp::Parser
 
     enum class BooleanOperator : char 
     {
-        Not = exclimation_point, 
+        LogicalNot = exclimation_point, 
         LogicalAnd, // = 0, 
         LogicalOr, // = 1, 
         LogicalBiConditional, // = 2, 

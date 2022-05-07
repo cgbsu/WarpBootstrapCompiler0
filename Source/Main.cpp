@@ -21,6 +21,12 @@ int main( int argc, char** args )
             // std::cout << "\nResult: " 
             //         << data 
             //         << "\n\n";
+
+            auto data = Warp::Analysis::abstract_syntax_tree_callback< Warp::Analysis::Executor, bool >( parse_result.value() );
+            std::cout << "\nResult: " 
+                    << data 
+                    << "\n\n";
+
         }
         else
             std::cerr << "Error failed to parse!\n";

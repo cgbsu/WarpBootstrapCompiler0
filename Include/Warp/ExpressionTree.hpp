@@ -95,7 +95,7 @@ namespace Warp::AbstractSyntaxTree
     struct Taggable
     {
         template< typename NodeTagTypeParameterType >
-        constexpr const std::optional< NodeTagTypeParameterType > tag_as() const
+        constexpr const std::optional< NodeTagTypeParameterType > tag_as() const noexcept 
         {
             if constexpr( 
                         auto result = std::any_cast< NodeTagTypeParameterType >( type_tag ); 
@@ -106,7 +106,7 @@ namespace Warp::AbstractSyntaxTree
         }
         // Includes runtime check, cant do it at compile time :( //
         template< typename NodeTagTypeParameterType >
-        const std::optional< NodeTagTypeParameterType > safe_tag_as() const
+        const std::optional< NodeTagTypeParameterType > safe_tag_as() const noexcept 
         {
             if( tag_type_id() == typeid( NodeTagTypeParameterType ).hash_code() )
                 return tag_as< NodeTagTypeParameterType >();
@@ -117,14 +117,14 @@ namespace Warp::AbstractSyntaxTree
             return type_tag().type().hash_code();
         }
         protected: 
-            constexpr virtual const std::any type_tag() const = 0;
+            constexpr virtual const std::any type_tag() const noexcept = 0;
     };
 
     template< auto TagParameterConstant >
     struct BaseNode : public Taggable
     {
         protected: 
-            constexpr virtual const std::any type_tag() const override final {
+            constexpr virtual const std::any type_tag() const noexcept override final {
                 return TagParameterConstant;
             }
     };
@@ -134,8 +134,15 @@ namespace Warp::AbstractSyntaxTree
     {
         const NodeVariantType left;
         const NodeVariantType right;
-        constexpr LeftRight( const NodeVariantType left, const NodeVariantType right ) 
+        constexpr LeftRight( const NodeVariantType left, const NodeVariantType right ) noexcept 
                 : left( left ), right( right ) {}    
+    };
+
+    template< auto TagParameterConstant >
+    struct UnaryNode : public BaseNode< TagParameterConstant >
+    {
+        const NodeVariantType child;
+        constexpr UnaryNode( const NodeVariantType child ) noexcept : child( child ) {}    
     };
 
 
@@ -165,6 +172,24 @@ namespace Warp::AbstractSyntaxTree
         constexpr Node( Node< NodeType::Identifier > const& other ) noexcept : name( other.name ) {}
     };
 
+    #define DEFINE_UNARY_NODE_CUSTOM_OPERATION( OPERATION_TYPE, VALUE, OPERHAND_TYPE, CUSTOM_OPERATION ) \
+        template<> \
+        struct Node< VALUE > : public UnaryNode< VALUE > \
+        { \
+            using BaseType = UnaryNode< VALUE >; \
+            constexpr static const auto operate( OPERHAND_TYPE operhand ) noexcept { \
+                return CUSTOM_OPERATION( operhand ); \
+            } \
+            constexpr static OPERATION_TYPE operation = VALUE ; \
+            constexpr Node( const NodeVariantType child ) noexcept \
+                    : BaseType( child ) {} \
+            constexpr Node( Node< VALUE > const& other ) noexcept \
+                    : BaseType( other.child ) {} \
+            constexpr Node( Node< VALUE >&& other ) noexcept \
+                    : BaseType( other.child ) {} \
+            constexpr Node& operator=( Node< VALUE > const& other ) noexcept = default; \
+            constexpr Node& operator=( Node< VALUE >&& other ) noexcept = default; \
+        }
 
     #define DEFINE_BI_NODE( OPERATION_TYPE, VALUE, LEFT_OPERHAND_TYPE, RIGHT_OPERHAND_TYPE, OPERATOR ) \
         template<> \
@@ -181,6 +206,10 @@ namespace Warp::AbstractSyntaxTree
                 ) noexcept : BaseType( left, right ) {} \
             constexpr Node( Node< VALUE > const& other ) noexcept \
                     : BaseType( other.left, other.right ) {} \
+            constexpr Node( Node< VALUE >&& other ) noexcept \
+                    : BaseType( other.left, other.right ) {} \
+            constexpr Node& operator=( Node< VALUE > const& other ) noexcept = default; \
+            constexpr Node& operator=( Node< VALUE >&& other ) noexcept = default; \
         }
 
     #define DEFINE_BI_NODE_CUSTOM_OPERATION( OPERATION_TYPE, VALUE, LEFT_OPERHAND_TYPE, RIGHT_OPERHAND_TYPE, CUSTOM_OPERATION ) \
@@ -198,6 +227,10 @@ namespace Warp::AbstractSyntaxTree
                 ) noexcept : BaseType( left, right ) {} \
             constexpr Node( Node< VALUE > const& other ) noexcept \
                     : BaseType( other.left, other.right ) {} \
+            constexpr Node( Node< VALUE >&& other ) noexcept \
+                    : BaseType( other.left, other.right ) {} \
+            constexpr Node& operator=( Node< VALUE > const& other ) noexcept = default; \
+            constexpr Node& operator=( Node< VALUE >&& other ) noexcept = default; \
         }
 
 
@@ -209,6 +242,7 @@ namespace Warp::AbstractSyntaxTree
     DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalOr, bool, bool, || );
     DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalBiConditional, bool, bool, == );
     DEFINE_BI_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalImplies, bool, bool, Warp::Utilities::logical_implies );
+    DEFINE_UNARY_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalNot, bool, ! );
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_TREE_HPP

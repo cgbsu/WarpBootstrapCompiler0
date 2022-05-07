@@ -29,7 +29,7 @@ namespace Warp::Parser
                         >::AddOnePriority< 
                                 And 
                         >::AddOnePriority<  
-                                BooleanOperator::Not 
+                                BooleanOperator::LogicalNot 
                             >::AddOnePriority< 
                                     OpenParenthesis, 
                                     CloseParenthesis 
@@ -64,7 +64,7 @@ namespace Warp::Parser
         using ResolvedType = typename TypeResolverParameterType< ParameterConstant >::Type;
 
         constexpr static const auto parser = ctpg::parser( 
-                non_terminal_term< Factor >, 
+                non_terminal_term< LogicalOperation >, 
                 terms, 
                 non_terminal_terms, 
                 ctpg::rules( 
@@ -143,12 +143,15 @@ namespace Warp::Parser
                         
                         //////////////////////////////// Boolean Expressions ////////////////////////////////
 
-                        // Probably shouldent actually ever need thes in the language, but keepoing them at least for debugging. //
-                        non_terminal_term< Factor >( term< BooleanLiteral > ) 
+                        // Probably shouldent actually ever need thes in the language, but keeping them at least for debugging. //
+                        non_terminal_term< LogicalOperation >( term< BooleanLiteral > ) 
                                 >= []( auto token ) {
                                     return Warp::Utilities::allocate_boolean_literal_node( token );
+                                }, 
+                        non_terminal_term< LogicalOperation >( term< BooleanOperator::LogicalNot >, non_terminal_term< LogicalOperation > )
+                                >= []( auto, auto logical_expression ) {
+                                    Warp::Utilities::allocate_node< BooleanOperator::LogicalNot >( logical_expression );
                                 }
-                        
                 )
         );
     };
