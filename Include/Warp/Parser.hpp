@@ -15,6 +15,7 @@ namespace Warp::Parser
         using enum StringTerms;
         using enum NonTerminalTerms;
         using enum BooleanOperator;
+        using enum ComparisonOperator;
 
         using TermsType = EasySafeTermsType< 
                 SumAdd, 
@@ -29,17 +30,23 @@ namespace Warp::Parser
                             Or 
                         >::AddOnePriority< 
                                 And 
-                        >::AddOnePriority<  
-                                LogicalNot 
-                            >::AddOnePriority< 
-                                    OpenParenthesis, 
-                                    CloseParenthesis 
-                                >::AddOnePriority<
-                                        Identifier 
-                                    >::NoPriority< 
-                                            BooleanLiteral, 
-                                            NaturalNumber 
-                                        >;
+                            >::AddOnePriority<  
+                                    LogicalNot 
+                                >::AddOnePriority< 
+                                        ComparisonEqual, 
+                                        ComparisonLessThan, 
+                                        ComparisonGreaterThan, 
+                                        GreaterThanOrEqualTo, 
+                                        LessThanOrEqualTo 
+                                    >::AddOnePriority< 
+                                            OpenParenthesis, 
+                                            CloseParenthesis 
+                                        >::AddOnePriority<
+                                                Identifier 
+                                            >::NoPriority< 
+                                                    BooleanLiteral, 
+                                                    NaturalNumber 
+                                                >; // I feel like Im writing python here 0.0 //
 
         using NonTerminalTermsType = SafeTermsType< 
                 TermBuilderType::NoPriority, 
@@ -252,6 +259,9 @@ namespace Warp::Parser
                                 >= []( auto, auto logical_expression, auto ) {
                                     return logical_expression;
                                 }
+
+                        //////////////////////////////// Comparison Expressions ////////////////////////////////
+
                 )
         );
     };

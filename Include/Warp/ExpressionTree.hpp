@@ -64,29 +64,46 @@ namespace Warp::AbstractSyntaxTree
     struct Node< Warp::Parser::ExpressionOperator::FactorDivide >;
     struct Node< Warp::Parser::ExpressionOperator::SumAdd >;
     struct Node< Warp::Parser::ExpressionOperator::SumSubtract >;
+    
     struct Node< NodeType::Literal >;
     struct Node< NodeType::BooleanLiteral >;
     struct Node< NodeType::Identifier >;
+    
     struct Node< Warp::Parser::BooleanOperator::LogicalNot >;
     struct Node< Warp::Parser::BooleanOperator::LogicalAnd >;
     struct Node< Warp::Parser::BooleanOperator::LogicalOr >;
     struct Node< Warp::Parser::BooleanOperator::LogicalBiConditional >;
     struct Node< Warp::Parser::BooleanOperator::LogicalImplies >;
+    
+    struct Node< Warp::Parser::ComparisonOperator::ComparisonEqual >;
+    struct Node< Warp::Parser::ComparisonOperator::ComparisonLessThan >;
+    struct Node< Warp::Parser::ComparisonOperator::ComparisonGreaterThan >;
+    struct Node< Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo >;
+    struct Node< Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo >;
 
-
+    // It would be nice if I did not have to forward declare all of these 🤔 <-- also thats teh first time I have used an unicode emojii in C++ 😊 //
     using InternalNodeVariantType = Utilities::AutoVariant< 
+
             Node< Warp::Parser::ExpressionOperator::FactorMultiply >, 
             Node< Warp::Parser::ExpressionOperator::FactorDivide >, 
             Node< Warp::Parser::ExpressionOperator::SumAdd >, 
             Node< Warp::Parser::ExpressionOperator::SumSubtract >, 
+
             Node< NodeType::Literal >, 
             Node< NodeType::BooleanLiteral >, 
             Node< NodeType::Identifier >, 
+
             Node< Warp::Parser::BooleanOperator::LogicalNot >, 
             Node< Warp::Parser::BooleanOperator::LogicalAnd >, 
             Node< Warp::Parser::BooleanOperator::LogicalOr >, 
             Node< Warp::Parser::BooleanOperator::LogicalBiConditional >, 
             Node< Warp::Parser::BooleanOperator::LogicalImplies > 
+
+            Node< Warp::Parser::ComparisonOperator::ComparisonEqual >, 
+            Node< Warp::Parser::ComparisonOperator::ComparisonLessThan >, 
+            Node< Warp::Parser::ComparisonOperator::ComparisonGreaterThan >, 
+            Node< Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo >, 
+            Node< Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo > 
         >;
 
     using NodeVariantType = Utilities::NotSoUniquePointer< InternalNodeVariantType >;
@@ -240,11 +257,18 @@ namespace Warp::AbstractSyntaxTree
     DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::FactorDivide, auto, auto, / );
     DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::SumAdd, auto, auto, + );
     DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::SumSubtract, auto, auto, - );
+
     DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalAnd, bool, bool, && );
     DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalOr, bool, bool, || );
     DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalBiConditional, bool, bool, == );
     DEFINE_BI_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalImplies, bool, bool, Warp::Utilities::logical_implies );
     DEFINE_UNARY_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalNot, bool, ! );
+
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonEqual, auto, == );
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonLessThan, auto, < );
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonGreaterThan, auto, > );
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo, auto, <= );
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo, auto, >= );
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_TREE_HPP

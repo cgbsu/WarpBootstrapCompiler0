@@ -21,8 +21,7 @@ namespace Warp::Parser
         Comparison = 3, 
         LogicalOperation = 5, 
         BooleanAnd = 6, 
-        BooleanOr = 7//, 
-        // BooleanParenthesisScope = 8 
+        BooleanOr = 7
     };
 
     enum class StringTerms
@@ -33,6 +32,8 @@ namespace Warp::Parser
         Not = 3, 
         BiCondition = 4, 
         Implies = 5, 
+        GreaterThanOrEqualTo = 6, 
+        LessThanOrEqualTo = 7 
     };
 
     #define LITERAL_REGEX_TERM( TYPE, REGEX ) \
@@ -88,6 +89,10 @@ namespace Warp::Parser
     STRING_TERM( Or, "||" );
     STRING_TERM( BiCondition, "<->" );
     STRING_TERM( Implies, "->" );
+    STRING_TERM( GreaterThanOrEqualTo, ">=" );
+    STRING_TERM( LessThanOrEqualTo, "<=" );
+
+    // There are better ways to do this than using the types of the enums, but this is quick. //
 
     template< 
             auto PriorityParameterConstant, 

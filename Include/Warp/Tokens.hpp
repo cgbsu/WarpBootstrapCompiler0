@@ -13,6 +13,7 @@ namespace Warp::Parser
     constexpr static const char colon_token = ':';
     constexpr static const char semi_colon_token = ';';
     constexpr static const char exclimation_point = '!';
+    constexpr static const char equal_sign = '=';
 
     constexpr static const char open_parenthesis = '(';
     constexpr static const char close_parenthesis = ')';
@@ -35,10 +36,19 @@ namespace Warp::Parser
     enum class BooleanOperator : char 
     {
         LogicalNot = exclimation_point, 
-        LogicalAnd = '&', // = 0, 
-        LogicalOr = '|', // = 1, 
-        LogicalBiConditional = '@', // = 2, 
-        LogicalImplies = '#'//= 3
+        LogicalAnd, 
+        LogicalOr, 
+        LogicalBiConditional, 
+        LogicalImplies 
+    };
+
+    enum class ComparisonOperator : char 
+    {
+        ComparisonEqual = equal_sign, 
+        ComparisonLessThan = open_angle_bracket, 
+        ComparisonGreaterThan = close_angle_bracket, 
+        ComparisionLessThanOrEqualTo, 
+        ComparisionGreaterThanOrEqualTo, 
     };
 
     enum class ScopeOperators : char 
