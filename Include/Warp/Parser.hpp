@@ -22,25 +22,24 @@ namespace Warp::Parser
             >::AddOnePriority< 
                     FactorMultiply, 
                     FactorDivide 
-                // >::AddOnePriority< 
-                //         BiCondition, 
-                //         Implies 
-                //     >::AddOnePriority< 
-                //             Or 
-                //         >::AddOnePriority< 
-                //                 And 
+                >::AddOnePriority< 
+                        BiCondition, 
+                        Implies 
+                    >::AddOnePriority< 
+                            Or 
+                        >::AddOnePriority< 
+                                And 
                         >::AddOnePriority<  
-                                BooleanOperator::LogicalNot 
+                                LogicalNot 
                             >::AddOnePriority< 
                                     OpenParenthesis, 
                                     CloseParenthesis 
                                 >::AddOnePriority<
                                         Identifier 
-                                    // >::AddOnePriority< 
-                                        >::NoPriority< 
+                                    >::NoPriority< 
                                             BooleanLiteral, 
-                                                NaturalNumber 
-                                            >;
+                                            NaturalNumber 
+                                        >;
 
         using NonTerminalTermsType = SafeTermsType< 
                 TermBuilderType::NoPriority, 
@@ -49,7 +48,9 @@ namespace Warp::Parser
                 Factor, 
                 Sum, 
                 ParenthesisScope, 
-                LogicalOperation 
+                LogicalOperation, 
+                BooleanAnd, 
+                BooleanOr  
             >;
 
         template< auto ParameterConstant >
@@ -149,11 +150,45 @@ namespace Warp::Parser
                                 >= []( auto token ) {
                                     return Warp::Utilities::allocate_boolean_literal_node( token );
                                 }, 
-                        non_terminal_term< LogicalOperation >( term< BooleanOperator::LogicalNot >, non_terminal_term< LogicalOperation > )
-                                >= []( auto, auto logical_expression ) {
-                                    return Warp::Utilities::allocate_node< BooleanOperator::LogicalNot >( logical_expression );
+                        non_terminal_term< LogicalOperation >( non_terminal_term< LogicalOperation >, term< And >, non_terminal_term< LogicalOperation > )
+                                >= []( auto right, auto, auto left ) 
+                                {
+                                    return std::move( Warp::Utilities::allocate_node< LogicalAnd >( 
+                                            left, 
+                                            right 
+                                        ) );
                                 }, 
-                        non_terminal_term< LogicalOperation >( term< BooleanOperator::LogicalNot >, term< BooleanOperator::LogicalNot >, non_terminal_term< LogicalOperation > )
+                        // non_terminal_term< LogicalOperation >( non_terminal_term< LogicalOperation >, term< And >, term< BooleanLiteral > )
+                        //         >= []( auto logical_expression, auto, const auto& next_token ) 
+                        //         {
+                        //             return std::move( Warp::Utilities::allocate_node< LogicalAnd >( 
+                        //                     logical_expression, 
+                        //                     Warp::Utilities::allocate_boolean_literal_node( next_token ) 
+                        //                 ) );
+                        //         }, 
+                        // non_terminal_term< LogicalOperation >( non_terminal_term< BooleanAnd > )
+                        //         >=[] ( auto& and_expression ) {
+                        //             return and_expression;
+                        //         }, 
+                        // non_terminal_term< LogicalOperation >( non_terminal_term< BooleanAnd > ) 
+                        //     >= []( auto logical_expression ) {
+                        //     //DEBUGGGGGG@!!!!!!!!!!!!!!
+                        //             return Warp::Utilities::allocate_node< LogicalNot >( logical_expression );
+
+                        // }, 
+                        // non_terminal_term< LogicalOr >( non_terminal_term< LogicalAnd >, term< And >, non_terminal_term< LogicalOperation > )
+                        //         >= []( auto logical_expression, auto, const auto& next_token ) 
+                        //         {
+                        //             return Warp::Utilities::allocate_node< LogicalAnd >( 
+                        //                     logical_expression, 
+                        //                     return Warp::Utilities::allocate_boolean_literal_node( next_token );
+                        //                 );
+                        //         }, 
+                        non_terminal_term< LogicalOperation >( term< LogicalNot >, non_terminal_term< LogicalOperation > )
+                                >= []( auto, auto logical_expression ) {
+                                    return Warp::Utilities::allocate_node< LogicalNot >( logical_expression );
+                                }, 
+                        non_terminal_term< LogicalOperation >( term< LogicalNot >, term< LogicalNot >, non_terminal_term< LogicalOperation > )
                                 >= []( auto, auto, auto logical_expression ) {
                                     return logical_expression;
                                 }

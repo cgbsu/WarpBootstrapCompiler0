@@ -19,8 +19,9 @@ namespace Warp::Parser
         Sum = 1, 
         ParenthesisScope = 2, 
         Comparison = 3, 
-        Negation = 4, 
-        LogicalOperation = 5 
+        LogicalOperation = 5, 
+        BooleanAnd = 6, 
+        BooleanOr = 7 
     };
 
     enum class StringTerms
@@ -79,7 +80,9 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( ParenthesisScope, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( LogicalOperation, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Comparison, Warp::AbstractSyntaxTree::NodeVariantType );
-    NON_TERMINAL_TERM( Negation, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( BooleanAnd, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( BooleanOr, Warp::AbstractSyntaxTree::NodeVariantType );
+    // STRING_TERM( And, "&&" );
     STRING_TERM( And, "&&" );
     STRING_TERM( Or, "||" );
     STRING_TERM( BiCondition, "<->" );
