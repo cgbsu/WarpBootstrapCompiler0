@@ -24,7 +24,10 @@ namespace Warp::Parser
         BooleanOr = 7, 
         Parameter = 8, 
         ParameterList = 9, 
-        WarpFunctionAlternative = 10 
+        WarpFunctionAlternative = 10, 
+        WarpFunction = 11, 
+        WarpModule = 12, 
+        Arguments = 13 
     };
 
     enum class StringTerms
@@ -90,8 +93,11 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( BooleanAnd, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanOr, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Parameter, Warp::CompilerRuntime::Parameter );
-    NON_TERMINAL_TERM( ParameterList, std::vector< Warp::CompilerRuntime::Parameter > );
+    NON_TERMINAL_TERM( ParameterList, Warp::CompilerRuntime::IntermediateFunctionAlternative );
+    NON_TERMINAL_TERM( Arguments, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( WarpFunctionAlternative, Warp::CompilerRuntime::FunctionAlternative );
+    NON_TERMINAL_TERM( WarpFunction, Warp::CompilerRuntime::Function );
+    NON_TERMINAL_TERM( WarpModule, Warp::CompilerRuntime::Module );
     STRING_TERM( And, "&&" );
     STRING_TERM( Or, "||" );
     STRING_TERM( BiCondition, "<->" );

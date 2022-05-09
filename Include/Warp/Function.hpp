@@ -12,6 +12,11 @@ namespace Warp::CompilerRuntime
         Warp::AbstractSyntaxTree::NodeVariantType constraints;
     };
 
+    struct IntermediateFunctionAlternative {
+        Warp::Utilities::HashedStringType identifier;
+        std::vector< Parameter > input_constraints;
+    };
+
     struct FunctionAlternative
     {
         Function* function;
@@ -40,7 +45,7 @@ namespace Warp::CompilerRuntime
 
     struct Module {
         std::vector< Function > functions;
-        std::vector< Warp::AbstractSyntaxTree::NodeVariantType > expressions, input_constraints, output_constraints;
+        // std::vector< Warp::AbstractSyntaxTree::NodeVariantType > expressions, input_constraints, output_constraints;
     };
 }
 

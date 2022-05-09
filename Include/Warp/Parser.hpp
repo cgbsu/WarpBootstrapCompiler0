@@ -110,7 +110,10 @@ namespace Warp::Parser
                 BooleanOr, 
                 Comparison, 
                 ParameterList, 
-                WarpFunctionAlternative 
+                WarpFunctionAlternative, 
+                WarpFunction, 
+                WarpModule, 
+                Arguments
             >;
 
         template< auto ParameterConstant >
@@ -131,7 +134,7 @@ namespace Warp::Parser
                 auto constraints 
             ) 
         {
-                parameter_list.push_back( Warp::CompilerRuntime::Parameter{ 
+                parameter_list.input_constraints.push_back( Warp::CompilerRuntime::Parameter{ 
                         Warp::Utilities::hash_string( parameter_name ), 
                         constraints 
                     } );
@@ -139,7 +142,7 @@ namespace Warp::Parser
         }
 
         constexpr static const auto parser = ctpg::parser( 
-                non_terminal_term< ParameterList >, 
+                non_terminal_term< Arguments >, 
                 terms, 
                 non_terminal_terms, 
                 ctpg::rules( 
@@ -313,37 +316,34 @@ namespace Warp::Parser
 
                         // TODO: Add types/concepts with additional color, e.g my_parameter : natural : my_parameter < 128
 
-                        non_terminal_term< ParameterList >( term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< Comparison > )
-                                >= []( auto parameter_name, auto, auto comparison_constraint ) {
-                                        std::vector< Warp::CompilerRuntime::Parameter > parameter_list;
+                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< Comparison > )
+                                >= []( auto parameter_list, auto parameter_name, auto, auto comparison_constraint ) {
                                         return add_to_parameter_list( parameter_list, parameter_name, comparison_constraint );
                                 }, 
-                        non_terminal_term< ParameterList >( term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< LogicalOperation > )
-                                >= []( auto parameter_name, auto, auto constraints ) {
-                                        std::vector< Warp::CompilerRuntime::Parameter > parameter_list;
+                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< LogicalOperation > )
+                                >= []( auto parameter_list, auto parameter_name, auto, auto constraints ) {
                                         return add_to_parameter_list( parameter_list, parameter_name, constraints );
                                 },
-                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< Comparison > )
-                                >= []( auto parameter_list, auto, auto parameter_name, auto, auto comparison_constraint ) {
-                                        return add_to_parameter_list( parameter_list, parameter_name, comparison_constraint );
+                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter > )
+                                >= []( auto parameter_list, auto ) {
+                                    return parameter_list;
                                 }, 
-                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< LogicalOperation > )
-                                >= []( auto parameter_list, auto, auto parameter_name, auto, auto constraints ) {
-                                        return add_to_parameter_list( parameter_list, parameter_name, constraints );
+                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter > )
+                                >= []( auto parameter_list, auto ) {
+                                    return parameter_list;
                                 }, 
-                        
+
+                        non_terminal_term< Arguments >( non_terminal_term< ParameterList >, term< CloseParenthesis > )
+                                >= []( auto parameter_list, auto ) {
+                                    return parameter_list;
+                                }, 
+
+
                         //////////////////////////////// Functions::Alternatives ////////////////////////////////
 
-                        non_terminal_term< WarpFunctionAlternative >( term< KeywordLet >, term< Identifier >, term< OpenParenthesis >, non_terminal_term< ParameterList >, term< CloseParenthesis >, term< FunctionDefintionComplete >, non_terminal_term< Factor >, term< FunctionDefintionComplete > )
-                                >= []( auto let, auto function_name, auto open_parenthesis, auto parameter_list, auto close_parenthesis, auto function_definition_operator, auto expression, auto semi_colon )
-                                {
-                                    return std::move( Warp::CompilerRuntime::FunctionAlternative{ 
-                                            ( Warp::CompilerRuntime::Function* ) nullptr, 
-                                            expression, 
-                                            Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >(), 
-                                            parameter_list, 
-                                            std::vector< Warp::CompilerRuntime::Function* >{} 
-                                        } );
+                        non_terminal_term< ParameterList >( term< KeywordLet >, term< Identifier >, term< OpenParenthesis > )
+                                >= []( auto let, auto function_name, auto open_parenthesis ) {
+                                    return Warp::CompilerRuntime::IntermediateFunctionAlternative{ Warp::Utilities::hash_string( function_name ) };
                                 }
 
                         //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
