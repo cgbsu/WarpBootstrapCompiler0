@@ -59,6 +59,8 @@ namespace Warp::Parser
         using enum FunctionOperators;
 
         using TermsType = EasySafeTermsType< 
+                                                FunctionDefinitionOperator 
+            >::AddOnePriority< 
                 SumAdd, 
                 SumSubtract 
             >::AddOnePriority< 
@@ -82,21 +84,21 @@ namespace Warp::Parser
                                     >::AddOnePriority< 
                                             OpenParenthesis, 
                                             CloseParenthesis 
-                                        >::AddOnePriority< 
-                                                FunctionParameterConstaraint 
                                             >::AddOnePriority< 
-                                                    FunctionParameterNextParameter 
-                                                >::AddOnePriority<
-                                                        Identifier 
-                                                    >::AddOnePriority< 
-                                                            FunctionDefintionComplete 
+                                                    FunctionParameterConstaraint 
+                                                >::AddOnePriority< 
+                                                        FunctionParameterNextParameter 
+                                                    >::AddOnePriority<
+                                                            Identifier 
                                                         >::AddOnePriority< 
-                                                                KeywordLet 
-                                                            >::NoPriority< 
-                                                                    BooleanLiteral, 
-                                                                    NaturalNumber, 
-                                                                    FunctionResult 
-                                                                >; // I feel like Im writing python here 0.0 //
+                                                                FunctionDefintionComplete 
+                                                            >::AddOnePriority< 
+                                                                    KeywordLet 
+                                                                >::NoPriority< 
+                                                                        BooleanLiteral, 
+                                                                        NaturalNumber, 
+                                                                        FunctionResult 
+                                                                    >; // I feel like Im writing python here 0.0 //
 
         using NonTerminalTermsType = SafeTermsType< 
                 TermBuilderType::NoPriority, 
@@ -113,7 +115,8 @@ namespace Warp::Parser
                 WarpFunctionAlternative, 
                 WarpFunction, 
                 WarpModule, 
-                Arguments
+                Arguments, 
+                Expression 
             >;
 
         template< auto ParameterConstant >
@@ -142,7 +145,7 @@ namespace Warp::Parser
         }
 
         constexpr static const auto parser = ctpg::parser( 
-                non_terminal_term< Arguments >, 
+                non_terminal_term< WarpFunctionAlternative >, 
                 terms, 
                 non_terminal_terms, 
                 ctpg::rules( 
@@ -233,6 +236,14 @@ namespace Warp::Parser
                                                 next_token 
                                             );
                                     }, 
+                        // non_terminal_term< Expression >( non_terminal_term< Factor >, term< FunctionDefintionComplete > ) 
+                        //         >= []( auto factor, auto ) {
+                        //             return factor;
+                        //         }, 
+                        non_terminal_term< Expression >( term< FunctionDefinitionOperator >, non_terminal_term< Factor > ) 
+                                >= []( auto, auto factor ) {
+                                    return factor;
+                                }, 
                         
                         //////////////////////////////// Boolean Expressions ////////////////////////////////
 
@@ -342,7 +353,20 @@ namespace Warp::Parser
                         non_terminal_term< ParameterList >( term< KeywordLet >, term< Identifier >, term< OpenParenthesis > )
                                 >= []( auto let, auto function_name, auto open_parenthesis ) {
                                     return Warp::CompilerRuntime::IntermediateFunctionAlternative{ Warp::Utilities::hash_string( function_name ) };
+                                },
+
+                        non_terminal_term< WarpFunctionAlternative >( non_terminal_term< Arguments >, non_terminal_term< Expression > ) //term< FunctionDefinitionOperator >, non_terminal_term< Expression > )
+                                >= []( auto arguments , auto expression )//auto, auto expression )
+                                {
+                                        return Warp::CompilerRuntime::FunctionAlternative{ 
+                                            arguments.identifier, 
+                                            expression, 
+                                            // Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >(), 
+                                            arguments.input_constraints, 
+                                            // dependancies would go here //
+                                        };
                                 }
+
 
                         //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
 

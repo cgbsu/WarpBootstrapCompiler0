@@ -27,7 +27,8 @@ namespace Warp::Parser
         WarpFunctionAlternative = 10, 
         WarpFunction = 11, 
         WarpModule = 12, 
-        Arguments = 13 
+        Arguments = 13, 
+        Expression = 14 
     };
 
     enum class StringTerms
@@ -87,6 +88,7 @@ namespace Warp::Parser
     LITERAL_REGEX_TERM( BooleanLiteral, "(true)|(false)" ); // Originally (true)\\b|(false)\\b, ctpg seems to take care of this. //
     NON_TERMINAL_TERM( Factor, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Sum, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( Expression, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( ParenthesisScope, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( LogicalOperation, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Comparison, Warp::AbstractSyntaxTree::NodeVariantType );
