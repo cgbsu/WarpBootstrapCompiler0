@@ -37,7 +37,9 @@ namespace Warp::Parser
         Implies = 5, 
         GreaterThanOrEqualTo = 6, 
         LessThanOrEqualTo = 7, 
-        FunctionDefinitionOperator = 8 
+        FunctionDefinitionOperator = 8, 
+        KeywordLet = 9, 
+        Comma = 10 
     };
 
     #define LITERAL_REGEX_TERM( TYPE, REGEX ) \
@@ -98,6 +100,8 @@ namespace Warp::Parser
     STRING_TERM( GreaterThanOrEqualTo, ">=" );
     STRING_TERM( LessThanOrEqualTo, "<=" );
     STRING_TERM( FunctionDefinitionOperator, "::" );
+    STRING_TERM( KeywordLet, "let" );
+    STRING_TERM( Comma, "," );
 
     // There are better ways to do this than using the types of the enums, but this is quick. //
 
