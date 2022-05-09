@@ -15,6 +15,7 @@ namespace Warp::Parser
     constexpr static const char exclimation_point_token = '!';
     constexpr static const char equal_sign_token = '=';
     constexpr static const char comma_token = ',';
+    constexpr static const char at_symbol = '@';
 
     constexpr static const char open_parenthesis_token = '(';
     constexpr static const char close_parenthesis_token = ')';
@@ -64,11 +65,6 @@ namespace Warp::Parser
         CloseAngleBracket = close_angle_bracket_token 
     };
 
-    constexpr static const char and_operator[] = "&&";
-    constexpr static const char or_operator[] = "||";
-    constexpr static const char bi_conditional_operator[] = "<->";
-    constexpr static const char implies_operator[] = "->";
-
     // Unfortunatley, string concatination will just be too much of //
     // a problem with constexpr constraint. //////////////////////////
     #define MAKE_BOOL_VALUES( TRUE_TOKEN, FALSE_TOKEN ) \
@@ -87,6 +83,7 @@ namespace Warp::Parser
         FunctionParameterNextParameter = comma_token, 
         FunctionDefintionComplete = semi_colon_token, 
         FunctionParameterConstaraint = colon_token, 
+        FunctionResult = at_symbol 
     };
 }
 

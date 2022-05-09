@@ -81,6 +81,8 @@ namespace Warp::AbstractSyntaxTree
     struct Node< Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo >;
     struct Node< Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo >;
 
+    // struct Node< Warp::Parser::FunctionOperators::FunctionResult >;
+
     // It would be nice if I did not have to forward declare all of these 🤔 <-- also thats teh first time I have used an unicode emojii in C++ 😊 //
     using InternalNodeVariantType = Utilities::AutoVariant< 
 
@@ -103,7 +105,9 @@ namespace Warp::AbstractSyntaxTree
             Node< Warp::Parser::ComparisonOperator::ComparisonLessThan >, 
             Node< Warp::Parser::ComparisonOperator::ComparisonGreaterThan >, 
             Node< Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo >, 
-            Node< Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo > 
+            Node< Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo >//, 
+
+            // Node< Warp::Parser::FunctionOperators::FunctionResult >
         >;
 
     using NodeVariantType = Utilities::NotSoUniquePointer< InternalNodeVariantType >;
@@ -181,6 +185,11 @@ namespace Warp::AbstractSyntaxTree
         constexpr Node( bool value ) noexcept : value( value ) {}
         constexpr Node( Node< NodeType::BooleanLiteral > const& other ) noexcept : value( other.value ) {}
     };
+
+    // template<>
+    // struct Node< Warp::Parser::FunctionOperators::FunctionResult > 
+    //         : public BaseNode< Warp::Parser::FunctionOperators::FunctionResult > { // Does nothing but tell the compiler <insert result of function here> //
+    // };
 
     template<>
     struct Node< NodeType::Identifier > : public BaseNode< NodeType::Identifier >

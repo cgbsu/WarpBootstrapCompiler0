@@ -21,8 +21,8 @@ int main( int argc, char** args )
             auto result = parse_result.value();
             // Warp::Analysis::abstract_syntax_tree_callback< Warp::Analysis::Executor, size_t >( parse_result.value() );
             std::cout << "\nResults: \n";
-            for( auto& parameter : result )
-                std::cout << "Parameter Name Hash: " << parameter.identifier << "\n";
+            // for( auto& parameter : result )
+                // std::cout << "Parameter Name Hash: " << parameter.identifier << "\n";
 
         }
         else

@@ -7,7 +7,8 @@ namespace Warp::CompilerRuntime
 {
     struct Function;
 
-    struct Parameter {
+    struct Parameter
+    {
         // Warp::Utilities::HeapStringType identifier;
         Warp::Utilities::HashedStringType identifier;
         Warp::AbstractSyntaxTree::NodeVariantType constraints;
@@ -15,26 +16,16 @@ namespace Warp::CompilerRuntime
 
     struct FunctionAlternative
     {
-        const Function& function;
-        const Warp::AbstractSyntaxTree::NodeVariantType expression;
-        const Warp::AbstractSyntaxTree::NodeVariantType return_constraint;
-        const std::vector< Parameter > input_constraints;
-        const std::vector< const Function* > dependancies;
-        FunctionAlternative( 
-                const Function& function, 
-                const Warp::AbstractSyntaxTree::NodeVariantType expression, 
-                const Warp::AbstractSyntaxTree::NodeVariantType return_constraint, 
-                const std::vector< Parameter > input_constraints, 
-                const std::vector< const Function* > call 
-            ) : 
-                function( function ), 
-                expression( expression ), 
-                return_constraint( return_constraint ), 
-                input_constraints( input_constraints ) {}
+        Function* function;
+        Warp::AbstractSyntaxTree::NodeVariantType expression;
+        Warp::AbstractSyntaxTree::NodeVariantType return_constraint;
+        std::vector< Parameter > input_constraints;
+        std::vector< Function* > dependancies;
     };
 
+    // using FunctionAlternative = std::tuple< std::vector< Parameter >, std::vector< Function* > >;
+
     struct Function {
-        // Warp::Utilities::HeapStringType identifier;
         Warp::Utilities::HashedStringType identifier;
         std::vector< FunctionAlternative > variants;
     };
@@ -43,7 +34,7 @@ namespace Warp::CompilerRuntime
     {
         const size_t function;
         const size_t variant;
-        const std::vector< Warp::AbstractSyntaxTree::LiteralType > inputs;
+        // const std::vector< Warp::AbstractSyntaxTree::LiteralType > inputs;
         const Warp::AbstractSyntaxTree::LiteralType output;
     };
     
