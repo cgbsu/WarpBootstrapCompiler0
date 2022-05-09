@@ -7,9 +7,7 @@ namespace Warp::CompilerRuntime
 {
     struct Function;
 
-    struct Parameter
-    {
-        // Warp::Utilities::HeapStringType identifier;
+    struct Parameter {
         Warp::Utilities::HashedStringType identifier;
         Warp::AbstractSyntaxTree::NodeVariantType constraints;
     };
@@ -23,8 +21,6 @@ namespace Warp::CompilerRuntime
         std::vector< Function* > dependancies;
     };
 
-    // using FunctionAlternative = std::tuple< std::vector< Parameter >, std::vector< Function* > >;
-
     struct Function {
         Warp::Utilities::HashedStringType identifier;
         std::vector< FunctionAlternative > variants;
@@ -34,7 +30,7 @@ namespace Warp::CompilerRuntime
     {
         const size_t function;
         const size_t variant;
-        // const std::vector< Warp::AbstractSyntaxTree::LiteralType > inputs;
+        const std::vector< Warp::AbstractSyntaxTree::LiteralType > inputs;
         const Warp::AbstractSyntaxTree::LiteralType output;
     };
     

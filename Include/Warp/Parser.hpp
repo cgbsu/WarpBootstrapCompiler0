@@ -93,8 +93,8 @@ namespace Warp::Parser
                                                             // KeywordLet 
                                                         >::NoPriority< 
                                                                 BooleanLiteral, 
-                                                                NaturalNumber//, 
-                                                                // FunctionResult 
+                                                                NaturalNumber, 
+                                                                FunctionResult 
                                                             >; // I feel like Im writing python here 0.0 //
 
         using NonTerminalTermsType = SafeTermsType< 
@@ -141,10 +141,10 @@ namespace Warp::Parser
 
                         //////////////////////////////// Arithmatic Expressions ////////////////////////////////
 
-                        // non_terminal_term< Factor >( term< FunctionResult > ) 
-                        //         >= []( auto token ) {
-                        //                 return std::move( Warp::Utilities::allocate_node< FunctionResult >() );
-                        //         }, 
+                        non_terminal_term< Factor >( term< FunctionResult > ) 
+                                >= []( auto token ) {
+                                        return std::move( Warp::Utilities::allocate_node< FunctionResult >() );
+                                }, 
                         non_terminal_term< Factor >( term< Identifier > ) 
                                 >= []( auto token ) {
                                         return std::move( Warp::Utilities::allocate_node< 
