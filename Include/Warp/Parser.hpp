@@ -86,16 +86,17 @@ namespace Warp::Parser
                                                 FunctionParameterConstaraint 
                                             >::AddOnePriority< 
                                                     FunctionParameterNextParameter 
-                                                    // Comma 
                                                 >::AddOnePriority<
                                                         Identifier 
-                                                    // >::AddOnePriority< 
-                                                            // KeywordLet 
-                                                        >::NoPriority< 
-                                                                BooleanLiteral, 
-                                                                NaturalNumber, 
-                                                                FunctionResult 
-                                                            >; // I feel like Im writing python here 0.0 //
+                                                    >::AddOnePriority< 
+                                                            FunctionDefintionComplete 
+                                                        >::AddOnePriority< 
+                                                                KeywordLet 
+                                                            >::NoPriority< 
+                                                                    BooleanLiteral, 
+                                                                    NaturalNumber, 
+                                                                    FunctionResult 
+                                                                >; // I feel like Im writing python here 0.0 //
 
         using NonTerminalTermsType = SafeTermsType< 
                 TermBuilderType::NoPriority, 
@@ -329,12 +330,21 @@ namespace Warp::Parser
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< LogicalOperation > )
                                 >= []( auto parameter_list, auto, auto parameter_name, auto, auto constraints ) {
                                         return add_to_parameter_list( parameter_list, parameter_name, constraints );
-                                }
+                                }, 
                         
                         //////////////////////////////// Functions::Alternatives ////////////////////////////////
 
-                        // non_terminal_term< FunctionAlternative >( term< Identifier >, term< OpenParenthesis >, non_terminal_term< ParameterList >, term< CloseParenthesis >,  )
-                            // >= []
+                        non_terminal_term< WarpFunctionAlternative >( term< KeywordLet >, term< Identifier >, term< OpenParenthesis >, non_terminal_term< ParameterList >, term< CloseParenthesis >, term< FunctionDefintionComplete >, non_terminal_term< Factor >, term< FunctionDefintionComplete > )
+                                >= []( auto let, auto function_name, auto open_parenthesis, auto parameter_list, auto close_parenthesis, auto function_definition_operator, auto expression, auto semi_colon )
+                                {
+                                    return std::move( Warp::CompilerRuntime::FunctionAlternative{ 
+                                            ( Warp::CompilerRuntime::Function* ) nullptr, 
+                                            expression, 
+                                            Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >(), 
+                                            parameter_list, 
+                                            std::vector< Warp::CompilerRuntime::Function* >{} 
+                                        } );
+                                }
 
                         //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
 

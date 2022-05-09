@@ -14,7 +14,8 @@ namespace Warp::AbstractSyntaxTree
         LogicalOperation = 'B', 
         Literal = 'L', 
         Identifier = 'I', 
-        BooleanLiteral = 'b'
+        BooleanLiteral = 'b', 
+        Unconstrained = 'U' 
     };
 
     template< typename... ArithmaticParameterTypes >
@@ -83,6 +84,8 @@ namespace Warp::AbstractSyntaxTree
 
     struct Node< Warp::Parser::FunctionOperators::FunctionResult >;
 
+    struct Node< NodeType::Unconstrained >;
+
     // It would be nice if I did not have to forward declare all of these 🤔 <-- also thats teh first time I have used an unicode emojii in C++ 😊 //
     using InternalNodeVariantType = Utilities::AutoVariant< 
 
@@ -107,7 +110,8 @@ namespace Warp::AbstractSyntaxTree
             Node< Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo >, 
             Node< Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo >, 
 
-            Node< Warp::Parser::FunctionOperators::FunctionResult >
+            Node< Warp::Parser::FunctionOperators::FunctionResult >, 
+            Node< NodeType::Unconstrained >
         >;
 
     using NodeVariantType = Utilities::NotSoUniquePointer< InternalNodeVariantType >;
@@ -190,6 +194,12 @@ namespace Warp::AbstractSyntaxTree
     struct Node< Warp::Parser::FunctionOperators::FunctionResult > 
             : public BaseNode< Warp::Parser::FunctionOperators::FunctionResult > { // Does nothing but tell the compiler <insert result of function here> //
     };
+
+    template<>
+    struct Node< NodeType::Unconstrained > 
+            : public BaseNode< NodeType::Unconstrained > { // Does nothing but tell the compiler that the parameter/return value is unconstrained //
+    };
+
 
     template<>
     struct Node< NodeType::Identifier > : public BaseNode< NodeType::Identifier >
