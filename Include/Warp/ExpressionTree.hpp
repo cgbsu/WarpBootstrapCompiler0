@@ -72,7 +72,7 @@ namespace Warp::AbstractSyntaxTree
     struct Node< Warp::Parser::BooleanOperator::LogicalNot >;
     struct Node< Warp::Parser::BooleanOperator::LogicalAnd >;
     struct Node< Warp::Parser::BooleanOperator::LogicalOr >;
-    struct Node< Warp::Parser::BooleanOperator::LogicalBiConditional >;
+    struct Node< Warp::Parser::BooleanOperator::LogicalBiCondition >;
     struct Node< Warp::Parser::BooleanOperator::LogicalImplies >;
     
     struct Node< Warp::Parser::ComparisonOperator::ComparisonEqual >;
@@ -96,7 +96,7 @@ namespace Warp::AbstractSyntaxTree
             Node< Warp::Parser::BooleanOperator::LogicalNot >, 
             Node< Warp::Parser::BooleanOperator::LogicalAnd >, 
             Node< Warp::Parser::BooleanOperator::LogicalOr >, 
-            Node< Warp::Parser::BooleanOperator::LogicalBiConditional >, 
+            Node< Warp::Parser::BooleanOperator::LogicalBiCondition >, 
             Node< Warp::Parser::BooleanOperator::LogicalImplies >, 
 
             Node< Warp::Parser::ComparisonOperator::ComparisonEqual >, 
@@ -282,7 +282,7 @@ namespace Warp::AbstractSyntaxTree
 
     DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalAnd, bool, bool, && );
     DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalOr, bool, bool, || );
-    DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalBiConditional, bool, bool, == );
+    DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalBiCondition, bool, bool, == );
     DEFINE_BI_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalImplies, bool, bool, Warp::Utilities::logical_implies );
     DEFINE_UNARY_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalNot, bool, ! );
 

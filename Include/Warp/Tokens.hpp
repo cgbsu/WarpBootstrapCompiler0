@@ -38,7 +38,7 @@ namespace Warp::Parser
         LogicalNot = exclimation_point, 
         LogicalAnd, 
         LogicalOr, 
-        LogicalBiConditional, 
+        LogicalBiCondition, 
         LogicalImplies 
     };
 
