@@ -12,17 +12,18 @@ namespace Warp::Parser
     constexpr static const char caret_token = '^';
     constexpr static const char colon_token = ':';
     constexpr static const char semi_colon_token = ';';
-    constexpr static const char exclimation_point = '!';
-    constexpr static const char equal_sign = '=';
+    constexpr static const char exclimation_point_token = '!';
+    constexpr static const char equal_sign_token = '=';
+    constexpr static const char comma_token = ',';
 
-    constexpr static const char open_parenthesis = '(';
-    constexpr static const char close_parenthesis = ')';
-    constexpr static const char open_curly_bracket = '{';
-    constexpr static const char close_curly_bracket = '}';
-    constexpr static const char open_square_bracket = '[';
-    constexpr static const char close_square_bracket = ']';
-    constexpr static const char open_angle_bracket = '<';
-    constexpr static const char close_angle_bracket = '>';
+    constexpr static const char open_parenthesis_token = '(';
+    constexpr static const char close_parenthesis_token = ')';
+    constexpr static const char open_curly_bracket_token = '{';
+    constexpr static const char close_curly_bracket_token = '}';
+    constexpr static const char open_square_bracket_token = '[';
+    constexpr static const char close_square_bracket_token = ']';
+    constexpr static const char open_angle_bracket_token = '<';
+    constexpr static const char close_angle_bracket_token = '>';
 
     enum class ExpressionOperator : char 
     {
@@ -35,7 +36,7 @@ namespace Warp::Parser
 
     enum class BooleanOperator : char 
     {
-        LogicalNot = exclimation_point, 
+        LogicalNot = exclimation_point_token, 
         LogicalAnd = '1', 
         LogicalOr = '2', 
         LogicalBiCondition = '3', 
@@ -44,23 +45,23 @@ namespace Warp::Parser
 
     enum class ComparisonOperator : char 
     {
-        ComparisonEqual = equal_sign, 
-        ComparisonLessThan = open_angle_bracket, 
-        ComparisonGreaterThan = close_angle_bracket, 
+        ComparisonEqual = equal_sign_token, 
+        ComparisonLessThan = open_angle_bracket_token, 
+        ComparisonGreaterThan = close_angle_bracket_token, 
         ComparisionLessThanOrEqualTo = '5', 
         ComparisionGreaterThanOrEqualTo = '6', 
     };
 
     enum class ScopeOperators : char 
     {
-        OpenParenthesis = open_parenthesis, 
-        CloseParenthesis = close_parenthesis, 
-        OpenCurlyBracket = open_curly_bracket, 
-        CloseCurlyBracket = close_curly_bracket, 
-        OpenSquareBracket = open_square_bracket, 
-        CloseSquareBracket = close_square_bracket, 
-        OpenAngleBracket = open_angle_bracket, 
-        CloseAngleBracket = close_angle_bracket 
+        OpenParenthesis = open_parenthesis_token, 
+        CloseParenthesis = close_parenthesis_token, 
+        OpenCurlyBracket = open_curly_bracket_token, 
+        CloseCurlyBracket = close_curly_bracket_token, 
+        OpenSquareBracket = open_square_bracket_token, 
+        CloseSquareBracket = close_square_bracket_token, 
+        OpenAngleBracket = open_angle_bracket_token, 
+        CloseAngleBracket = close_angle_bracket_token 
     };
 
     constexpr static const char and_operator[] = "&&";
@@ -81,7 +82,12 @@ namespace Warp::Parser
 
     // constexpr static const char let_keyword[] = "let";
 
-
+    enum class FunctionOperators
+    {
+        FunctionParameterNextParameter = comma_token, 
+        FunctionDefintionComplete = semi_colon_token, 
+        FunctionParameterConstaraint = colon_token, 
+    };
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP

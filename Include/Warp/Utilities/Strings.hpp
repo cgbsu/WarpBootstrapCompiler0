@@ -5,6 +5,56 @@
 
 namespace Warp::Utilities
 {
+    template<>
+    struct NotSoUniquePointer< const char* >
+    {
+        constexpr NotSoUniquePointer() : pointer( nullptr ) {}
+        constexpr NotSoUniquePointer( auto... string ) noexcept : pointer( new char[ sizeof...( string ) ]{ string... } ) {}
+        constexpr NotSoUniquePointer( const char* string ) noexcept : pointer( string ) {}
+        constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ) {
+            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
+        }
+        constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ) {
+            other.pointer = nullptr;
+        }
+        constexpr ~NotSoUniquePointer() noexcept {
+            delete pointer; 
+        }
+        constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept
+        {
+            pointer = other.pointer;
+            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
+            return *this;
+        }
+        constexpr NotSoUniquePointer& operator=( NotSoUniquePointer&& other ) noexcept
+        {
+            pointer = other.pointer;
+            other.pointer = nullptr;
+            return *this;
+        }
+        constexpr const char* operator->() const noexcept {
+            return pointer;
+        }
+
+        constexpr const char* get_pointer() const noexcept {
+            return pointer;
+        }
+
+        constexpr const std::string_view to_string_view() const noexcept {
+            return std::string_view{ pointer };
+        }
+
+        constexpr operator const std::string_view() const noexcept {
+            return to_string_view();
+        }
+
+        protected: 
+            const char* pointer;
+    };
+
+    using HeapStringType = NotSoUniquePointer< const char* >;
+
+
     constexpr std::optional< bool > to_bool( 
             std::string_view boolean_token, 
             std::string_view true_token, 
@@ -123,6 +173,31 @@ namespace Warp::Utilities
     template< typename PointerParameterType >
     constexpr HeapStringType to_string( NotSoUniquePointer< PointerParameterType > to_stringify ) {
         return to_string( to_stringify.get_pointer() );
+    }
+
+
+    // https://cp-algorithms.com/string/string-hashing.html //
+    // https://stackoverflow.com/questions/1835976/what-is-a-sensible-prime-for-hashcode-calculation/2816747# //
+
+    using HashedStringType = unsigned long long int;
+
+    template< 
+            HashedStringType BaseParameterConstant = 92821, 
+            HashedStringType TableSizeOrderParameterConstant = 486187739, 
+            size_t OffsetParameterConstant = 'a' + 1 
+        >
+    constexpr HashedStringType hash_string( std::string_view to_hash )
+    {
+        HashedStringType power = BaseParameterConstant;
+        HashedStringType hash = 0;
+        for( size_t ii = 0; ii < to_hash.size(); ++ii )
+        {
+            hash += ( ( ( to_hash[ ii ] - OffsetParameterConstant ) * power ) 
+                    % TableSizeOrderParameterConstant
+                );
+            power *= BaseParameterConstant;
+        }
+        return hash;
     }
 }
 

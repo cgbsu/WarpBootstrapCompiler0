@@ -27,7 +27,7 @@ namespace Warp::Parser
                                 right \
                             ) ); \
                     } 
-
+    
     #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LEFT, OPERATION, RIGHT ) \
             non_terminal_term< LogicalOperation >( non_terminal_term< LEFT >, term< OPERATION >, non_terminal_term< RIGHT > ) \
                     >= []( auto right, auto, auto left ) \
@@ -56,6 +56,7 @@ namespace Warp::Parser
         using enum NonTerminalTerms;
         using enum BooleanOperator;
         using enum ComparisonOperator;
+        using enum FunctionOperators;
 
         using TermsType = EasySafeTermsType< 
                 SumAdd, 
@@ -83,10 +84,12 @@ namespace Warp::Parser
                                             CloseParenthesis 
                                         >::AddOnePriority<
                                                 Identifier 
-                                            >::NoPriority< 
-                                                    BooleanLiteral, 
-                                                    NaturalNumber 
-                                                >; // I feel like Im writing python here 0.0 //
+                                            >::AddOnePriority< 
+                                                    FunctionParameterConstaraint 
+                                                >::NoPriority< 
+                                                        BooleanLiteral, 
+                                                        NaturalNumber 
+                                                    >; // I feel like Im writing python here 0.0 //
 
         using NonTerminalTermsType = SafeTermsType< 
                 TermBuilderType::NoPriority, 
@@ -98,7 +101,10 @@ namespace Warp::Parser
                 LogicalOperation, 
                 BooleanAnd, 
                 BooleanOr, 
-                Comparison 
+                Comparison, 
+                Parameter//, 
+                // ParameterList, 
+                // FunctionAlternative 
             >;
 
         template< auto ParameterConstant >
@@ -114,7 +120,7 @@ namespace Warp::Parser
         using ResolvedType = typename TypeResolverParameterType< ParameterConstant >::Type;
 
         constexpr static const auto parser = ctpg::parser( 
-                non_terminal_term< LogicalOperation >, 
+                non_terminal_term< Parameter >, 
                 terms, 
                 non_terminal_terms, 
                 ctpg::rules( 
@@ -128,6 +134,10 @@ namespace Warp::Parser
 
                         //////////////////////////////// Arithmatic Expressions ////////////////////////////////
 
+                        non_terminal_term< Factor >( term< Identifier > ) 
+                                >= []( auto token ) {
+                                        return std::move( Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Identifier >( Warp::Utilities::hash_string( token ) ) );
+                                }, 
                         non_terminal_term< Factor >( term< NaturalNumber > ) 
                                 >= []( auto token )
                                 {
@@ -250,11 +260,11 @@ namespace Warp::Parser
                         
                         // No other logical terms here, just return what you've got. //
                         non_terminal_term< LogicalOperation >( non_terminal_term< BooleanOr > )
-                                >=[] ( auto or_expression ) {
+                                >= []( auto or_expression ) {
                                     return or_expression;
                                 }, 
                         non_terminal_term< LogicalOperation >( non_terminal_term< BooleanAnd > )
-                                >=[] ( auto and_expression ) {
+                                >= []( auto and_expression ) {
                                     return and_expression;
                                 },                         
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( LogicalOperation, LogicalOperation ), 
@@ -263,14 +273,34 @@ namespace Warp::Parser
 
                         //////////////////////////////// Comparison Expressions ////////////////////////////////
 
-                        // Comparisions must return a Compariosn non terminal term so they can be evaluated before the logical expressions (and thus used in them) //
+                        // Comparisions must return a Comparison non terminal term so they can be evaluated before the logical expressions (and thus used in them) //
 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( ComparisonEqual ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( ComparisonLessThan ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( ComparisonGreaterThan ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON_UNALIGNED( GreaterThanOrEqualTo, ComparisionGreaterThanOrEqualTo ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON_UNALIGNED( LessThanOrEqualTo, ComparisionLessThanOrEqualTo ), 
-                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( LogicalOperation, Comparison ) 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( LogicalOperation, Comparison ), 
+
+                        // TODO: Add ternary/chaining comparisons and : "piping/forwarding" //
+
+                        //////////////////////////////// Functions::Parameters ////////////////////////////////
+
+                        non_terminal_term< Parameter >( term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< Comparison > )
+                                >= []( auto parameter_name, auto, auto comparison_constraint ) {
+                                        return Warp::CompilerRuntime::Parameter{ Warp::Utilities::hash_string( parameter_name ), comparison_constraint };
+                                }
+                                , 
+
+                        non_terminal_term< Parameter >( term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< LogicalOperation > )
+                                >= []( auto parameter_name, auto, auto comparison_constraints ) {
+                                        return Warp::CompilerRuntime::Parameter{ Warp::Utilities::hash_string( parameter_name ), comparison_constraints };
+                                }
+
+                        //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
+
+                        // non_terminal_term< Parameter >( term< Identifier >, non_terminal_term< LogicalOperation > )
+
                 )
         );
     };

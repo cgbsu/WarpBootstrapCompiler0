@@ -14,7 +14,7 @@ namespace Warp::AbstractSyntaxTree
         LogicalOperation = 'B', 
         Literal = 'L', 
         Identifier = 'I', 
-        BooleanLiteral = 'b' 
+        BooleanLiteral = 'b'
     };
 
     template< typename... ArithmaticParameterTypes >
@@ -185,10 +185,14 @@ namespace Warp::AbstractSyntaxTree
     template<>
     struct Node< NodeType::Identifier > : public BaseNode< NodeType::Identifier >
     {
-        const Warp::Utilities::HeapStringType name;
-        constexpr Node( Warp::Utilities::HeapStringType name ) noexcept : name( name ) {}
-        constexpr Node( const auto... name_characters ) noexcept : name( name_characters... ) {}
-        constexpr Node( Node< NodeType::Identifier > const& other ) noexcept : name( other.name ) {}
+        const std::optional< Warp::Utilities::HeapStringType > string; // DO NOT CHANGE THE ORDER OF THESE MEMBERS, `value` may depend on the initialization `string` //
+        const Warp::Utilities::HashedStringType value; // DO NOT CHANGE THE ORDER OF THESE MEMBERS, `value` may depend on the initialization `string` //
+        constexpr Node( Warp::Utilities::HashedStringType value ) noexcept : string( std::nullopt ), value( value ) {}
+        constexpr Node( std::string_view value ) noexcept : string( std::nullopt ), value( Warp::Utilities::hash_string( value ) ) {}        
+        constexpr Node( const auto... name_characters ) noexcept 
+                : string( Warp::Utilities::HeapStringType{ name_characters... } ), // Class members initialized in order of declaration. //
+                value( Warp::Utilities::hash_string( string->to_string_view() ) ) {} // Class members initialized in order of declaration. //
+        constexpr Node( Node< NodeType::Identifier > const& other ) noexcept : string( other.string ), value( other.value ) {}
     };
 
     #define DEFINE_UNARY_NODE_CUSTOM_OPERATION( OPERATION_TYPE, VALUE, OPERHAND_TYPE, CUSTOM_OPERATION ) \

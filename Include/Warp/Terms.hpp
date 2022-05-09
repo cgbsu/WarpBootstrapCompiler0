@@ -21,7 +21,10 @@ namespace Warp::Parser
         Comparison = 3, 
         LogicalOperation = 5, 
         BooleanAnd = 6, 
-        BooleanOr = 7 
+        BooleanOr = 7, 
+        Parameter = 8, 
+        ParameterList = 9, 
+        FunctionAlternative = 10 
     };
 
     enum class StringTerms
@@ -33,7 +36,8 @@ namespace Warp::Parser
         BiCondition = 4, 
         Implies = 5, 
         GreaterThanOrEqualTo = 6, 
-        LessThanOrEqualTo = 7 
+        LessThanOrEqualTo = 7, 
+        FunctionDefinitionOperator = 8 
     };
 
     #define LITERAL_REGEX_TERM( TYPE, REGEX ) \
@@ -84,12 +88,16 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( Comparison, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanAnd, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanOr, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( Parameter, Warp::CompilerRuntime::Parameter );
+    NON_TERMINAL_TERM( ParameterList, std::vector< Warp::CompilerRuntime::Parameter > );
+    NON_TERMINAL_TERM( FunctionAlternative, Warp::CompilerRuntime::FunctionAlternative );
     STRING_TERM( And, "&&" );
     STRING_TERM( Or, "||" );
     STRING_TERM( BiCondition, "<->" );
     STRING_TERM( Implies, "->" );
     STRING_TERM( GreaterThanOrEqualTo, ">=" );
     STRING_TERM( LessThanOrEqualTo, "<=" );
+    STRING_TERM( FunctionDefinitionOperator, "::" );
 
     // There are better ways to do this than using the types of the enums, but this is quick. //
 

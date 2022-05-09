@@ -53,56 +53,7 @@ namespace Warp::Utilities
         protected: 
             StorageParameterType* pointer;
     };
-
-    template<>
-    struct NotSoUniquePointer< const char* >
-    {
-        constexpr NotSoUniquePointer() : pointer( nullptr ) {}
-        constexpr NotSoUniquePointer( auto... string ) noexcept : pointer( new char[ sizeof...( string ) ]{ string... } ) {}
-        constexpr NotSoUniquePointer( const char* string ) noexcept : pointer( string ) {}
-        constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ) {
-            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
-        }
-        constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ) {
-            other.pointer = nullptr;
-        }
-        constexpr ~NotSoUniquePointer() noexcept {
-            delete pointer; 
-        }
-        constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept
-        {
-            pointer = other.pointer;
-            ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
-            return *this;
-        }
-        constexpr NotSoUniquePointer& operator=( NotSoUniquePointer&& other ) noexcept
-        {
-            pointer = other.pointer;
-            other.pointer = nullptr;
-            return *this;
-        }
-        constexpr const char* operator->() const noexcept {
-            return pointer;
-        }
-
-        constexpr const char* get_pointer() const noexcept {
-            return pointer;
-        }
-
-        constexpr const std::string_view to_string_view() const noexcept {
-            return std::string_view{ pointer };
-        }
-
-        constexpr operator const std::string_view() const noexcept {
-            return to_string_view();
-        }
-
-        protected: 
-            const char* pointer;
-    };
-
-    using HeapStringType = NotSoUniquePointer< const char* >;
-
+    
     namespace Detail
     {
         template< typename >

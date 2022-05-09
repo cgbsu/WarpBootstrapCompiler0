@@ -73,7 +73,7 @@ namespace Warp::Utilities
     }
 
     template< auto NodeParameterTypeConstant, typename ToParameterType >
-    constexpr const ToParameterType& to_literal( const Warp::AbstractSyntaxTree::NodeVariantType& from ) {
+    constexpr const ToParameterType& get_node_value( const Warp::AbstractSyntaxTree::NodeVariantType& from ) {
         return Warp::Utilities::get_if< Warp::AbstractSyntaxTree::Node< NodeParameterTypeConstant > >( from.get_pointer() )->value;
     }
 }

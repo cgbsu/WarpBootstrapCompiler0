@@ -7,18 +7,24 @@ namespace Warp::CompilerRuntime
 {
     struct Function;
 
+    struct Parameter {
+        // Warp::Utilities::HeapStringType identifier;
+        Warp::Utilities::HashedStringType identifier;
+        Warp::AbstractSyntaxTree::NodeVariantType constraints;
+    };
+
     struct FunctionAlternative
     {
         const Function& function;
         const Warp::AbstractSyntaxTree::NodeVariantType expression;
         const Warp::AbstractSyntaxTree::NodeVariantType return_constraint;
-        const std::vector< Warp::AbstractSyntaxTree::NodeVariantType > input_constraints;
+        const std::vector< Parameter > input_constraints;
         const std::vector< const Function* > dependancies;
         FunctionAlternative( 
                 const Function& function, 
                 const Warp::AbstractSyntaxTree::NodeVariantType expression, 
                 const Warp::AbstractSyntaxTree::NodeVariantType return_constraint, 
-                const std::vector< Warp::AbstractSyntaxTree::NodeVariantType > input_constraints, 
+                const std::vector< Parameter > input_constraints, 
                 const std::vector< const Function* > call 
             ) : 
                 function( function ), 
@@ -27,9 +33,9 @@ namespace Warp::CompilerRuntime
                 input_constraints( input_constraints ) {}
     };
 
-    struct Function
-    {
-        Warp::Utilities::HeapStringType identifier;
+    struct Function {
+        // Warp::Utilities::HeapStringType identifier;
+        Warp::Utilities::HashedStringType identifier;
         std::vector< FunctionAlternative > variants;
     };
 
