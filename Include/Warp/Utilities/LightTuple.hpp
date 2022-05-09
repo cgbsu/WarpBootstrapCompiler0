@@ -1,5 +1,12 @@
 #include <Warp/Utilities/TemplateUtilities.hpp>
 
+///////////////////////////////////////////////////////////////////////////////////
+// I want to thank Matthew Godbolt https://godbolt.org/ for providing a ///////////
+// good enviornment I could test this out in, isolated from the rest of the code //
+// (which was on fire at the time), and get quick feedback. Compiler Explorere ////
+// is awesome!! ///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_LIGHT_TUPLE_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_LIGHT_TUPLE_HPP
 

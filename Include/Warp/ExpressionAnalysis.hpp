@@ -53,8 +53,6 @@ namespace Warp::Analysis
         }
     };
 
-
-
     template< typename ExpressionParameterType, Warp::Parser::ExpressionOperator OperatorParameterConstant >
     struct Executor< ExpressionParameterType, OperatorParameterConstant >
     {
@@ -102,6 +100,23 @@ namespace Warp::Analysis
                 );
         }
     };
+
+    template< typename ExpressionParameterType, Warp::Parser::ComparisonOperator OperatorParameterConstant >
+    struct Executor< ExpressionParameterType, OperatorParameterConstant >
+    {
+        static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node )
+        {
+            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> ExpressionParameterType { 
+                    return abstract_syntax_tree_callback< Executor, ExpressionParameterType >( from ); 
+                };
+            using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
+            return OperationNodeType::operate( 
+                    value_from( node.left ), 
+                    value_from( node.right ) 
+                );
+        }
+    };
+
 
 
     template< typename QueryParameterType >

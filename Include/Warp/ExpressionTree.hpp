@@ -97,7 +97,7 @@ namespace Warp::AbstractSyntaxTree
             Node< Warp::Parser::BooleanOperator::LogicalAnd >, 
             Node< Warp::Parser::BooleanOperator::LogicalOr >, 
             Node< Warp::Parser::BooleanOperator::LogicalBiConditional >, 
-            Node< Warp::Parser::BooleanOperator::LogicalImplies > 
+            Node< Warp::Parser::BooleanOperator::LogicalImplies >, 
 
             Node< Warp::Parser::ComparisonOperator::ComparisonEqual >, 
             Node< Warp::Parser::ComparisonOperator::ComparisonLessThan >, 
@@ -252,6 +252,28 @@ namespace Warp::AbstractSyntaxTree
             constexpr Node& operator=( Node< VALUE >&& other ) noexcept = default; \
         }
 
+    #define DEFINE_TRI_NODE_CUSTOM_OPERATION( VALUE_TYPE, TAG_TYPE, TAG, LEFT_OPERHAND_TYPE, RIGHT_OPERHAND_TYPE, CUSTOM_OPERATION ) \
+        template<> \
+        struct Node< TAG > : public LeftRight< TAG > \
+        { \
+            using BaseType = LeftRight< TAG >; \
+            VALUE_TYPE value; \
+            constexpr static const auto operate( LEFT_OPERHAND_TYPE left_value, RIGHT_OPERHAND_TYPE right_value ) noexcept { \
+                return CUSTOM_OPERATION( left_value, right_value ); \
+            } \
+            constexpr static TAG_TYPE operation = TAG ; \
+            constexpr Node( \
+                    const NodeVariantType left, \
+                    const VALUE_TYPE value, \
+                    const NodeVariantType right \
+                ) noexcept : BaseType( left, right ), value( value ) {} \
+            constexpr Node( const Node< TAG >& other ) noexcept \
+                    : BaseType( other.left, other.right ), value( other.value ) {} \
+            constexpr Node( Node< TAG >&& other ) noexcept \
+                    : BaseType( other.left, other.right ), value( other.value ) {} \
+            constexpr Node& operator=( const Node< TAG >& other ) noexcept = default; \
+            constexpr Node& operator=( Node< TAG >&& other ) noexcept = default; \
+        }
 
     DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::FactorMultiply, auto, auto, * );
     DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::FactorDivide, auto, auto, / );
@@ -264,11 +286,13 @@ namespace Warp::AbstractSyntaxTree
     DEFINE_BI_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalImplies, bool, bool, Warp::Utilities::logical_implies );
     DEFINE_UNARY_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalNot, bool, ! );
 
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonEqual, auto, == );
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonLessThan, auto, < );
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonGreaterThan, auto, > );
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo, auto, <= );
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo, auto, >= );
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonEqual, auto, auto, == );
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonLessThan, auto, auto, < );
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonGreaterThan, auto, auto, > );
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo, auto, auto, <= );
+    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo, auto, auto, >= );
+
+    // DEFINE_TRI_NODE_CUSTOM_OPERATION( )
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_TREE_HPP
