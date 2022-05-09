@@ -332,12 +332,10 @@ namespace Warp::Parser
                                 >= []( auto parameter_list, auto ) {
                                     return parameter_list;
                                 }, 
-
                         non_terminal_term< Arguments >( non_terminal_term< ParameterList >, term< CloseParenthesis > )
                                 >= []( auto parameter_list, auto ) {
                                     return parameter_list;
                                 }, 
-
 
                         //////////////////////////////// Functions::Alternatives ////////////////////////////////
 
