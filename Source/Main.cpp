@@ -1,9 +1,20 @@
 #include <Warp/Parser.hpp>
 #include <Warp/ExpressionAnalysis.hpp>
 
+    using ParserType = typename Warp::Parser::WarpParser< Warp::Parser::DefaultTypes >;
+
+ctpg::rule( 
+// template<> 
+ParserType::non_terminal_term< Warp::Parser::NonTerminalTerms::Comparison >(
+    Warp::Utilities::IsAnyOfConcept< 
+            decltype( ParserType::term< Warp::Parser::ComparisonOperator::ComparisonEqual > ), 
+            decltype( ParserType::term< Warp::Parser::ComparisonOperator::ComparisonLessThan > ), 
+            decltype( ParserType::term< Warp::Parser::ComparisonOperator::ComparisonGreaterThan > ) 
+        > ) ) >= []( auto ) { return 0; };
+
+
 int main( int argc, char** args )
 {
-    using ParserType = typename Warp::Parser::WarpParser< Warp::Parser::DefaultTypes >;
     const auto& parser = ParserType::parser;
     std::cout << "Hello world! Please enter your expression: ";
     for( std::string input = "2+2"/*"4*10+2"*/; input != "thanks :)"; std::getline( std::cin, input ) )

@@ -430,6 +430,9 @@ namespace Warp::Utilities
             >::value;
     };
 
+    // https://en.cppreference.com/w/cpp/concepts/same_as
+    template< typename ParameterType, typename ... ParameterTypes >
+    concept IsAnyOfConcept = ( std::same_as< ParameterType, ParameterTypes > || ... );
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_TEMPLATE_UTILITIES_HPP

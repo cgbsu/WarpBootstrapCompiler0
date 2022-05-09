@@ -57,8 +57,8 @@ namespace Warp::Parser
                 ParenthesisScope, 
                 LogicalOperation, 
                 BooleanAnd, 
-                BooleanOr//, 
-                // Comparison 
+                BooleanOr, 
+                Comparison 
             >;
 
         template< auto ParameterConstant >
@@ -258,12 +258,18 @@ namespace Warp::Parser
                         non_terminal_term< LogicalOperation >( term< OpenParenthesis >, non_terminal_term< BooleanOr >, term< CloseParenthesis > )
                                 >= []( auto, auto logical_expression, auto ) {
                                     return logical_expression;
-                                }//, 
+                                }, 
 
                         //////////////////////////////// Comparison Expressions ////////////////////////////////
 
-                        // non_terminal_term< Comparison >( )
-
+                        non_terminal_term< LogicalOperation >( 
+                                    non_terminal_term< Factor >, 
+                                    term< ComparisonEqual >, 
+                                    non_terminal_term< Factor > 
+                                )
+                                >= []( auto left, auto, auto right ) {
+                                    return Warp::Utilities::allocate_node< ComparisonEqual >( left, right );
+                                } 
                 )
         );
     };

@@ -62,7 +62,20 @@ namespace Warp::Utilities
             };
     }
 
+    template< auto NodeParameterTypeConstant >
+    constexpr const Warp::AbstractSyntaxTree::NodeVariantType& get_left( const Warp::AbstractSyntaxTree::NodeVariantType& from ) {
+        return Warp::Utilities::get_if< Warp::AbstractSyntaxTree::Node< NodeParameterTypeConstant > >( from.get_pointer() )->left;
+    }
 
+    template< auto NodeParameterTypeConstant >
+    constexpr const Warp::AbstractSyntaxTree::NodeVariantType& get_right( const Warp::AbstractSyntaxTree::NodeVariantType& from ) {
+        return Warp::Utilities::get_if< Warp::AbstractSyntaxTree::Node< NodeParameterTypeConstant > >( from.get_pointer() )->right;
+    }
+
+    template< auto NodeParameterTypeConstant, typename ToParameterType >
+    constexpr const ToParameterType& to_literal( const Warp::AbstractSyntaxTree::NodeVariantType& from ) {
+        return Warp::Utilities::get_if< Warp::AbstractSyntaxTree::Node< NodeParameterTypeConstant > >( from.get_pointer() )->value;
+    }
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_ABSTRACT_SYNTAX_TREE_UTILITIES_HPP
