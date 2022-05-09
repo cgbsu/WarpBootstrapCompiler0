@@ -124,7 +124,18 @@ namespace Warp::Parser
         template< auto ParameterConstant >
         using ResolvedType = typename TypeResolverParameterType< ParameterConstant >::Type;
 
-        // constexpr std::vector< Warp::CompilerRuntime::Parameter >&& add_to_parameter_list( const auto& list, const  )
+        constexpr static auto add_to_parameter_list( 
+                auto& parameter_list, 
+                auto parameter_name, 
+                auto constraints 
+            ) 
+        {
+                parameter_list.push_back( Warp::CompilerRuntime::Parameter{ 
+                        Warp::Utilities::hash_string( parameter_name ), 
+                        constraints 
+                    } );
+                return std::move( parameter_list );
+        }
 
         constexpr static const auto parser = ctpg::parser( 
                 non_terminal_term< ParameterList >, 
@@ -302,42 +313,22 @@ namespace Warp::Parser
                         // TODO: Add types/concepts with additional color, e.g my_parameter : natural : my_parameter < 128
 
                         non_terminal_term< ParameterList >( term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< Comparison > )
-                                >= []( auto parameter_name, auto, auto comparison_constraint )
-                                {
+                                >= []( auto parameter_name, auto, auto comparison_constraint ) {
                                         std::vector< Warp::CompilerRuntime::Parameter > parameter_list;
-                                        parameter_list.push_back( Warp::CompilerRuntime::Parameter{ 
-                                                Warp::Utilities::hash_string( parameter_name ), 
-                                                comparison_constraint 
-                                            } );
-                                        return std::move( parameter_list );
+                                        return add_to_parameter_list( parameter_list, parameter_name, comparison_constraint );
                                 }, 
                         non_terminal_term< ParameterList >( term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< LogicalOperation > )
-                                >= []( auto parameter_name, auto, auto comparison_constraints )
-                                {
+                                >= []( auto parameter_name, auto, auto constraints ) {
                                         std::vector< Warp::CompilerRuntime::Parameter > parameter_list;
-                                        parameter_list.push_back( Warp::CompilerRuntime::Parameter{ 
-                                                Warp::Utilities::hash_string( parameter_name ), 
-                                                comparison_constraints 
-                                            } );
-                                        return std::move( parameter_list );
+                                        return add_to_parameter_list( parameter_list, parameter_name, constraints );
                                 },
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< Comparison > )
-                                >= []( auto parameter_list, auto, auto parameter_name, auto, auto comparison_constraint )
-                                {
-                                        parameter_list.push_back( Warp::CompilerRuntime::Parameter{ 
-                                                Warp::Utilities::hash_string( parameter_name ), 
-                                                comparison_constraint 
-                                            } );
-                                        return std::move( parameter_list );
+                                >= []( auto parameter_list, auto, auto parameter_name, auto, auto comparison_constraint ) {
+                                        return add_to_parameter_list( parameter_list, parameter_name, comparison_constraint );
                                 }, 
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< LogicalOperation > )
-                                >= []( auto parameter_list, auto, auto parameter_name, auto, auto comparison_constraints )
-                                {
-                                        parameter_list.push_back( Warp::CompilerRuntime::Parameter{ 
-                                                Warp::Utilities::hash_string( parameter_name ), 
-                                                comparison_constraints 
-                                            } );
-                                        return std::move( parameter_list );
+                                >= []( auto parameter_list, auto, auto parameter_name, auto, auto constraints ) {
+                                        return add_to_parameter_list( parameter_list, parameter_name, constraints );
                                 }
                         
                         //////////////////////////////// Functions::Alternatives ////////////////////////////////
