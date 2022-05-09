@@ -6,6 +6,29 @@
 
 namespace Warp::Parser
 {
+    #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( COMPARISON_TYPE ) \
+        non_terminal_term< Comparison >( non_terminal_term< Factor >, term< COMPARISON_TYPE >, non_terminal_term< Factor > ) \
+            >= []( auto left, auto, auto right ) { \
+                return Warp::Utilities::allocate_node< COMPARISON_TYPE >( left, right ); \
+            }
+    
+    #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON_UNALIGNED( COMPARISON_TYPE, NODE_COMPARISON_TYPE ) \
+        non_terminal_term< Comparison >( non_terminal_term< Factor >, term< COMPARISON_TYPE >, non_terminal_term< Factor > ) \
+            >= []( auto left, auto, auto right ) { \
+                return Warp::Utilities::allocate_node< NODE_COMPARISON_TYPE >( left, right ); \
+            }
+
+    #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LEFT, OPERATION, RIGHT ) \
+                        non_terminal_term< Boolean##OPERATION >( non_terminal_term< LEFT >, term< OPERATION >, non_terminal_term< RIGHT > ) \
+                                >= []( auto right, auto, auto left ) \
+                                { \
+                                    return std::move( Warp::Utilities::allocate_node< Logical##OPERATION >( \
+                                            left, \
+                                            right \
+                                        ) ); \
+                                } 
+
+
     template< template< auto > typename TypeResolverParameterType = DefaultTypes >
     struct WarpParser
     {
@@ -199,14 +222,16 @@ namespace Warp::Parser
                                             right 
                                         ) );
                                 }, 
-                        non_terminal_term< BooleanOr >( non_terminal_term< LogicalOperation >, term< Or >, non_terminal_term< BooleanAnd > )
-                                >= []( auto right, auto, auto left ) 
-                                {
-                                    return std::move( Warp::Utilities::allocate_node< LogicalOr >( 
-                                            left, 
-                                            right 
-                                        ) );
-                                }, 
+                        // non_terminal_term< BooleanOr >( non_terminal_term< LogicalOperation >, term< Or >, non_terminal_term< BooleanAnd > )
+                        //         >= []( auto right, auto, auto left ) 
+                        //         {
+                        //             return std::move( Warp::Utilities::allocate_node< LogicalOr >( 
+                        //                     left, 
+                        //                     right 
+                        //                 ) );
+                        //         }, 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, Or, BooleanAnd ), 
+
                         non_terminal_term< BooleanOr >( non_terminal_term< BooleanAnd >, term< Or >, non_terminal_term< BooleanAnd > )
                                 >= []( auto right, auto, auto left ) 
                                 {
@@ -262,14 +287,11 @@ namespace Warp::Parser
 
                         //////////////////////////////// Comparison Expressions ////////////////////////////////
 
-                        non_terminal_term< LogicalOperation >( 
-                                    non_terminal_term< Factor >, 
-                                    term< ComparisonEqual >, 
-                                    non_terminal_term< Factor > 
-                                )
-                                >= []( auto left, auto, auto right ) {
-                                    return Warp::Utilities::allocate_node< ComparisonEqual >( left, right );
-                                } 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( ComparisonEqual ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( ComparisonLessThan ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( ComparisonGreaterThan ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON_UNALIGNED( GreaterThanOrEqualTo, ComparisionGreaterThanOrEqualTo ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON_UNALIGNED( LessThanOrEqualTo, ComparisionLessThanOrEqualTo ) 
                 )
         );
     };
