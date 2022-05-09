@@ -36,10 +36,10 @@ namespace Warp::Parser
     enum class BooleanOperator : char 
     {
         LogicalNot = exclimation_point, 
-        LogicalAnd, 
-        LogicalOr, 
-        LogicalBiCondition, 
-        LogicalImplies 
+        LogicalAnd = '1', 
+        LogicalOr = '2', 
+        LogicalBiCondition = '3', 
+        LogicalImplies = '4' 
     };
 
     enum class ComparisonOperator : char 
@@ -47,8 +47,8 @@ namespace Warp::Parser
         ComparisonEqual = equal_sign, 
         ComparisonLessThan = open_angle_bracket, 
         ComparisonGreaterThan = close_angle_bracket, 
-        ComparisionLessThanOrEqualTo, 
-        ComparisionGreaterThanOrEqualTo, 
+        ComparisionLessThanOrEqualTo = '5', 
+        ComparisionGreaterThanOrEqualTo = '6', 
     };
 
     enum class ScopeOperators : char 

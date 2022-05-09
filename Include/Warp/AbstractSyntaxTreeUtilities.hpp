@@ -41,11 +41,11 @@ namespace Warp::Utilities
                         Warp::AbstractSyntaxTree::NodeType::Literal 
                     > 
             >;
-        return Warp::AbstractSyntaxTree::NodeVariantType { 
+        return std::move( Warp::AbstractSyntaxTree::NodeVariantType { 
                 std::in_place_type_t< Warp::AbstractSyntaxTree::InternalNodeVariantType >{}, 
                 NodeInPlaceType{}, 
                 Warp::AbstractSyntaxTree::LiteralType{ Utilities::to_integral< DataLiteralType >( data ) } 
-            };
+            } );
     }
 
     constexpr Warp::AbstractSyntaxTree::NodeVariantType allocate_boolean_literal_node( auto data )

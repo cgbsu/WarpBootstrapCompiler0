@@ -23,7 +23,7 @@ int main( int argc, char** args )
             //         << data 
             //         << "\n\n";
 
-            auto data = Warp::Analysis::abstract_syntax_tree_callback< Warp::Analysis::Executor, bool >( parse_result.value() );
+            auto data = Warp::Analysis::abstract_syntax_tree_callback< Warp::Analysis::Executor, size_t >( parse_result.value() );
             std::cout << "\nResult: " 
                     << data 
                     << "\n\n";

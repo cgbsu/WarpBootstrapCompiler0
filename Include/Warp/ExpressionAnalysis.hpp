@@ -16,9 +16,11 @@ namespace Warp::Analysis
     {
         const auto& node = Warp::Utilities::to_const_reference( variant );
         return Warp::Utilities::visit< []( auto raw_node_pointer ) { 
-               const decltype( *raw_node_pointer )& ref = *raw_node_pointer;
-               return FeedbackParameterType< ReturnParameterType, decltype( ExtractNodeType( ref ) )::node_type >::compute_value_of_expression( ref ); 
-            }>( node );
+               const decltype( *raw_node_pointer )& reference = *raw_node_pointer;
+               return FeedbackParameterType< 
+                    ReturnParameterType, 
+                    decltype( ExtractNodeType( reference ) )::node_type >::compute_value_of_expression( reference ); 
+            } >( node );
     }
 
     template< typename, auto >
@@ -30,9 +32,10 @@ namespace Warp::Analysis
     {
         static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node )
         {
-            return Warp::Utilities::visit< []( auto value_pointer ) -> ExpressionParameterType {
+            auto value = Warp::Utilities::visit< []( auto value_pointer ) -> ExpressionParameterType {
                     return *value_pointer;
                 } >( Warp::Utilities::to_const_reference( node.value.factor ) );
+            return value;
         }
     };
 

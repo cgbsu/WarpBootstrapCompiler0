@@ -19,24 +19,32 @@ namespace Warp::Parser
             }
 
     #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( LEFT, OPERATION, RIGHT ) \
-                        non_terminal_term< Boolean##OPERATION >( non_terminal_term< LEFT >, term< OPERATION >, non_terminal_term< RIGHT > ) \
-                                >= []( auto right, auto, auto left ) \
-                                { \
-                                    return std::move( Warp::Utilities::allocate_node< Logical##OPERATION >( \
-                                            left, \
-                                            right \
-                                        ) ); \
-                                } 
+            non_terminal_term< Boolean##OPERATION >( non_terminal_term< LEFT >, term< OPERATION >, non_terminal_term< RIGHT > ) \
+                    >= []( auto right, auto, auto left ) \
+                    { \
+                        return std::move( Warp::Utilities::allocate_node< Logical##OPERATION >( \
+                                left, \
+                                right \
+                            ) ); \
+                    } 
 
     #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LEFT, OPERATION, RIGHT ) \
-                        non_terminal_term< LogicalOperation >( non_terminal_term< LEFT >, term< OPERATION >, non_terminal_term< RIGHT > ) \
-                                >= []( auto right, auto, auto left ) \
-                                { \
-                                    return std::move( Warp::Utilities::allocate_node< Logical##OPERATION >( \
-                                            left, \
-                                            right \
-                                        ) ); \
-                                } 
+            non_terminal_term< LogicalOperation >( non_terminal_term< LEFT >, term< OPERATION >, non_terminal_term< RIGHT > ) \
+                    >= []( auto right, auto, auto left ) \
+                    { \
+                        return std::move( Warp::Utilities::allocate_node< Logical##OPERATION >( \
+                                left, \
+                                right \
+                            ) ); \
+                    } 
+
+    
+    #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( TO, MIDDLE ) \
+        non_terminal_term< TO >( term< OpenParenthesis >, non_terminal_term< MIDDLE >, term< CloseParenthesis > ) \
+            >= []( auto, auto middle, auto ) { \
+                return middle; \
+            } 
+
 
     template< template< auto > typename TypeResolverParameterType = DefaultTypes >
     struct WarpParser
@@ -111,17 +119,22 @@ namespace Warp::Parser
                 non_terminal_terms, 
                 ctpg::rules( 
 
+                        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         // CTPG Makes it very hard to seperate all these out (see: https://github.com/peter-winter/ctpg/issues/46 ) //
-                        // I spent a good amount of time doings so I am going to annotate the different sections. ////////////////////
+                        // I spent a good amount of time doings so I am going to annotate the different sections. I also have not ////
+                        // yet figured out how to generate rules externally and automatically, so please excuese the macros and //////
+                        // crummy code overall here, I will just have to document it a bit. //////////////////////////////////////////
+                        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                         //////////////////////////////// Arithmatic Expressions ////////////////////////////////
 
                         non_terminal_term< Factor >( term< NaturalNumber > ) 
-                                >= []( auto token ) {
-                                        return Warp::Utilities::allocate_integral_literal_node< 
+                                >= []( auto token )
+                                {
+                                        return std::move( Warp::Utilities::allocate_integral_literal_node< 
                                                 ResolvedType< NaturalNumber > 
-                                            >( token );
-                                    }, 
+                                            >( token ) );
+                                }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< NaturalNumber > ) 
                                 >= []( auto current_factor, auto, const auto& next_token )
                                     {
@@ -190,16 +203,52 @@ namespace Warp::Parser
                                 >= []( auto token ) {
                                     return Warp::Utilities::allocate_boolean_literal_node( token );
                                 }, 
+                        
+                        // And::Initial_Conditions //
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( LogicalOperation, And, LogicalOperation ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( LogicalOperation, And, Comparison ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( Comparison, And, Comparison ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( Comparison, And, LogicalOperation ), 
+                        
+                        // And::Chaining //
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( BooleanAnd, And, LogicalOperation ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( BooleanAnd, And, Comparison ), 
+
+                        // Or::Initial_Conditions //
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( LogicalOperation, Or, LogicalOperation ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( Comparison, Or, LogicalOperation ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( Comparison, Or, Comparison ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( LogicalOperation, Or, Comparison ), 
+
+                        // Or::Chaining::And //
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( BooleanAnd, Or, BooleanAnd ), 
+
+                        // Or::Chaining::LogicalOperation //
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( BooleanOr, Or, LogicalOperation ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( BooleanAnd, Or, LogicalOperation ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( LogicalOperation, Or, BooleanAnd ), 
-                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( BooleanAnd, Or, BooleanAnd ), 
+
+                        // Or::Chaning::Comparison //
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( BooleanOr, Or, Comparison ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( BooleanAnd, Or, Comparison ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( Comparison, Or, BooleanAnd ), 
+                        
+                        //Extended Logical (evalated last before aritmatic) //
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, BiCondition, LogicalOperation ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, Implies, LogicalOperation ), 
 
+                        // Not //
+                        non_terminal_term< LogicalOperation >( term< LogicalNot >, non_terminal_term< LogicalOperation > )
+                                >= []( auto, auto logical_expression ) {
+                                    return Warp::Utilities::allocate_node< LogicalNot >( logical_expression );
+                                }, 
+                        // This seems to do the trick with reducing the not's just down to one or two depending on if there are an even or odd amount. //
+                        non_terminal_term< LogicalOperation >( term< LogicalNot >, term< LogicalNot >, non_terminal_term< LogicalOperation > )
+                                >= []( auto, auto, auto logical_expression ) {
+                                    return logical_expression;
+                                }, 
+                        
+                        // No other logical terms here, just return what you've got. //
                         non_terminal_term< LogicalOperation >( non_terminal_term< BooleanOr > )
                                 >=[] ( auto or_expression ) {
                                     return or_expression;
@@ -207,37 +256,21 @@ namespace Warp::Parser
                         non_terminal_term< LogicalOperation >( non_terminal_term< BooleanAnd > )
                                 >=[] ( auto and_expression ) {
                                     return and_expression;
-                                }, 
-                        
-                        non_terminal_term< LogicalOperation >( term< LogicalNot >, non_terminal_term< LogicalOperation > )
-                                >= []( auto, auto logical_expression ) {
-                                    return Warp::Utilities::allocate_node< LogicalNot >( logical_expression );
-                                }, 
-                        non_terminal_term< LogicalOperation >( term< LogicalNot >, term< LogicalNot >, non_terminal_term< LogicalOperation > )
-                                >= []( auto, auto, auto logical_expression ) {
-                                    return logical_expression;
-                                }, 
-                        non_terminal_term< LogicalOperation >( term< OpenParenthesis >, non_terminal_term< LogicalOperation >, term< CloseParenthesis > )
-                                >= []( auto, auto logical_expression, auto ) {
-                                    return logical_expression;
-                                }, 
-                        non_terminal_term< LogicalOperation >( term< OpenParenthesis >, non_terminal_term< BooleanAnd >, term< CloseParenthesis > )
-                                >= []( auto, auto logical_expression, auto ) {
-                                    return logical_expression;
-                                }, 
-                        non_terminal_term< LogicalOperation >( term< OpenParenthesis >, non_terminal_term< BooleanOr >, term< CloseParenthesis > )
-                                >= []( auto, auto logical_expression, auto ) {
-                                    return logical_expression;
-                                }, 
-
+                                },                         
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( LogicalOperation, LogicalOperation ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( LogicalOperation, BooleanAnd ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( LogicalOperation, BooleanOr ), 
 
                         //////////////////////////////// Comparison Expressions ////////////////////////////////
+
+                        // Comparisions must return a Compariosn non terminal term so they can be evaluated before the logical expressions (and thus used in them) //
 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( ComparisonEqual ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( ComparisonLessThan ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( ComparisonGreaterThan ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON_UNALIGNED( GreaterThanOrEqualTo, ComparisionGreaterThanOrEqualTo ), 
-                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON_UNALIGNED( LessThanOrEqualTo, ComparisionLessThanOrEqualTo ) 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON_UNALIGNED( LessThanOrEqualTo, ComparisionLessThanOrEqualTo ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( LogicalOperation, Comparison ) 
                 )
         );
     };
