@@ -28,7 +28,8 @@ namespace Warp::Parser
         WarpFunction = 11, 
         WarpModule = 12, 
         Arguments = 13, 
-        Expression = 14 
+        Expression = 14, 
+        ExpressionEater = 15 
     };
 
     enum class StringTerms
@@ -82,6 +83,11 @@ namespace Warp::Parser
         using Type = size_t;
     };
 
+    struct CarryOn {
+        Warp::CompilerRuntime::IntermediateFunctionAlternative prototype;
+        Warp::AbstractSyntaxTree::NodeVariantType expression;
+    };
+
     // For testing regexes for this program and many others, and for learning, thank you too https://regexr.com/ //
     LITERAL_REGEX_TERM( NaturalNumber, "[0-9][0-9]*" );
     LITERAL_REGEX_TERM( Identifier, "[a-zA-Z\\_][a-zA-Z0-9\\_]*" );
@@ -97,6 +103,7 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( Parameter, Warp::CompilerRuntime::Parameter );
     NON_TERMINAL_TERM( ParameterList, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( Arguments, Warp::CompilerRuntime::IntermediateFunctionAlternative );
+    NON_TERMINAL_TERM( ExpressionEater, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( WarpFunctionAlternative, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( WarpFunction, Warp::CompilerRuntime::Function );
     NON_TERMINAL_TERM( WarpModule, Warp::CompilerRuntime::Module );

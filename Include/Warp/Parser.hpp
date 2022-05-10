@@ -59,8 +59,7 @@ namespace Warp::Parser
         using enum FunctionOperators;
 
         using TermsType = EasySafeTermsType< 
-                                                FunctionDefinitionOperator 
-            >::AddOnePriority< 
+            // >::AddOnePriority< 
                 SumAdd, 
                 SumSubtract 
             >::AddOnePriority< 
@@ -84,20 +83,21 @@ namespace Warp::Parser
                                     >::AddOnePriority< 
                                             OpenParenthesis, 
                                             CloseParenthesis 
+                                        >::AddOnePriority< 
+                                                FunctionParameterConstaraint 
                                             >::AddOnePriority< 
-                                                    FunctionParameterConstaraint 
-                                                >::AddOnePriority< 
-                                                        FunctionParameterNextParameter 
-                                                    >::AddOnePriority<
-                                                            Identifier 
+                                                    FunctionParameterNextParameter 
+                                                >::AddOnePriority<
+                                                        Identifier 
+                                                    >::AddOnePriority< 
+                                                            FunctionDefintionComplete 
                                                         >::AddOnePriority< 
-                                                                FunctionDefintionComplete 
-                                                            >::AddOnePriority< 
-                                                                    KeywordLet 
-                                                                >::NoPriority< 
-                                                                        BooleanLiteral, 
-                                                                        NaturalNumber, 
-                                                                        FunctionResult 
+                                                                KeywordLet 
+                                                            >::NoPriority< 
+                                                                    BooleanLiteral, 
+                                                                    NaturalNumber, 
+                                                                    FunctionDefinitionOperator, 
+                                                                    FunctionResult 
                                                                     >; // I feel like Im writing python here 0.0 //
 
         using NonTerminalTermsType = SafeTermsType< 
@@ -116,7 +116,8 @@ namespace Warp::Parser
                 WarpFunction, 
                 WarpModule, 
                 Arguments, 
-                Expression 
+                Expression, 
+                ExpressionEater 
             >;
 
         template< auto ParameterConstant >
@@ -143,6 +144,20 @@ namespace Warp::Parser
                     } );
                 return std::move( parameter_list );
         }
+
+        template< auto NodeTagParameterConstant >
+        constexpr static auto subsume_function_alternative_expression( auto function, auto factor )
+        {
+            return Warp::CompilerRuntime::FunctionAlternative{ 
+                    function.identifier, 
+                    Warp::Utilities::allocate_node< NodeTagParameterConstant >( 
+                        function.expression, 
+                        factor 
+                    ), 
+                    function.input_constraints 
+                };
+        }
+
 
         constexpr static const auto parser = ctpg::parser( 
                 non_terminal_term< WarpFunctionAlternative >, 
@@ -196,6 +211,26 @@ namespace Warp::Parser
                                                     >( next_token )
                                             );
                                     }, 
+                        non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< Identifier > ) 
+                                >= []( auto current_factor, auto, const auto& next_token )
+                                    {
+                                        return Warp::Utilities::allocate_node< FactorMultiply >( 
+                                                current_factor, 
+                                                Warp::Utilities::allocate_node< 
+                                                        Warp::AbstractSyntaxTree::NodeType::Identifier 
+                                                    >( Warp::Utilities::hash_string( next_token ) )
+                                            );
+                                    }, 
+                        non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, term< Identifier > ) 
+                                >= []( auto current_factor, auto, const auto& next_token )
+                                    {
+                                        return Warp::Utilities::allocate_node< FactorDivide >( 
+                                                current_factor, 
+                                                Warp::Utilities::allocate_node< 
+                                                        Warp::AbstractSyntaxTree::NodeType::Identifier 
+                                                    >( Warp::Utilities::hash_string( next_token ) )
+                                            );
+                                    }, 
                         non_terminal_term< ParenthesisScope >( term< OpenParenthesis >, non_terminal_term< Factor >, term< CloseParenthesis > )
                                 >= [] ( auto, auto factor, auto ) { return factor; }, 
                         non_terminal_term< Factor >( non_terminal_term< ParenthesisScope > ) 
@@ -236,15 +271,15 @@ namespace Warp::Parser
                                                 next_token 
                                             );
                                     }, 
-                        // non_terminal_term< Expression >( non_terminal_term< Factor >, term< FunctionDefintionComplete > ) 
-                        //         >= []( auto factor, auto ) {
-                        //             return factor;
-                        //         }, 
-                        non_terminal_term< Expression >( term< FunctionDefinitionOperator >, non_terminal_term< Factor > ) 
-                                >= []( auto, auto factor ) {
+                        non_terminal_term< Expression >( non_terminal_term< Factor >) 
+                                >= []( auto factor ) {
                                     return factor;
                                 }, 
-                        
+                        // non_terminal_term< Expression >( term< FunctionDefinitionOperator >, non_terminal_term< Factor > ) 
+                        //         >= []( auto , auto factor ) {
+                        //             return factor;
+                        //         }, 
+
                         //////////////////////////////// Boolean Expressions ////////////////////////////////
 
                         // Probably shouldent actually ever need thes in the language, but keeping them at least for debugging. //
@@ -343,30 +378,81 @@ namespace Warp::Parser
                                 >= []( auto parameter_list, auto ) {
                                     return parameter_list;
                                 }, 
-                        non_terminal_term< Arguments >( non_terminal_term< ParameterList >, term< CloseParenthesis > )
-                                >= []( auto parameter_list, auto ) {
-                                    return parameter_list;
-                                }, 
-
-                        //////////////////////////////// Functions::Alternatives ////////////////////////////////
-
                         non_terminal_term< ParameterList >( term< KeywordLet >, term< Identifier >, term< OpenParenthesis > )
                                 >= []( auto let, auto function_name, auto open_parenthesis ) {
                                     return Warp::CompilerRuntime::IntermediateFunctionAlternative{ Warp::Utilities::hash_string( function_name ) };
                                 },
-
-                        non_terminal_term< WarpFunctionAlternative >( non_terminal_term< Arguments >, non_terminal_term< Expression > ) //term< FunctionDefinitionOperator >, non_terminal_term< Expression > )
-                                >= []( auto arguments , auto expression )//auto, auto expression )
+                        non_terminal_term< Arguments >( non_terminal_term< ParameterList >, term< CloseParenthesis > )
+                                >= []( auto parameter_list, auto ) {
+                                    return parameter_list;
+                                }, 
+                        non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, term< FunctionDefinitionOperator >, non_terminal_term< Expression > )
+                                >= []( auto arguments, auto, auto expression )
                                 {
-                                        return Warp::CompilerRuntime::FunctionAlternative{ 
-                                            arguments.identifier, 
-                                            expression, 
-                                            // Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >(), 
-                                            arguments.input_constraints, 
-                                            // dependancies would go here //
-                                        };
-                                }
+                                    std::cout << "Creating Expression Eater\n";
+                                    return Warp::CompilerRuntime::FunctionAlternative{ 
+                                        arguments.identifier, 
+                                        expression, 
+                                        // Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >(), 
+                                        arguments.input_constraints, 
+                                        // dependancies would go here //
+                                    };
+                                }, 
+                        
+                        //////////////////////////////// Arithmatic Expressions (Again) ////////////////////////////////
 
+                        ///////////////////////////////////////////////////////////////////////////////////////////////
+                        // This file is already a horrid mess, however, I needed to do duplicate this because I have //
+                        // the prototype of the function to the left and the uparsed expression too the right which ///
+                        // needs to be reduced before it can become a part of the function. ///////////////////////////
+                        ///////////////////////////////////////////////////////////////////////////////////////////////
+
+                        non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorMultiply >, non_terminal_term< Expression > ) 
+                                >= []( auto function, auto, auto factor ) {
+                                        return subsume_function_alternative_expression< FactorMultiply >( function, factor );
+                                    }, 
+                        
+                        non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorDivide >, non_terminal_term< Expression > ) 
+                                >= []( auto function, auto, auto factor ) {
+                                        return subsume_function_alternative_expression< FactorDivide >( function, factor );
+                                    }, 
+                        // non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorMultiply >, term< NaturalNumber > ) 
+                        //         >= []( auto function, auto, auto token )
+                        //             {
+                        //                 return subsume_function_alternative_expression< FactorMultiply >( function, std::move( 
+                        //                         Warp::Utilities::allocate_integral_literal_node< ResolvedType< NaturalNumber > >( token ) ) 
+                        //                     );
+                        //             }, 
+                        // non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorDivide >, term< NaturalNumber > ) 
+                        //         >= []( auto function, auto, auto token ) {
+                        //                 return subsume_function_alternative_expression< FactorDivide >( function, std::move( 
+                        //                         Warp::Utilities::allocate_integral_literal_node< ResolvedType< NaturalNumber > >( token ) ) 
+                        //                     );
+                        //             }, 
+                        // non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorMultiply >, term< Identifier > ) 
+                        //         >= []( auto function, auto, auto token )
+                        //             {
+                        //                 return subsume_function_alternative_expression< FactorMultiply >( function, std::move( 
+                        //                         Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Identifier >( 
+                        //                             Warp::Utilities::hash_string( token ) 
+                        //                         ) 
+                        //                     ) );
+                        //             }, 
+                        // non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorDivide >, term< Identifier > ) 
+                        //         >= []( auto function, auto, auto token )
+                        //             {
+                        //                 return subsume_function_alternative_expression< FactorDivide >( function, std::move( 
+                        //                         Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Identifier >( 
+                        //                             Warp::Utilities::hash_string( token ) 
+                        //                         ) 
+                        //                     ) );
+                        //             }, 
+                        non_terminal_term< WarpFunctionAlternative >( non_terminal_term< ExpressionEater >, term< FunctionDefintionComplete > ) 
+                                >= []( auto function, auto ) {
+                                        return function;
+                                    } 
+
+                        //////////////////////////////// Functions::Alternatives ////////////////////////////////
 
                         //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
 
