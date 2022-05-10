@@ -20,10 +20,10 @@ int main( int argc, char** args )
             std::cout << "Have result!\n";
             auto result = parse_result.value();
             // Warp::Analysis::abstract_syntax_tree_callback< Warp::Analysis::Executor, size_t >( parse_result.value() );
-            std::cout << "\nResults: \n";
-            std::cout << "Function Name Hash: " << result.identifier << "\n";
-            for( auto& parameter : result.input_constraints )
-                std::cout << "\tParameter Name Hash: " << parameter.identifier << "\n";
+            // std::cout << "\nResults: \n";
+            // std::cout << "Function Name Hash: " << result.identifier << "\n";
+            // for( auto& parameter : result.input_constraints )
+            //     std::cout << "\tParameter Name Hash: " << parameter.identifier << "\n";
 
         }
         else
