@@ -461,66 +461,45 @@ namespace Warp::Parser
                                 >= []( auto identifier, auto ) // function, auto identifier, auto )
                                     {
                                         std::cout << "Call found!\n";
-                                        // return CallEaterCarrier{ 
-                                                // function,
-                                                return  
-                                                Warp::CompilerRuntime::CallType{ 
-                                                        Warp::Utilities::hash_string( identifier ), 
-                                                        Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
-                                                    }
-                                                    ;
-                                            // };
+                                        return Warp::CompilerRuntime::CallType{ 
+                                                Warp::Utilities::hash_string( identifier ), 
+                                                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
+                                            };
                                     }, 
                         non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< Factor >, term< FunctionParameterNextParameter > ) 
                                 >= [](auto call, auto argument, auto )
                                     {
                                         std::cout << "Argument buffered!\n";
-                                        // return CallEaterCarrier{ 
-                                                // function,
-                                                return  
-                                                Warp::CompilerRuntime::CallType{ 
-                                                        call.identifier, 
-                                                        Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
-                                                                call.arguments, 
-                                                                argument 
-                                                            } 
-                                                    }
-                                                    ;
-                                            // };
+                                        return Warp::CompilerRuntime::CallType{ 
+                                                call.identifier, 
+                                                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
+                                                        call.arguments, 
+                                                        argument 
+                                                    } 
+                                            };
                                     }, 
                         non_terminal_term< Factor >( non_terminal_term< Call >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
                                 >= []( auto call, auto argument, auto )
                                     {
-                                        std::cout << "Call end!\n";
-                                        // return Warp::CompilerRuntime::FunctionAlternative{ 
-                                                // call.function_alternative.identifier, 
-                                                return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
-                                                    call.identifier, 
-                                                    Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
-                                                            call.arguments, 
-                                                            argument 
-                                                        } 
-                                                );//, 
-                                                // call.function_alternative.input_constraints 
-                                            // };
-
-                                        // return subsume_function_alternative_expression< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
-                                        //             call.function_alternative, 
-                                        //             Warp::Utilities::allocate_node< Warp:: call.call 
-                                        //         );
+                                        std::cout << "Call end 0!\n";
+                                        return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
+                                                call.identifier, 
+                                                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
+                                                        call.arguments, 
+                                                        argument 
+                                                    } 
+                                            );
+                                    }, 
+                        non_terminal_term< Factor >( non_terminal_term< Call >, term< CloseParenthesis > ) 
+                                >= []( auto call, auto )
+                                    {
+                                        std::cout << "Call end 1!\n";
+                                        return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
+                                                call.identifier, 
+                                                call.arguments 
+                                            );
                                     }
-                        // non_terminal_term< CallEater >( non_terminal_term< ExpressionEater >, term< Identifier >, term< OpenParenthesis > ) 
-                        //         >= []( auto function, auto call, auto ) {
-                        //                 std::cout << "Call found!\n";
-                        //                 return CallEaterCarrier{ 
-                        //                         function, 
-                        //                         Warp::CompilerRuntime::CallType{ 
-                        //                                 Warp::Utilities::hash_string( identifier ), 
-                        //                                 Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
-                        //                             }
-                        //                     };
-                        //             }, 
-
+ 
 ///////////////////////////////////
                         // non_terminal_term< Call >( term< hash_symbol > )
                         //         >= []( auto identifier )
