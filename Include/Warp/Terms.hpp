@@ -33,7 +33,8 @@ namespace Warp::Parser
         Call = 16, 
         CallNode = 17, 
         CallEater = 18, 
-        CallArguments = 19 
+        CallArguments = 19, 
+        CompleteCall = 20 
     };
 
     enum class StringTerms
@@ -108,6 +109,7 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( BooleanOr, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Call, Warp::CompilerRuntime::CallType );
     NON_TERMINAL_TERM( CallArguments, Warp::CompilerRuntime::CallType );
+    // NON_TERMINAL_TERM( CompleteCall, Warp::CompilerRuntime::CallType );
     NON_TERMINAL_TERM( CallNode, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Parameter, Warp::CompilerRuntime::Parameter );
     NON_TERMINAL_TERM( ParameterList, Warp::CompilerRuntime::IntermediateFunctionAlternative );

@@ -172,7 +172,7 @@ namespace Warp::Parser
         }
 
         constexpr static const auto parser = ctpg::parser( 
-                non_terminal_term< Factor >, 
+                non_terminal_term< WarpFunctionAlternative >, 
                 terms, 
                 non_terminal_terms, 
                 ctpg::rules( 
@@ -420,7 +420,6 @@ namespace Warp::Parser
                         non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, term< FunctionDefinitionOperator >, non_terminal_term< Expression > )
                                 >= []( auto arguments, auto, auto expression )
                                 {
-                                    std::cout << "Creating Expression Eater\n";
                                     return Warp::CompilerRuntime::FunctionAlternative{ 
                                         arguments.identifier, 
                                         expression, 
@@ -448,6 +447,13 @@ namespace Warp::Parser
                                     }, 
 
 
+                                    /// EXPERIMENTAL //
+                        // non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorMultiply >, non_terminal_term< CallNode > ) 
+                        //         >= []( auto function, auto, auto call ) {
+                        //                 return subsume_function_alternative_expression< FactorMultiply >( function, call );
+                        //             }, 
+
+
 
 
                         non_terminal_term< WarpFunctionAlternative >( non_terminal_term< ExpressionEater >, term< FunctionDefintionComplete > ) 
@@ -458,9 +464,8 @@ namespace Warp::Parser
                         //////////////////////////////// Functions::Calls ////////////////////////////////
 
                         non_terminal_term< Call >( term< Identifier >, term< OpenParenthesis > ) 
-                                >= []( auto identifier, auto ) // function, auto identifier, auto )
+                                >= []( auto identifier, auto ) 
                                     {
-                                        std::cout << "Call found!\n";
                                         return Warp::CompilerRuntime::CallType{ 
                                                 Warp::Utilities::hash_string( identifier ), 
                                                 Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
@@ -469,7 +474,6 @@ namespace Warp::Parser
                         non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< Factor >, term< FunctionParameterNextParameter > ) 
                                 >= [](auto call, auto argument, auto )
                                     {
-                                        std::cout << "Argument buffered!\n";
                                         return Warp::CompilerRuntime::CallType{ 
                                                 call.identifier, 
                                                 Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
@@ -478,10 +482,9 @@ namespace Warp::Parser
                                                     } 
                                             };
                                     }, 
-                        non_terminal_term< Factor >( non_terminal_term< Call >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
+                        non_terminal_term< Expression >( non_terminal_term< Call >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
                                 >= []( auto call, auto argument, auto )
                                     {
-                                        std::cout << "Call end 0!\n";
                                         return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
                                                 call.identifier, 
                                                 Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
@@ -490,105 +493,18 @@ namespace Warp::Parser
                                                     } 
                                             );
                                     }, 
-                        non_terminal_term< Factor >( non_terminal_term< Call >, term< CloseParenthesis > ) 
+                        non_terminal_term< Expression >( non_terminal_term< Call >, term< CloseParenthesis > ) 
                                 >= []( auto call, auto )
                                     {
-                                        std::cout << "Call end 1!\n";
                                         return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
                                                 call.identifier, 
                                                 call.arguments 
                                             );
                                     }
- 
-///////////////////////////////////
-                        // non_terminal_term< Call >( term< hash_symbol > )
-                        //         >= []( auto identifier )
-                        //             {
-                        //                 std::cout << "Call found!\n";
-                        //                 return Warp::CompilerRuntime::CallType{ 
-                        //                         0, 
-                        //                         // Warp::Utilities::get_node_value< Warp::AbstractSyntaxTree::NodeType::Identifier, Warp::Utilities::HashedStringType >( identifier ), 
-                        //                         Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
-                        //                     };
-                        //             }, 
-                        // non_terminal_term< Call >( term< Identifier >, term< OpenParenthesis > )
-                        //         >= []( auto identifier, auto )
-                        //             {
-                        //             }, 
-                        // // non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< Factor > )
-                        // //         >= []( auto call, auto factor ) {
-                        // //                 return Warp::CompilerRuntime::CallType{ 
-                        // //                         call.identifier, 
-                        // //                         Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ call.arguments, factor } 
-                        // //                     };
-                        // //             }, 
-
-                        // // non_terminal_term< Call >( non_terminal_term< Call >, term< FunctionParameterNextParameter >, non_terminal_term< CallNode > )
-                        // //         >= []( auto call, auto, auto factor )
-                        // //             {
-                        // //                 std::cout << "New Parmaeter found!\n";
-                        // //                 return Warp::CompilerRuntime::CallType{ 
-                        // //                         call.identifier, 
-                        // //                         Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ call.arguments, factor } 
-                        // //                     };
-                        // //             }, 
-
-                        // non_terminal_term< Call >( non_terminal_term< Call >, term< FunctionParameterNextParameter >, non_terminal_term< Factor > )
-                        //         >= []( auto call, auto, auto factor )
-                        //         {
-                        //                 std::cout << "New Parmaeter found!\n";
-                        //                 return Warp::CompilerRuntime::CallType{ 
-                        //                         call.identifier, 
-                        //                         Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ call.arguments, factor } 
-                        //                     };
-                        //             }, 
-                        // // non_terminal_term< Call >( non_terminal_term< Call >, term< FactorMultiply >, non_terminal_term< Factor > )
-                        // //         >= []( auto call, auto, auto factor )
-                        // //             {
-                        // //                 std::cout << "Call Multiply\n";
-                        // //                 return Warp::CompilerRuntime::CallType{ 
-                        // //                         call.identifier, 
-                        // //                         subsume_expression< FactorMultiply >( 
-                        // //                                 *call.arguments.get_end(), 
-                        // //                                 factor
-                        // //                             )
-                        // //                     };
-                        // //             }, 
-                        // // non_terminal_term< Call >( non_terminal_term< Call >, term< FactorDivide >, non_terminal_term< Factor > )
-                        // //         >= []( auto call, auto, auto factor )
-                        // //             {
-                        // //                 std::cout << "Call Divide\n";
-                        // //                 return Warp::CompilerRuntime::CallType{ 
-                        // //                         call.identifier, 
-                        // //                         subsume_expression< FactorDivide >( 
-                        // //                                 *call.arguments.get_end(), 
-                        // //                                 factor
-                        // //                             )
-                        // //                     };
-                        // //             }, 
-                        // non_terminal_term< CallNode >( non_terminal_term< Call >, term< CloseParenthesis > ) // non_terminal_term< Factor >, term< FactorMultiply >, non_terminal_term< Call >, term< CloseParenthesis > )
-                        //         >= []( auto call, auto ) 
-                        //             {
-                        //                 std::cout << "Call Done.\n";
-                        //                 // return Warp::Utilities::allocate_node< FactorMultiply >( 
-                        //                     // factor, 
-                        //                     return Warp::Utilities::allocate_node< 
-                        //                                     Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
-                        //                             call.identifier, 
-                        //                             call.arguments
-                        //                         // )
-                        //                     );
-                        //             }//, 
-                        // // non_terminal_term< Expression >( non_terminal_term< CallNode > )
-                        // //         >= []( auto call ) {
-                        // //             return call;
-                        // //         }
 
                         //////////////////////////////// Functions::Alternatives ////////////////////////////////
 
                         //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
-
-                        // non_terminal_term< Parameter >( term< Identifier >, non_terminal_term< LogicalOperation > )
 
                 )
         );
