@@ -132,7 +132,7 @@ namespace Warp::Utilities
             return pointer;
         }
 
-        constexpr const StorageParameterType* get_pointer() const noexcept {
+        constexpr StorageParameterType* get_pointer() const noexcept {
             return pointer;
         }
 

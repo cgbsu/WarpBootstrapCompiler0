@@ -32,6 +32,8 @@ namespace Warp::Parser
         ExpressionEater = 15, 
         Call = 16, 
         CallNode = 17, 
+        CallEater = 18, 
+        CallArguments = 19 
     };
 
     enum class StringTerms
@@ -85,6 +87,12 @@ namespace Warp::Parser
         using Type = size_t;
     };
 
+    // struct CallEaterCarrier 
+    // {
+    //     Warp::CompilerRuntime::FunctionAlternative function_alternative;
+
+    // }
+
     // For testing regexes for this program and many others, and for learning, thank you too https://regexr.com/ //
     LITERAL_REGEX_TERM( NaturalNumber, "[0-9][0-9]*" );
     LITERAL_REGEX_TERM( Identifier, "[a-zA-Z\\_][a-zA-Z0-9\\_]*" );
@@ -98,12 +106,13 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( BooleanAnd, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanOr, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Call, Warp::CompilerRuntime::CallType );
+    NON_TERMINAL_TERM( CallArguments, Warp::CompilerRuntime::CallType );
     NON_TERMINAL_TERM( CallNode, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Parameter, Warp::CompilerRuntime::Parameter );
     NON_TERMINAL_TERM( ParameterList, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( Arguments, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( ExpressionEater, Warp::CompilerRuntime::FunctionAlternative );
-    NON_TERMINAL_TERM( CallEater, Warp::CompilerRuntime::FunctionAlternative );
+    // NON_TERMINAL_TERM( CallEater, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( WarpFunctionAlternative, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( WarpFunction, Warp::CompilerRuntime::Function );
     NON_TERMINAL_TERM( WarpModule, Warp::CompilerRuntime::Module );

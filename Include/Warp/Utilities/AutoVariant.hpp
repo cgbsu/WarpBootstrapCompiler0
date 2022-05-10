@@ -150,9 +150,9 @@ namespace Warp::Utilities
     }*/
 
     template< typename QueryParameterType, typename... VariantAlternativeParameterTypes >
-    constexpr static QueryParameterType* get_if( AutoVariant< VariantAlternativeParameterTypes... >* variant ) {
-        if( decltype( FindTypeIndexDecay< 0, QueryParameterType, VariantAlternativeParameterTypes... >{} )::type_index == variant.index() )
-            return static_cast< QueryParameterType* >( variant.get_data() );
+    constexpr static QueryParameterType* get_if( const AutoVariant< VariantAlternativeParameterTypes... >* variant ) {
+        if( decltype( FindTypeIndexDecay< 0, QueryParameterType, VariantAlternativeParameterTypes... >{} )::type_index == variant->index() )
+            return static_cast< QueryParameterType* >( variant->get_data() );
         return nullptr;
     }
 }
