@@ -15,7 +15,8 @@ namespace Warp::AbstractSyntaxTree
         Literal = 'L', 
         Identifier = 'I', 
         BooleanLiteral = 'b', 
-        Unconstrained = 'U' 
+        Unconstrained = 'U', 
+        FunctionCall = 'c' 
     };
 
     template< typename... ArithmaticParameterTypes >
@@ -83,6 +84,7 @@ namespace Warp::AbstractSyntaxTree
     struct Node< Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo >;
 
     struct Node< Warp::Parser::FunctionOperators::FunctionResult >;
+    struct Node< NodeType::FunctionCall >;
 
     struct Node< NodeType::Unconstrained >;
 
@@ -111,6 +113,7 @@ namespace Warp::AbstractSyntaxTree
             Node< Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo >, 
 
             Node< Warp::Parser::FunctionOperators::FunctionResult >, 
+            Node< NodeType::FunctionCall >, 
             Node< NodeType::Unconstrained >
         >;
 
@@ -213,6 +216,19 @@ namespace Warp::AbstractSyntaxTree
                 value( Warp::Utilities::hash_string( string->to_string_view() ) ) {} // Class members initialized in order of declaration. //
         constexpr Node( Node< NodeType::Identifier > const& other ) noexcept : string( other.string ), value( other.value ) {}
     };
+
+    template<>
+    struct Node< NodeType::FunctionCall > : public BaseNode< NodeType::FunctionCall >
+    {
+        Warp::Utilities::HashedStringType identifier;
+        Warp::Utilities::VectorType< NodeVariantType > arguments;
+        constexpr Node( 
+                Warp::Utilities::HashedStringType identifier, 
+                Warp::Utilities::VectorType< NodeVariantType > arguments 
+            ) noexcept : 
+                identifier( identifier ), arguments( arguments ) {}
+    };
+
 
     #define DEFINE_UNARY_NODE_CUSTOM_OPERATION( OPERATION_TYPE, VALUE, OPERHAND_TYPE, CUSTOM_OPERATION ) \
         template<> \

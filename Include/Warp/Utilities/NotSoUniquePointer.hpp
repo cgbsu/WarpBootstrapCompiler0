@@ -85,25 +85,29 @@ namespace Warp::Utilities
     template< typename StorageParameterType >
     struct NotSoUniquePointer< Detail::VectorPlaceHolder< StorageParameterType > >
     {
-        constexpr NotSoUniquePointer() : pointer( nullptr ), size( 0 ) {}
+        constexpr NotSoUniquePointer() : pointer( nullptr ), size( 0 ), end( nullptr ) {}
 
         constexpr NotSoUniquePointer( auto... array ) noexcept : 
-                pointer( new StorageParameterType[ sizeof...( array ) ]{ array... } ), size( sizeof...( array ) ) {}
+                pointer( new StorageParameterType[ sizeof...( array ) ]{ array... } ), 
+                size( sizeof...( array ) ), 
+                end( &pointer[ sizeof...( array ) - 1 ] ) {}
 
         constexpr NotSoUniquePointer( const NotSoUniquePointer& other, const StorageParameterType& to_append ) noexcept : 
                 pointer( copy_append( 0, other.size, new StorageParameterType[ other.size + 1 ], other.pointer, to_append ) ), 
-                size( other.size + 1 )
+                size( other.size + 1 ), 
+                end( &pointer[ other.size ] )
         {}
 
         constexpr NotSoUniquePointer( NotSoUniquePointer&& other, const StorageParameterType& to_append ) noexcept : 
                 pointer( copy_append( 0, other.size, new StorageParameterType[ other.size + 1 ], other.pointer, to_append ) ), 
-                size( other.size + 1 )
+                size( other.size + 1 ), 
+                end( &pointer[ other.size ] ) 
         {}
 
-        constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ), size( other.size ) {
+        constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ), size( other.size ), end( other.end ) {
             ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
         }
-        constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ), size( other.size ) {
+        constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ), size( other.size ), end( other.end ) {
             other.pointer = nullptr;
         }
         constexpr ~NotSoUniquePointer() noexcept {
@@ -141,10 +145,18 @@ namespace Warp::Utilities
             return get( index );
         }
 
+        constexpr const StorageParameterType* get_end() {
+            return end;
+        }
+
+        constexpr const size_t get_size() {
+            return size;
+        }
 
         protected: 
             size_t size;
             StorageParameterType* pointer;
+            StorageParameterType* end;
     };
 
     template< typename StorageParameterType >

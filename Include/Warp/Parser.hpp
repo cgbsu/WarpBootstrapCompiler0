@@ -117,7 +117,8 @@ namespace Warp::Parser
                 WarpModule, 
                 Arguments, 
                 Expression, 
-                ExpressionEater 
+                ExpressionEater, 
+                Call  
             >;
 
         template< auto ParameterConstant >
@@ -146,11 +147,19 @@ namespace Warp::Parser
         }
 
         template< auto NodeTagParameterConstant >
+        constexpr static auto subsume_expression( auto left, auto right ) {
+            return Warp::Utilities::allocate_node< NodeTagParameterConstant >( 
+                    left, 
+                    right 
+                );
+        }
+
+        template< auto NodeTagParameterConstant >
         constexpr static auto subsume_function_alternative_expression( auto function, auto factor )
         {
             return Warp::CompilerRuntime::FunctionAlternative{ 
                     function.identifier, 
-                    Warp::Utilities::allocate_node< NodeTagParameterConstant >( 
+                    subsume_expression< NodeTagParameterConstant >( 
                         function.expression, 
                         factor 
                     ), 
@@ -416,40 +425,64 @@ namespace Warp::Parser
                                 >= []( auto function, auto, auto factor ) {
                                         return subsume_function_alternative_expression< FactorDivide >( function, factor );
                                     }, 
-                        // non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorMultiply >, term< NaturalNumber > ) 
-                        //         >= []( auto function, auto, auto token )
-                        //             {
-                        //                 return subsume_function_alternative_expression< FactorMultiply >( function, std::move( 
-                        //                         Warp::Utilities::allocate_integral_literal_node< ResolvedType< NaturalNumber > >( token ) ) 
-                        //                     );
-                        //             }, 
-                        // non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorDivide >, term< NaturalNumber > ) 
-                        //         >= []( auto function, auto, auto token ) {
-                        //                 return subsume_function_alternative_expression< FactorDivide >( function, std::move( 
-                        //                         Warp::Utilities::allocate_integral_literal_node< ResolvedType< NaturalNumber > >( token ) ) 
-                        //                     );
-                        //             }, 
-                        // non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorMultiply >, term< Identifier > ) 
-                        //         >= []( auto function, auto, auto token )
-                        //             {
-                        //                 return subsume_function_alternative_expression< FactorMultiply >( function, std::move( 
-                        //                         Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Identifier >( 
-                        //                             Warp::Utilities::hash_string( token ) 
-                        //                         ) 
-                        //                     ) );
-                        //             }, 
-                        // non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorDivide >, term< Identifier > ) 
-                        //         >= []( auto function, auto, auto token )
-                        //             {
-                        //                 return subsume_function_alternative_expression< FactorDivide >( function, std::move( 
-                        //                         Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Identifier >( 
-                        //                             Warp::Utilities::hash_string( token ) 
-                        //                         ) 
-                        //                     ) );
-                        //             }, 
                         non_terminal_term< WarpFunctionAlternative >( non_terminal_term< ExpressionEater >, term< FunctionDefintionComplete > ) 
                                 >= []( auto function, auto ) {
                                         return function;
+                                    }, 
+                        
+                        //////////////////////////////// Functions::Calls ////////////////////////////////
+                        
+                        non_terminal_term< Call >( term< Identifier >, term< OpenParenthesis > )
+                                >= []( auto identifier, auto ) {
+                                        return Warp::CompilerRuntime::CallType{ 
+                                                Warp::Utilities::hash_string( identifier ), 
+                                                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
+                                            };
+                                    }, 
+                        // non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< Factor > )
+                        //         >= []( auto call, auto factor ) {
+                        //                 return Warp::CompilerRuntime::CallType{ 
+                        //                         call.identifier, 
+                        //                         Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ call.arguments, factor } 
+                        //                     };
+                        //             }, 
+                        non_terminal_term< Call >( non_terminal_term< Call >, term< FunctionParameterNextParameter >, non_terminal_term< Factor > )
+                                >= []( auto call, auto, auto factor ) {
+                                        return Warp::CompilerRuntime::CallType{ 
+                                                call.identifier, 
+                                                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ call.arguments, factor } 
+                                            };
+                                    }, 
+                        non_terminal_term< Call >( non_terminal_term< Call >, term< FactorMultiply >, non_terminal_term< Factor > )
+                                >= []( auto call, auto, auto factor )
+                                    {
+                                        return Warp::CompilerRuntime::CallType{ 
+                                                call.identifier, 
+                                                subsume_expression< FactorMultiply >( 
+                                                        *call.arguments.get_end(), 
+                                                        factor
+                                                    )
+                                            };
+                                    }, 
+                        non_terminal_term< Call >( non_terminal_term< Call >, term< FactorDivide >, non_terminal_term< Factor > )
+                                >= []( auto call, auto, auto factor )
+                                    {
+                                        return Warp::CompilerRuntime::CallType{ 
+                                                call.identifier, 
+                                                subsume_expression< FactorDivide >( 
+                                                        *call.arguments.get_end(), 
+                                                        factor
+                                                    )
+                                            };
+                                    }, 
+                        non_terminal_term< Expression >( non_terminal_term< Call >, term< CloseParenthesis > )
+                                >= []( auto call, auto ) 
+                                    {
+                                        return Warp::Utilities::allocate_node< 
+                                                        Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
+                                                call.identifier, 
+                                                call.arguments
+                                            );
                                     } 
 
                         //////////////////////////////// Functions::Alternatives ////////////////////////////////

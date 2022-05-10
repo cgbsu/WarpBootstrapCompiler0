@@ -5,6 +5,8 @@
 
 namespace Warp::CompilerRuntime
 {
+    using CallType = Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >
+    ;
     struct Function;
 
     struct Parameter {
