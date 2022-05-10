@@ -16,6 +16,7 @@ namespace Warp::Parser
     constexpr static const char equal_sign_token = '=';
     constexpr static const char comma_token = ',';
     constexpr static const char at_symbol = '@';
+    constexpr static const char hash_symbol = '#';
 
     constexpr static const char open_parenthesis_token = '(';
     constexpr static const char close_parenthesis_token = ')';

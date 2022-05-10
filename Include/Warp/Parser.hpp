@@ -90,6 +90,7 @@ namespace Warp::Parser
                                                 >::AddOnePriority<
                                                         Identifier 
                                                     >::AddOnePriority< 
+                                                                    hash_symbol,
                                                             FunctionDefintionComplete 
                                                         >::AddOnePriority< 
                                                                 KeywordLet 
@@ -97,7 +98,7 @@ namespace Warp::Parser
                                                                     BooleanLiteral, 
                                                                     NaturalNumber, 
                                                                     FunctionDefinitionOperator, 
-                                                                    FunctionResult 
+                                                                    FunctionResult//, 
                                                                     >; // I feel like Im writing python here 0.0 //
 
         using NonTerminalTermsType = SafeTermsType< 
@@ -118,7 +119,8 @@ namespace Warp::Parser
                 Arguments, 
                 Expression, 
                 ExpressionEater, 
-                Call  
+                Call, 
+                CallNode 
             >;
 
         template< auto ParameterConstant >
@@ -419,10 +421,17 @@ namespace Warp::Parser
                         non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorMultiply >, non_terminal_term< Expression > ) 
                                 >= []( auto function, auto, auto factor ) {
                                         return subsume_function_alternative_expression< FactorMultiply >( function, factor );
-                                    }, 
-                        
+                                    },                         
                         non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorDivide >, non_terminal_term< Expression > ) 
                                 >= []( auto function, auto, auto factor ) {
+                                        return subsume_function_alternative_expression< FactorDivide >( function, factor );
+                                    }, 
+                        non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorMultiply >, term< Identifier > ) 
+                                >= []( auto function, auto, auto call ) {
+                                        return subsume_function_alternative_expression< FactorMultiply >( function, factor );
+                                    },                         
+                        non_terminal_term< ExpressionEater >( non_terminal_term< ExpressionEater >, term< FactorDivide >, non_terminal_term< Identifier > ) 
+                                >= []( auto function, auto, auto call ) {
                                         return subsume_function_alternative_expression< FactorDivide >( function, factor );
                                     }, 
                         non_terminal_term< WarpFunctionAlternative >( non_terminal_term< ExpressionEater >, term< FunctionDefintionComplete > ) 
@@ -432,8 +441,9 @@ namespace Warp::Parser
                         
                         //////////////////////////////// Functions::Calls ////////////////////////////////
                         
-                        non_terminal_term< Call >( term< Identifier >, term< OpenParenthesis > )
-                                >= []( auto identifier, auto ) {
+                        non_terminal_term< Call >( term< hash_symbol >, term< Identifier >, term< OpenParenthesis > )
+                                >= []( auto, auto identifier, auto ) {
+                                        std::cout << "Call found!\n";
                                         return Warp::CompilerRuntime::CallType{ 
                                                 Warp::Utilities::hash_string( identifier ), 
                                                 Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
@@ -447,37 +457,42 @@ namespace Warp::Parser
                         //                     };
                         //             }, 
                         non_terminal_term< Call >( non_terminal_term< Call >, term< FunctionParameterNextParameter >, non_terminal_term< Factor > )
-                                >= []( auto call, auto, auto factor ) {
+                                >= []( auto call, auto, auto factor )
+                                {
+                                        std::cout << "New Parmaeter found!\n";
                                         return Warp::CompilerRuntime::CallType{ 
                                                 call.identifier, 
                                                 Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ call.arguments, factor } 
                                             };
                                     }, 
-                        non_terminal_term< Call >( non_terminal_term< Call >, term< FactorMultiply >, non_terminal_term< Factor > )
-                                >= []( auto call, auto, auto factor )
-                                    {
-                                        return Warp::CompilerRuntime::CallType{ 
-                                                call.identifier, 
-                                                subsume_expression< FactorMultiply >( 
-                                                        *call.arguments.get_end(), 
-                                                        factor
-                                                    )
-                                            };
-                                    }, 
-                        non_terminal_term< Call >( non_terminal_term< Call >, term< FactorDivide >, non_terminal_term< Factor > )
-                                >= []( auto call, auto, auto factor )
-                                    {
-                                        return Warp::CompilerRuntime::CallType{ 
-                                                call.identifier, 
-                                                subsume_expression< FactorDivide >( 
-                                                        *call.arguments.get_end(), 
-                                                        factor
-                                                    )
-                                            };
-                                    }, 
+                        // non_terminal_term< Call >( non_terminal_term< Call >, term< FactorMultiply >, non_terminal_term< Factor > )
+                        //         >= []( auto call, auto, auto factor )
+                        //             {
+                        //                 std::cout << "Call Multiply\n";
+                        //                 return Warp::CompilerRuntime::CallType{ 
+                        //                         call.identifier, 
+                        //                         subsume_expression< FactorMultiply >( 
+                        //                                 *call.arguments.get_end(), 
+                        //                                 factor
+                        //                             )
+                        //                     };
+                        //             }, 
+                        // non_terminal_term< Call >( non_terminal_term< Call >, term< FactorDivide >, non_terminal_term< Factor > )
+                        //         >= []( auto call, auto, auto factor )
+                        //             {
+                        //                 std::cout << "Call Divide\n";
+                        //                 return Warp::CompilerRuntime::CallType{ 
+                        //                         call.identifier, 
+                        //                         subsume_expression< FactorDivide >( 
+                        //                                 *call.arguments.get_end(), 
+                        //                                 factor
+                        //                             )
+                        //                     };
+                        //             }, 
                         non_terminal_term< Expression >( non_terminal_term< Call >, term< CloseParenthesis > )
                                 >= []( auto call, auto ) 
                                     {
+                                        std::cout << "Call Done.\n";
                                         return Warp::Utilities::allocate_node< 
                                                         Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
                                                 call.identifier, 

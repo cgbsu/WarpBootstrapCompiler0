@@ -30,7 +30,8 @@ namespace Warp::Parser
         Arguments = 13, 
         Expression = 14, 
         ExpressionEater = 15, 
-        Call = 16 
+        Call = 16, 
+        CallNode = 17, 
     };
 
     enum class StringTerms
@@ -97,10 +98,12 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( BooleanAnd, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanOr, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Call, Warp::CompilerRuntime::CallType );
+    NON_TERMINAL_TERM( CallNode, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( Parameter, Warp::CompilerRuntime::Parameter );
     NON_TERMINAL_TERM( ParameterList, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( Arguments, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( ExpressionEater, Warp::CompilerRuntime::FunctionAlternative );
+    NON_TERMINAL_TERM( CallEater, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( WarpFunctionAlternative, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( WarpFunction, Warp::CompilerRuntime::Function );
     NON_TERMINAL_TERM( WarpModule, Warp::CompilerRuntime::Module );
