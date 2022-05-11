@@ -95,6 +95,22 @@ namespace Warp::Parser
         Warp::CompilerRuntime::CallType call;
     };
 
+    struct ProtoCall
+    {
+        Warp::Utilities::HashedStringType identifier;
+        Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType > arguments;
+        ExpressionOperator expression_type;
+        Warp::AbstractSyntaxTree::NodeVariantType left_factor;
+        constexpr ProtoCall( 
+                Warp::Utilities::HashedStringType identifier, 
+                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType > arguments, 
+                Warp::AbstractSyntaxTree::NodeVariantType left_factor = Warp::AbstractSyntaxTree::NodeVariantType{}, 
+                ExpressionOperator expression_type = ExpressionOperator::FactorMultiply 
+            ) noexcept : 
+                identifier( identifier ), arguments( arguments ), left_factor( left_factor ), expression_type( expression_type ) {}
+
+    };
+
     // For testing regexes for this program and many others, and for learning, thank you too https://regexr.com/ //
     LITERAL_REGEX_TERM( NaturalNumber, "[0-9][0-9]*" );
     LITERAL_REGEX_TERM( Identifier, "[a-zA-Z\\_][a-zA-Z0-9\\_]*" );
@@ -107,7 +123,11 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( Comparison, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanAnd, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanOr, Warp::AbstractSyntaxTree::NodeVariantType );
-    NON_TERMINAL_TERM( Call, Warp::AbstractSyntaxTree::NodeVariantType ); //Warp::CompilerRuntime::CallType );
+
+    // NON_TERMINAL_TERM( Bipper, Warp::AbstractSyntaxTree::NodeVariantType );
+
+    // NON_TERMINAL_TERM( Call, Warp::AbstractSyntaxTree::NodeVariantType ); 
+    NON_TERMINAL_TERM( Call, ProtoCall );//Warp::CompilerRuntime::CallType );
     NON_TERMINAL_TERM( CallArguments, Warp::CompilerRuntime::CallType );
     // NON_TERMINAL_TERM( CompleteCall, Warp::CompilerRuntime::CallType );
     NON_TERMINAL_TERM( CallNode, Warp::AbstractSyntaxTree::NodeVariantType );
@@ -115,6 +135,7 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( ParameterList, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( Arguments, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( ExpressionEater, Warp::CompilerRuntime::FunctionAlternative );
+    // NON_TERMINAL_TERM( SumExpressionEater, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( CallEater, CallEaterCarrier );
     NON_TERMINAL_TERM( WarpFunctionAlternative, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( WarpFunction, Warp::CompilerRuntime::Function );
@@ -170,10 +191,10 @@ namespace Warp::Parser
                 NodeTypeParameterConstant
             > {
         using TermDataType = Term< NodeTypeParameterConstant >;
-        constexpr const static auto term = ctpg::nterm< typename TermDataType::StorageType >{ 
+        constexpr const static auto term = ctpg::nterm< typename TermDataType::StorageType >( 
                 TermDataType::name, 
                 PriorityParameterConstant  
-            };
+            );
     };
 
     template< 
@@ -232,7 +253,7 @@ namespace Warp::Parser
                 NodeTypeParameterConstant
             > {
         using TermDataType = Term< NodeTypeParameterConstant >;
-        constexpr const static auto term = ctpg::nterm< typename TermDataType::StorageType >{ TermDataType::name };
+        constexpr const static auto term = ctpg::nterm< typename TermDataType::StorageType >( TermDataType::name );
     };
 
     template< StringTerms NodeTypeParameterConstant >

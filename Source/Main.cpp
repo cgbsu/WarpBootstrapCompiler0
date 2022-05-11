@@ -20,7 +20,7 @@ bool test_parse( const WarpTest& test, const ParserParameterType& parser, bool d
     return result;
 }
 
-
+// #define WARP_REPL
 
 #ifdef WARP_REPL
 
@@ -57,7 +57,8 @@ int main( int argc, char** args )
 #else // WARP_REPL
 
 static std::array test_suite_names = {
-        "alternative_calls"
+        "alternative_calls", 
+        "factor_calls"
     };
 
 using TestSuiteType = std::vector< WarpTest >;
@@ -66,6 +67,7 @@ static TestSuiteType function_alternative_calls{
         WarpTest{ true, "let test( a : a < 64 ) :: test( 1 );" }, 
         WarpTest{ true, "let test( a : a < 64 ) :: test( a );" }, 
         WarpTest{ true, "let test( a : a < 64 ) :: 20 * test( a );" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: 20 + test( a );" }, 
         WarpTest{ true, "let test( a : a < 64 ) :: test( a ) * 20;" }, 
         WarpTest{ true, "let test( a : a < 64 ) :: test( a ) + 10;" }, 
         WarpTest{ true, "let test( a : a < 64 ) :: test( a * a );" }, 
@@ -74,8 +76,23 @@ static TestSuiteType function_alternative_calls{
         WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 );" } 
     };
 
+static TestSuiteType factor_calls{
+        WarpTest{ true, "test( 1 )" }, 
+        WarpTest{ true, "test( a )" }, 
+        WarpTest{ true, "20 * test( a )" }, 
+        WarpTest{ true, "20 + test( a )" }, 
+        WarpTest{ true, "test( a ) * 20" }, 
+        WarpTest{ true, "test( a ) + 10" }, 
+        WarpTest{ true, "test( a * a )" }, 
+        WarpTest{ true, "test( a(), b( q, 4, 5646, 345345 * 445656 + 34 ), rdfg * 34534 )" }, 
+        WarpTest{ true, "test( a, q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 )" }, 
+        WarpTest{ true, "test( ttt(), q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 )" } 
+    };
+
+
 static std::vector< TestSuiteType > test_suits{ 
-        function_alternative_calls 
+        function_alternative_calls, 
+        factor_calls
     };
 
 int main( int argc, char** args )
