@@ -117,6 +117,16 @@ namespace Warp::Utilities
                 } >( to_const_reference( from ) );
     }
 
+    // constexpr Warp::AbstractSyntaxTree::NodeVariantType construct_node_of_type( 
+    //         const Warp::AbstractSyntaxTree::NodeVariantType& from, 
+    //         auto... initializers 
+    //     )
+    // {
+    //     return Warp::Utilities::visit< []( auto* node ) { 
+    //                 return allocate_node< node_tag< CleanType< decltype( node ) > > >( initializers... );
+    //             } >( to_const_reference( from ) );
+    // }
+
     template< auto NodeParameterTypeConstant >
     constexpr const Warp::AbstractSyntaxTree::NodeVariantType& get_left( const Warp::AbstractSyntaxTree::NodeVariantType& from ) {
         return Warp::Utilities::get_if< Warp::AbstractSyntaxTree::Node< NodeParameterTypeConstant > >( from.get_pointer() )->left;
@@ -132,6 +142,11 @@ namespace Warp::Utilities
         // using NodeType = Warp::AbstractSyntaxTree::Node< NodeParameterTypeConstant >;
         // NodeType* ptr = static_cast< NodeType* >( from.get_pointer() );
         return Warp::Utilities::get_if< Warp::AbstractSyntaxTree::Node< NodeParameterTypeConstant > >( from.get_pointer() )->value;
+    }
+
+    template< auto NodeTagParameterConstant > 
+    constexpr auto tag_is( const Warp::AbstractSyntaxTree::NodeVariantType& node ) {
+        return node->data_as< Warp::AbstractSyntaxTree::Taggable, true >()->tag_as< decltype( NodeTagParameterConstant ) >() == NodeTagParameterConstant;
     }
 }
 

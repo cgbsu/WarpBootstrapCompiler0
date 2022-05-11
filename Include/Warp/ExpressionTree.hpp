@@ -343,12 +343,6 @@ namespace Warp::AbstractSyntaxTree
     DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo, auto, auto, >= );
 
     // DEFINE_TRI_NODE_CUSTOM_OPERATION( )
-
-    template< auto NodeTagParameterConstant > 
-    constexpr auto tag_is( const NodeVariantType& node ) {
-        return node->data_as< Taggable, true >()->tag_as< decltype( NodeTagParameterConstant ) >() == NodeTagParameterConstant;
-    }
-    
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_EXPRESSION_TREE_HPP
