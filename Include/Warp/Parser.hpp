@@ -122,7 +122,9 @@ namespace Warp::Parser
                 WarpModule, 
                 Arguments, 
                 Expression, 
-                ExpressionEater 
+                ExpressionEater, 
+                Argument, 
+                ArgumentList 
             >;
 
         template< auto ParameterConstant >
@@ -525,103 +527,122 @@ namespace Warp::Parser
                         
                         //////////////////////////////// Functions::Calls ////////////////////////////////
 //Herhe
-                        non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< Identifier >, term< OpenParenthesis > ) 
-                                >= []( auto factor, auto, auto identifier, auto ) 
+                        // non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< Identifier >, term< OpenParenthesis > ) 
+                        //         >= []( auto factor, auto, auto identifier, auto ) 
+                        //             {
+                        //                 return Warp::Utilities::allocate_node< FactorMultiply >( 
+                        //                         factor, 
+                        //                         Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
+                        //                                 Warp::Utilities::hash_string( identifier ), 
+                        //                                 Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
+                        //                             ) 
+                        //                     );
+                        //             }, 
+                        // non_terminal_term< Factor >( non_terminal_term< Factor >, non_terminal_term< Factor >, term< FunctionParameterNextParameter > ) 
+                        //         >= []( auto operation_call, auto argument, auto )
+                        //             {
+                        //                 if( Warp::Utilities::is_bi_node( operation_call ) == false ) 
+                        //                 {
+                        //                     std::cerr << "ERROR!!!: Attempt to parse function call failed! "
+                        //                             << "Bi-Node not found where expected (Factor, Factor, NextParmaeterToken(Comma))! "
+                        //                             << "Returning first factor.\n";
+                        //                 }
+                        //                 auto proxy = Warp::Utilities::bi_node_proxy( operation_call ).value();
+                        //                 if( Warp::Utilities::tag_is( proxy.right ) != Warp::AbstractSyntaxTree::NodeType::FunctionCall )
+                        //                 {
+                        //                     std::cerr << "ERROR!!!: Attempt to parse function call failed! "
+                        //                             << "FunctionCall not found where expected (Factor (left: Factor, right: FunctionCall), "
+                        //                             << "Factor, NextParmaeterToken(Comma))! Returning first factor.\n";
+                        //                 }
+                        //                 auto call = proxy.right->data_as< Warp::CompilerRuntime::CallType, true >();
+                        //                 call->arguments.push_back( argument );
+                        //                 return operation_call;
+                        //             }, 
+                        // non_terminal_term< Factor >( non_terminal_term< Factor >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
+                        //         >= []( auto operation_call, auto argument, auto )
+                        //             {
+                        //                 if( Warp::Utilities::is_bi_node( operation_call ) == false ) 
+                        //                 {
+                        //                     std::cerr << "ERROR!!!: Attempt to parse function call failed! "
+                        //                             << "Bi-Node not found where expected (Factor, Factor, CloseParenthesis)! "
+                        //                             << "Returning first factor.\n";
+                        //                 }
+                        //                 auto proxy = Warp::Utilities::bi_node_proxy( operation_call ).value();
+                        //                 if( Warp::Utilities::tag_is( proxy.right ) != Warp::AbstractSyntaxTree::NodeType::FunctionCall )
+                        //                 {
+                        //                     std::cerr << "ERROR!!!: Attempt to parse function call failed! "
+                        //                             << "FunctionCall not found where expected (Factor (left: Factor, right: FunctionCall), "
+                        //                             << "Factor, CloseParenthesis)! Returning first factor.\n";
+                        //                 }
+                        //                 auto call = proxy.right->data_as< Warp::CompilerRuntime::CallType, true >();
+                        //                 call->arguments.push_back( argument );
+                        //                 return operation_call;
+                        //             } 
+
+                        non_terminal_term< Call >( term< Identifier >, term< OpenParenthesis > ) 
+                                >= []( auto identifier, auto ) 
                                     {
-                                        return Warp::Utilities::allocate_node< FactorMultiply >( 
-                                                factor, 
-                                                Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
-                                                        Warp::Utilities::hash_string( identifier ), 
-                                                        Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
-                                                    ) 
+                                        // std::cout << "A\n";
+                                        // return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
+                                        return Warp::CompilerRuntime::CallType ( 
+                                                Warp::Utilities::hash_string( identifier ), 
+                                                std::vector< Warp::AbstractSyntaxTree::NodeVariantType >{}//, 
+                                                // Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
+                                            ); 
+                                    }, 
+
+                        // non_terminal_term< Call >( term< Identifier >, term< OpenParenthesis >, non_terminal_term< Factor > ) 
+                        //         >= []( auto identifier, auto, auto argument ) 
+                        //             {
+                        //                 // std::cout << "B\n";
+                        //                 // return std::move( Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
+                        //                 return std::move( Warp::CompilerRuntime::CallType { 
+                        //                         Warp::Utilities::hash_string( identifier ), 
+                        //                         std::vector< Warp::AbstractSyntaxTree::NodeVariantType >{ std::move( argument ) }//, 
+                        //                         // Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >( std::move( argument ) ) 
+                        //                     } ); 
+                        //             }, 
+
+                        non_terminal_term< ArgumentList >( non_terminal_term< ArgumentList >, non_terminal_term< Factor >, term< FunctionParameterNextParameter > )
+                                >= []( auto arguments, auto argument, auto ) {
+                                    arguments.push_back( argument );
+                                    return arguments;
+                                }, 
+                        non_terminal_term< Factor >( non_terminal_term< Call >, non_terminal_term< Arguments >, term< CloseParenthesis > ) 
+                                >= []( const auto& call, auto arguments, auto ) {
+                                        return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
+                                                call.identifier, 
+                                                arguments 
                                             );
-                                    }, 
-                        non_terminal_term< Factor >( non_terminal_term< Factor >, non_terminal_term< Factor >, term< FunctionParameterNextParameter > ) 
-                                >= []( auto operation_call, auto argument, auto )
-                                    {
-                                        if( Warp::Utilities::is_bi_node( operation_call ) == false ) 
-                                        {
-                                            std::cerr << "ERROR!!!: Attempt to parse function call failed! "
-                                                    << "Bi-Node not found where expected (Factor, Factor, NextParmaeterToken(Comma))! "
-                                                    << "Returning first factor.\n";
-                                        }
-                                        auto proxy = Warp::Utilities::bi_node_proxy( operation_call ).value();
-                                        if( Warp::Utilities::tag_is( proxy.right ) != Warp::AbstractSyntaxTree::NodeType::FunctionCall )
-                                        {
-                                            std::cerr << "ERROR!!!: Attempt to parse function call failed! "
-                                                    << "FunctionCall not found where expected (Factor (left: Factor, right: FunctionCall), "
-                                                    << "Factor, NextParmaeterToken(Comma))! Returning first factor.\n";
-                                        }
-                                        auto call = proxy.right->data_as< Warp::CompilerRuntime::CallType, true >();
-                                        call->arguments.push_back( argument );
-                                        return operation_call;
-                                    }, 
-                        non_terminal_term< Factor >( non_terminal_term< Factor >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
-                                >= []( auto operation_call, auto argument, auto )
-                                    {
-                                        if( Warp::Utilities::is_bi_node( operation_call ) == false ) 
-                                        {
-                                            std::cerr << "ERROR!!!: Attempt to parse function call failed! "
-                                                    << "Bi-Node not found where expected (Factor, Factor, CloseParenthesis)! "
-                                                    << "Returning first factor.\n";
-                                        }
-                                        auto proxy = Warp::Utilities::bi_node_proxy( operation_call ).value();
-                                        if( Warp::Utilities::tag_is( proxy.right ) != Warp::AbstractSyntaxTree::NodeType::FunctionCall )
-                                        {
-                                            std::cerr << "ERROR!!!: Attempt to parse function call failed! "
-                                                    << "FunctionCall not found where expected (Factor (left: Factor, right: FunctionCall), "
-                                                    << "Factor, CloseParenthesis)! Returning first factor.\n";
-                                        }
-                                        auto call = proxy.right->data_as< Warp::CompilerRuntime::CallType, true >();
-                                        call->arguments.push_back( argument );
-                                        return operation_call;
-                                    } 
-                        // non_terminal_term< CallNode >( non_terminal_term< Call >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
-                        //         >= []( auto call, auto argument, auto )
+                                } 
+
+                        // non_terminal_term< Factor >( non_terminal_term< Call >, term< CloseParenthesis > ) 
+                        //         >= []( const auto& call, auto ) 
                         //             {
-                        //                 return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
-                        //                         call.identifier, 
-                        //                         Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
-                        //                                 call.arguments, 
-                        //                                 argument 
-                        //                             } 
-                        //                     );
-                        //             }, 
-                        // non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< CallNode >, term< FunctionParameterNextParameter > ) 
-                        //         >= [](auto call, auto argument, auto )
-                        //             {
-                        //                 return ProtoCall{ 
-                        //                         call.identifier, 
-                        //                         Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
-                        //                                 call.arguments, 
-                        //                                 argument 
-                        //                             } 
-                        //                     };
-                        //             }, 
-                        // non_terminal_term< CallNode >( non_terminal_term< Call >, non_terminal_term< CallNode >, term< CloseParenthesis > ) 
-                        //         >= []( auto call, auto argument, auto )
-                        //             {
-                        //                 return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
-                        //                         call.identifier, 
-                        //                         Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
-                        //                                 call.arguments, 
-                        //                                 argument 
-                        //                             } 
-                        //                     );
-                        //             }, 
-                        // non_terminal_term< CallNode >( non_terminal_term< Call >, term< CloseParenthesis > ) 
-                        //         >= []( auto call, auto )
-                        //             {
+                        //                 // std::cout << "C\n";
                         //                 return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
                         //                         call.identifier, 
                         //                         call.arguments 
                         //                     );
                         //             }, 
-                        // non_terminal_term< Expression >( non_terminal_term< CallNode > )
-                        //         >= []( auto call ) {
+                        // // Had a theory that maybe they just needed to be seperated, sadly not true. //
+                        // non_terminal_term< Call >( non_terminal_term< Call >, term< FunctionParameterNextParameter >, non_terminal_term< Factor > ) 
+                        //         >= []( auto call, auto, auto argument )
+                        //             {
+                        //                 // std::cout << "D\n";
+                        //                 // using CallType = Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >;
+                        //                 // auto call = static_cast< CallType* >( call_node.get_pointer()->get_data() );
+                        //                 // return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
+                        //                 call.arguments.push_back( argument );
                         //                 return call;
-                        //             }
-
+                        //                 // return Warp::CompilerRuntime::CallType ( 
+                        //                 //         call.identifier, 
+                        //                 //         // Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >( 
+                        //                 //         //         call.arguments, 
+                        //                 //         //         argument 
+                        //                 //         //     ) 
+                        //                 //     );
+                        //             } 
                         //////////////////////////////// Functions::Alternatives ////////////////////////////////
                         // non_terminal_term< CallNode >( non_terminal_term< Expression >, term< FactorMultiply >, non_terminal_term< Call >, term< CloseParenthesis > ) 
                         //         >= []( auto factor, auto, auto call, auto )
@@ -634,6 +655,8 @@ namespace Warp::Parser
                         //                             )
                         //                     );
                         //             }, 
+
+
 
                         //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
 

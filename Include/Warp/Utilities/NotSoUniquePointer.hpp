@@ -85,6 +85,7 @@ namespace Warp::Utilities
     template< typename StorageParameterType >
     struct NotSoUniquePointer< Detail::VectorPlaceHolder< StorageParameterType > >
     {
+        using ThisType = NotSoUniquePointer< Detail::VectorPlaceHolder< StorageParameterType > >;
         constexpr NotSoUniquePointer() : pointer( nullptr ), size( 0 ), end( nullptr ) {}
 
         constexpr NotSoUniquePointer( auto... array ) noexcept : 
@@ -92,36 +93,36 @@ namespace Warp::Utilities
                 size( sizeof...( array ) ), 
                 end( &pointer[ sizeof...( array ) - 1 ] ) {}
 
-        constexpr NotSoUniquePointer( const NotSoUniquePointer& other, const StorageParameterType& to_append ) noexcept : 
+        constexpr NotSoUniquePointer( const ThisType& other, const StorageParameterType& to_append ) noexcept : 
                 pointer( copy_append( 0, other.size, new StorageParameterType[ other.size + 1 ], other.pointer, to_append ) ), 
                 size( other.size + 1 ), 
                 end( &pointer[ other.size ] )
         {}
 
-        constexpr NotSoUniquePointer( NotSoUniquePointer&& other, const StorageParameterType& to_append ) noexcept : 
+        constexpr NotSoUniquePointer( ThisType&& other, const StorageParameterType& to_append ) noexcept : 
                 pointer( copy_append( 0, other.size, new StorageParameterType[ other.size + 1 ], other.pointer, to_append ) ), 
                 size( other.size + 1 ), 
                 end( &pointer[ other.size ] ) 
         {}
 
-        constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ), size( other.size ), end( other.end ) {
+        constexpr NotSoUniquePointer( const ThisType& other ) noexcept : pointer( other.pointer ), size( other.size ), end( other.end ) {
             ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
         }
-        constexpr NotSoUniquePointer( NotSoUniquePointer&& other ) noexcept : pointer( other.pointer ), size( other.size ), end( other.end ) {
+        constexpr NotSoUniquePointer( ThisType&& other ) noexcept : pointer( other.pointer ), size( other.size ), end( other.end ) {
             other.pointer = nullptr;
         }
         constexpr ~NotSoUniquePointer() noexcept {
             delete pointer; 
         }
 
-        constexpr NotSoUniquePointer& operator=( const NotSoUniquePointer& other ) noexcept
+        constexpr NotSoUniquePointer& operator=( const ThisType& other ) noexcept
         {
             pointer = other.pointer;
             ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
             size = other.size;
             return *this;
         }
-        constexpr NotSoUniquePointer& operator=( NotSoUniquePointer&& other ) noexcept
+        constexpr NotSoUniquePointer& operator=( ThisType&& other ) noexcept
         {
             pointer = other.pointer;
             other.pointer = nullptr;
