@@ -107,7 +107,7 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( Comparison, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanAnd, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanOr, Warp::AbstractSyntaxTree::NodeVariantType );
-    NON_TERMINAL_TERM( Call, Warp::CompilerRuntime::CallType );
+    NON_TERMINAL_TERM( Call, Warp::AbstractSyntaxTree::NodeVariantType ); //Warp::CompilerRuntime::CallType );
     NON_TERMINAL_TERM( CallArguments, Warp::CompilerRuntime::CallType );
     // NON_TERMINAL_TERM( CompleteCall, Warp::CompilerRuntime::CallType );
     NON_TERMINAL_TERM( CallNode, Warp::AbstractSyntaxTree::NodeVariantType );
