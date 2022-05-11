@@ -127,12 +127,7 @@ namespace Warp::AbstractSyntaxTree
         template< typename NodeTagTypeParameterType >
         constexpr const std::optional< NodeTagTypeParameterType > tag_as() const noexcept 
         {
-            if constexpr( 
-                        auto result = std::any_cast< NodeTagTypeParameterType >( type_tag ); 
-                        result != nullptr 
-                    )
-                return std::optional{ result };
-            return std::nullopt;
+            return std::optional< NodeTagTypeParameterType >{ std::any_cast< NodeTagTypeParameterType >( type_tag() ) };
         }
         // Includes runtime check, cant do it at compile time :( //
         template< typename NodeTagTypeParameterType >

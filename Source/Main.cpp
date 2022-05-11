@@ -58,6 +58,7 @@ int main( int argc, char** args )
 
 static std::array test_suite_names = {
         "alternative_calls", 
+        "basic_function_alternatives", 
         "factor_calls"
     };
 
@@ -76,6 +77,17 @@ static TestSuiteType function_alternative_calls{
         WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 );" } 
     };
 
+static TestSuiteType basic_function_alternatives{
+        WarpTest{ true, "let test( a : a < 64 ) :: 1;" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: a;" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: 20 * a;" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: 20 + a;" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: a * 20;" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: a + 10;" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: a * a;" }, 
+        WarpTest{ true, "let test( a : a < 64, b : b < 128 && b > a * a ) :: a + b * a * ( 120 + 343 + a );" } 
+    };
+
 static TestSuiteType factor_calls{
         WarpTest{ true, "test( 1 )" }, 
         WarpTest{ true, "test( a )" }, 
@@ -92,6 +104,7 @@ static TestSuiteType factor_calls{
 
 static std::vector< TestSuiteType > test_suits{ 
         function_alternative_calls, 
+        basic_function_alternatives, 
         factor_calls
     };
 
