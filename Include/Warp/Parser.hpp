@@ -482,7 +482,7 @@ namespace Warp::Parser
                                                     } 
                                             };
                                     }, 
-                        non_terminal_term< Expression >( non_terminal_term< Call >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
+                        non_terminal_term< CallNode >( non_terminal_term< Call >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
                                 >= []( auto call, auto argument, auto )
                                     {
                                         return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
@@ -493,13 +493,39 @@ namespace Warp::Parser
                                                     } 
                                             );
                                     }, 
-                        non_terminal_term< Expression >( non_terminal_term< Call >, term< CloseParenthesis > ) 
+                        non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< CallNode >, term< FunctionParameterNextParameter > ) 
+                                >= [](auto call, auto argument, auto )
+                                    {
+                                        return Warp::CompilerRuntime::CallType{ 
+                                                call.identifier, 
+                                                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
+                                                        call.arguments, 
+                                                        argument 
+                                                    } 
+                                            };
+                                    }, 
+                        non_terminal_term< CallNode >( non_terminal_term< Call >, non_terminal_term< CallNode >, term< CloseParenthesis > ) 
+                                >= []( auto call, auto argument, auto )
+                                    {
+                                        return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
+                                                call.identifier, 
+                                                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
+                                                        call.arguments, 
+                                                        argument 
+                                                    } 
+                                            );
+                                    }, 
+                        non_terminal_term< CallNode >( non_terminal_term< Call >, term< CloseParenthesis > ) 
                                 >= []( auto call, auto )
                                     {
                                         return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
                                                 call.identifier, 
                                                 call.arguments 
                                             );
+                                    }, 
+                        non_terminal_term< Expression >( non_terminal_term< CallNode > )
+                                >= []( auto call ) {
+                                        return call;
                                     }
 
                         //////////////////////////////// Functions::Alternatives ////////////////////////////////
