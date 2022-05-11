@@ -7,12 +7,12 @@ namespace Warp::Utilities
 {
 
     template< typename... VariantParameterTypes >
-    const auto& to_const_reference( const Warp::Utilities::NotSoUniquePointer< Warp::Utilities::AutoVariant< VariantParameterTypes... > >& variant ) {
+    constexpr const auto& to_const_reference( const Warp::Utilities::NotSoUniquePointer< Warp::Utilities::AutoVariant< VariantParameterTypes... > >& variant ) {
         const typename std::remove_pointer< decltype( variant.get_pointer() ) >::type& node = *variant.get_pointer();
         return node;
     }
 
-    const auto& to_const_reference( const auto* value ) {
+    constexpr const auto& to_const_reference( const auto* value ) {
         const typename std::remove_pointer< decltype( value ) >::type& node = *value;
         return node;
     }
@@ -60,6 +60,61 @@ namespace Warp::Utilities
                 NodeInPlaceType{}, 
                 Utilities::to_bool( data, Warp::Parser::true_token, Warp::Parser::false_token ).value() 
             };
+    }
+
+    template< auto TagParameterConstant >
+    struct NodeTagGetter
+    {
+        constexpr const static auto tag = TagParameterConstant;
+        constexpr NodeTagGetter( std::in_place_type_t< Warp::AbstractSyntaxTree::Node< TagParameterConstant > > ) {}
+        constexpr NodeTagGetter( Warp::AbstractSyntaxTree::Node< TagParameterConstant > ) {}
+        constexpr NodeTagGetter( Warp::AbstractSyntaxTree::Node< TagParameterConstant >* ) {}
+        constexpr NodeTagGetter( const Warp::AbstractSyntaxTree::Node< TagParameterConstant >& ) {}
+    };
+
+    template< typename NodeParameterType >
+    constexpr static const auto node_tag = decltype( NodeTagGetter( std::in_place_type_t< NodeParameterType >{} ) )::tag;
+
+
+    template< template< auto > typename BaseParameterType, typename NodeParmaterType >
+    constexpr bool node_is_derived_from( NodeParmaterType )
+    {
+        using NodeType = CleanType< NodeParmaterType >;
+        return std::derived_from< NodeType, BaseParameterType< node_tag< NodeType > > >;
+    };
+    
+    template< typename NodeParameterType >
+    constexpr bool node_is_left_right( NodeParameterType node ) {
+        return node_is_derived_from< Warp::AbstractSyntaxTree::LeftRight, NodeParameterType >( node );
+    }
+
+    struct LeftRight
+    {
+        const Warp::AbstractSyntaxTree::NodeVariantType& left;
+        const Warp::AbstractSyntaxTree::NodeVariantType& right;
+        template< typename NodeParameterType >
+        constexpr LeftRight( NodeParameterType* node ) noexcept : left( node->left ), right( node->right ) {}
+    };
+
+
+    constexpr bool is_bi_node( const Warp::AbstractSyntaxTree::NodeVariantType& from )
+    {
+        return Warp::Utilities::visit< []( auto* node ) 
+                { 
+                    if constexpr( node_is_left_right( decltype( node ){} ) == true )
+                        return true;
+                    return false;
+                } >( to_const_reference( from ) );
+    }
+
+    constexpr std::optional< LeftRight > bi_node_proxy( const Warp::AbstractSyntaxTree::NodeVariantType& from )
+    {
+        return Warp::Utilities::visit< []( auto* node ) 
+                { 
+                    if constexpr( node_is_left_right( decltype( node ){} ) == true )
+                        return std::optional{ LeftRight( node ) };
+                    return std::optional< LeftRight >{ std::nullopt };
+                } >( to_const_reference( from ) );
     }
 
     template< auto NodeParameterTypeConstant >

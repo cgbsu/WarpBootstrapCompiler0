@@ -43,7 +43,7 @@ namespace Warp::Utilities
             visit< []( auto* data_ ) {
                     delete static_cast< decltype( data_ ) >( data_ );
                     return nullptr; 
-                }>( *this );
+                } >( *this );
         }
         constexpr AutoVariant( const AutoVariant& other ) noexcept = default;
         constexpr AutoVariant( AutoVariant&& other ) noexcept = default;
@@ -55,6 +55,18 @@ namespace Warp::Utilities
         }
         constexpr void* get_data() const noexcept {
             return data;
+        }
+        template< typename TypeParameterConstant, bool IKnowWhatIAmDoingParameterConstant = false >
+        constexpr auto data_as() const noexcept
+        {
+            static_assert( IKnowWhatIAmDoingParameterConstant, 
+                    "AutoVariant< typename... >::template< typename, bool > auto data_as()::Saftey Check: "
+                    "Do you know what you are doing? this method performs a cast without checking "
+                    "too see if the specified type is held by the varaiant nor if it is the the "
+                    "type the varaiant presently holds. If you understand and wish to proceede "
+                    "enter a true value for the second template parameter." 
+                );
+            return static_cast< TypeParameterConstant* >( data );
         }
         protected: 
             void* data;

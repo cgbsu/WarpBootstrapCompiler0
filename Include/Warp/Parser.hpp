@@ -171,6 +171,10 @@ namespace Warp::Parser
                 };
         }
 
+        // template< auto NodeTagParameterConstant >
+        // constexpr static auto factorsubsume_function_alternative_expression( auto function, auto factor )
+        
+
         constexpr static const auto parser = ctpg::parser( 
                 non_terminal_term< WarpFunctionAlternative >, 
                 terms, 
@@ -520,26 +524,23 @@ namespace Warp::Parser
                                     }, 
                         
                         //////////////////////////////// Functions::Calls ////////////////////////////////
-
-                        non_terminal_term< Call >( term< Identifier >, term< OpenParenthesis > ) 
-                                >= []( auto identifier, auto ) 
-                                    {
-                                        return ProtoCall{ 
-                                                Warp::Utilities::hash_string( identifier ), 
-                                                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
-                                            };
-                                    }, 
-                        non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< Factor >, term< FunctionParameterNextParameter > ) 
-                                >= [](auto call, auto argument, auto )
-                                    {
-                                        return ProtoCall{ 
-                                                call.identifier, 
-                                                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{ 
-                                                        call.arguments, 
-                                                        argument 
-                                                    } 
-                                            };
-                                    }, 
+//Herhe
+                        // non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< Identifier >, term< OpenParenthesis > ) 
+                        //         >= []( auto factor, auto, auto identifier, auto ) 
+                        //             {
+                        //                 return Warp::Utilities::allocate_node< FactorMultiply >( 
+                        //                         factor, 
+                        //                         Warp::Utilities::allocate_node< FunctionCall >( 
+                        //                                 Warp::Utilities::hash_string( identifier ), 
+                        //                                 Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
+                        //                             ) 
+                        //                     );
+                        //             }, 
+                        // non_terminal_term< Factor >( non_terminal_term< Factor >, non_terminal_term< Factor >, term< FunctionParameterNextParameter > ) 
+                        //         >= []( auto call, auto argument, auto )
+                        //             {
+                        //                 // Warp::Utilities::bi_node_proxy( )
+                        //             }, 
                         non_terminal_term< CallNode >( non_terminal_term< Call >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
                                 >= []( auto call, auto argument, auto )
                                     {
@@ -581,6 +582,12 @@ namespace Warp::Parser
                                                 call.arguments 
                                             );
                                     }, 
+                        non_terminal_term< Expression >( non_terminal_term< CallNode > )
+                                >= []( auto call ) {
+                                        return call;
+                                    }
+
+                        //////////////////////////////// Functions::Alternatives ////////////////////////////////
                         // non_terminal_term< CallNode >( non_terminal_term< Expression >, term< FactorMultiply >, non_terminal_term< Call >, term< CloseParenthesis > ) 
                         //         >= []( auto factor, auto, auto call, auto )
                         //             {
@@ -592,12 +599,6 @@ namespace Warp::Parser
                         //                             )
                         //                     );
                         //             }, 
-                        non_terminal_term< Expression >( non_terminal_term< CallNode > )
-                                >= []( auto call ) {
-                                        return call;
-                                    }
-
-                        //////////////////////////////// Functions::Alternatives ////////////////////////////////
 
                         //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
 
