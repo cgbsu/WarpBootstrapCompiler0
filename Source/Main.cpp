@@ -1,24 +1,5 @@
-#include <Warp/Parser.hpp>
+#include <Warp/Testing/ParseTest.hpp>
 #include <Warp/ExpressionAnalysis.hpp>
-
-using ParserType = typename Warp::Parser::WarpParser< Warp::Parser::DefaultTypes >;
-
-struct WarpTest {
-    bool expected_result;
-    std::string code;
-};
-
-template< typename ParserParameterType = ParserType >
-bool test_parse( const WarpTest& test, const ParserParameterType& parser, bool display_result = true )
-{
-    const bool result = parser.parse( 
-            // ctpg::parse_options{}.set_verbose(), 
-            ctpg::buffers::string_buffer( test.code.c_str() ), std::cerr 
-        ).has_value() == test.expected_result;
-    if( display_result == true )
-        std::cout << ( ( result == true ) ? "Pass: ": "Fail: " ) << test.code << "\n";
-    return result;
-}
 
 // #define WARP_REPL
 
@@ -56,98 +37,8 @@ int main( int argc, char** args )
 
 #else // WARP_REPL
 
-static std::array test_suite_names = {
-        "alternative_calls", 
-        "basic_function_alternatives", 
-        "factor_calls"
-    };
-
-using TestSuiteType = std::vector< WarpTest >;
-
-static TestSuiteType function_alternative_calls{
-        WarpTest{ true, "let test( a : a < 64 ) :: test( 1 );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( a );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: 20 * test( a );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: 20 + test( a );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( a ) * 20;" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( a ) + 10;" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( a * a );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( a(), b( q, 4, 5646, 345345 * 445656 + 34 ), rdfg * 34534 );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( a, q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4 * another_test(), 5646, 345345 * 445656 + 34, rdfg * 34534 );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4 * another_test(), 5646, 345345 * another_test( abc, 123 ) + 34, rdfg * 34534 );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4 * another_test(), 5646, 345345 + another_test( abc, 123 ) * 34, rdfg * 34534 );" } 
-    };
-
-static TestSuiteType basic_function_alternatives{
-        WarpTest{ true, "let test( a : a < 64 ) :: 1;" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: a;" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: 20 * a;" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: 20 + a;" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: a * 20;" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: a + 10;" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: a * a;" }, 
-        WarpTest{ true, "let test( a : a < 64, b : b < 128 && b > a * a ) :: a + b * a * ( 120 + 343 + a );" } 
-    };
-
-static TestSuiteType factor_calls{
-        WarpTest{ true, "test( 1 )" }, 
-        WarpTest{ true, "test( a )" }, 
-        WarpTest{ true, "20 * test( a )" }, 
-        WarpTest{ true, "20 + test( a )" }, 
-        WarpTest{ true, "test( a ) * 20" }, 
-        WarpTest{ true, "test( a ) + 10" }, 
-        WarpTest{ true, "test( a * a )" }, 
-        WarpTest{ true, "test( a(), b( q, 4, 5646, 345345 * 445656 + 34 ), rdfg * 34534 )" }, 
-        WarpTest{ true, "test( a, q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 )" }, 
-        WarpTest{ true, "test( ttt(), q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 )" } 
-    };
-
-
-static std::vector< TestSuiteType > test_suits{ 
-        function_alternative_calls, 
-        basic_function_alternatives, 
-        factor_calls
-    };
-
-int main( int argc, char** args )
-{
-    const auto& parser = ParserType::parser;
-    for( size_t test_suite_index = 0; 
-            test_suite_index < test_suite_names.size(); 
-            ++test_suite_index )
-    {
-        if( std::string_view{ args[ 1 ] } == test_suite_names[ test_suite_index ] )
-        {
-            const size_t number_of_tests = test_suits[ test_suite_index ].size();
-            size_t number_of_tests_succeeded = 0;
-            for( size_t ii = 0; 
-                    ii < number_of_tests; 
-                    ( test_parse( 
-                            test_suits[ test_suite_index ][ ii++ ], 
-                            parser, 
-                            true 
-                        ) == true ) 
-                    ? ++number_of_tests_succeeded 
-                    : number_of_tests_succeeded
-                );
-            if( number_of_tests_succeeded == number_of_tests )
-                std::cout << "All tests succeeded!\n";
-            else
-            {
-                std::cout << "("
-                        << ( number_of_tests - number_of_tests_succeeded ) 
-                        << "/" 
-                        << number_of_tests 
-                        << ") tests failed.\n";
-            }
-            break;
-        }
-    }
-
-
-    return 0;
+int main( int argc, char** args ) {
+    return Warp::Parser::Testing::parse_test_main( argc, args, 1 );
 }
 
 #endif // WARP_REPL
