@@ -3,6 +3,8 @@
 namespace Warp::Parser::Testing
 {
 
+    constexpr static const char* help_flag = "help";
+
     using ParserType = typename Warp::Parser::WarpParser< Warp::Parser::DefaultTypes >;
 
     struct WarpTest {
