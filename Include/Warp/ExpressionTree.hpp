@@ -222,14 +222,16 @@ namespace Warp::AbstractSyntaxTree
     struct Node< NodeType::FunctionCall > : public BaseNode< NodeType::FunctionCall >
     {
         Warp::Utilities::HashedStringType identifier;
+        std::string function_name;
         std::vector< NodeVariantType > arguments;
         // Warp::Utilities::VectorType< NodeVariantType > arguments;
         Node( 
                 Warp::Utilities::HashedStringType identifier, 
+                std::string function_name, 
                 std::vector< NodeVariantType > arguments 
                 // Warp::Utilities::VectorType< NodeVariantType >&& arguments 
             ) noexcept : 
-                identifier( identifier ), arguments( arguments ) {}
+                identifier( identifier ), function_name( function_name ), arguments( arguments ) {}
         ~Node() = default;
     };
 

@@ -1,14 +1,14 @@
 #include <Warp/Parser.hpp>
 
+#ifndef WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_TEST_HPP
+#define WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_TEST_HPP
+
 namespace Warp::Parser::Testing
 {
 
     constexpr static const char* help_flag = "help";
 
-    using ParserType = typename Warp::Parser::WarpParser< 
-            Warp::Parser::DefaultTypes, 
-            Warp::Parser::NonTerminalTerms::WarpFunctionAlternative 
-        >;
+    using ParserType = Warp::Parser::DefaultParserType;
 
     struct WarpTest {
         bool expected_result;
@@ -46,3 +46,5 @@ namespace Warp::Parser::Testing
 
     int parse_test_main( int argc, char** args, size_t first_user_argument_index = 1 );
 }
+
+#endif // WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_TEST_HPP

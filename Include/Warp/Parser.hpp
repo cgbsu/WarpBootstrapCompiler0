@@ -8,19 +8,19 @@ namespace Warp::Parser
 {
     #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON( COMPARISON_TYPE ) \
         non_terminal_term< Comparison >( non_terminal_term< Factor >, term< COMPARISON_TYPE >, non_terminal_term< Factor > ) \
-            >>= []( const auto& context, auto left, auto, auto right ) { \
+            >= []( auto left, auto, auto right ) { \
                 return Warp::Utilities::allocate_node< COMPARISON_TYPE >( left, right ); \
             }
     
     #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_COMPARISON_UNALIGNED( COMPARISON_TYPE, NODE_COMPARISON_TYPE ) \
         non_terminal_term< Comparison >( non_terminal_term< Factor >, term< COMPARISON_TYPE >, non_terminal_term< Factor > ) \
-            >>= []( const auto& context, auto left, auto, auto right ) { \
+            >= []( auto left, auto, auto right ) { \
                 return Warp::Utilities::allocate_node< NODE_COMPARISON_TYPE >( left, right ); \
             }
 
     #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( LEFT, OPERATION, RIGHT ) \
             non_terminal_term< Boolean##OPERATION >( non_terminal_term< LEFT >, term< OPERATION >, non_terminal_term< RIGHT > ) \
-                    >>= []( const auto& context, auto right, auto, auto left ) \
+                    >= []( auto right, auto, auto left ) \
                     { \
                         return std::move( Warp::Utilities::allocate_node< Logical##OPERATION >( \
                                 left, \
@@ -30,7 +30,7 @@ namespace Warp::Parser
     
     #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LEFT, OPERATION, RIGHT ) \
             non_terminal_term< LogicalOperation >( non_terminal_term< LEFT >, term< OPERATION >, non_terminal_term< RIGHT > ) \
-                    >>= []( const auto& context, auto right, auto, auto left ) \
+                    >= []( auto right, auto, auto left ) \
                     { \
                         return std::move( Warp::Utilities::allocate_node< Logical##OPERATION >( \
                                 left, \
@@ -41,7 +41,7 @@ namespace Warp::Parser
     
     #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( TO, MIDDLE ) \
         non_terminal_term< TO >( term< OpenParenthesis >, non_terminal_term< MIDDLE >, term< CloseParenthesis > ) \
-            >>= []( const auto& context, auto, auto middle, auto ) { \
+            >= []( auto, auto middle, auto ) { \
                 return middle; \
             } 
 
@@ -179,7 +179,6 @@ namespace Warp::Parser
         // template< auto NodeTagParameterConstant >
         // constexpr static auto factorsubsume_function_alternative_expression( auto function, auto factor )
         
-
         constexpr static const auto parser = ctpg::parser( 
                 non_terminal_term< ReduceTo >, 
                 terms, 
@@ -196,18 +195,18 @@ namespace Warp::Parser
                         //////////////////////////////// Arithmatic Expressions::Literals ////////////////////////////////
 
                         non_terminal_term< Factor >( term< FunctionResult > ) 
-                                >>= []( const auto& context, auto token ) {
+                                >= []( auto token ) {
                                     return std::move( Warp::Utilities::allocate_node< FunctionResult >() );
                                 }, 
                         non_terminal_term< Factor >( term< Identifier > ) 
-                                >>= []( const auto& context, auto token ) 
+                                >= []( auto token ) 
                                 {
                                     return std::move( Warp::Utilities::allocate_node< 
                                                     Warp::AbstractSyntaxTree::NodeType::Identifier 
                                             >( Warp::Utilities::hash_string( token ) ) );
                                 }, 
                         non_terminal_term< Factor >( term< NaturalNumber > ) 
-                                >>= []( const auto& context, auto token )
+                                >= []( auto token )
                                 {
                                     return std::move( Warp::Utilities::allocate_integral_literal_node< 
                                             ResolvedType< NaturalNumber > 
@@ -217,7 +216,7 @@ namespace Warp::Parser
                         //////////////////////////////// Arithmatic Expressions::Products ////////////////////////////////
 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< NaturalNumber > ) 
-                                >>= []( const auto& context, auto current_factor, auto, const auto& next_token )
+                                >= []( auto current_factor, auto, const auto& next_token )
                                 {
                                     return Warp::Utilities::allocate_node< FactorMultiply >( 
                                             current_factor, 
@@ -227,7 +226,7 @@ namespace Warp::Parser
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, term< NaturalNumber > ) 
-                                >>= []( const auto& context, auto current_factor, auto, const auto& next_token )
+                                >= []( auto current_factor, auto, const auto& next_token )
                                 {
                                     return Warp::Utilities::allocate_node< FactorDivide >( 
                                             current_factor, 
@@ -237,7 +236,7 @@ namespace Warp::Parser
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< Identifier > ) 
-                                >>= []( const auto& context, auto current_factor, auto, const auto& next_token )
+                                >= []( auto current_factor, auto, const auto& next_token )
                                 {
                                     return Warp::Utilities::allocate_node< FactorMultiply >( 
                                             current_factor, 
@@ -247,7 +246,7 @@ namespace Warp::Parser
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, term< Identifier > ) 
-                                >>= []( const auto& context, auto current_factor, auto, const auto& next_token )
+                                >= []( auto current_factor, auto, const auto& next_token )
                                 {
                                     return Warp::Utilities::allocate_node< FactorDivide >( 
                                             current_factor, 
@@ -257,7 +256,7 @@ namespace Warp::Parser
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< FunctionResult > ) 
-                                >>= []( const auto& context, auto current_factor, auto, const auto& next_token )
+                                >= []( auto current_factor, auto, const auto& next_token )
                                 {
                                     return Warp::Utilities::allocate_node< FactorMultiply >( 
                                             current_factor, 
@@ -265,7 +264,7 @@ namespace Warp::Parser
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, term< FunctionResult > ) 
-                                >>= []( const auto& context, auto current_factor, auto, const auto& next_token )
+                                >= []( auto current_factor, auto, const auto& next_token )
                                 {
                                     return Warp::Utilities::allocate_node< FactorDivide >( 
                                             current_factor, 
@@ -276,11 +275,11 @@ namespace Warp::Parser
                         //////////////////////////////// Arithmatic Expressions::Parenthesis ////////////////////////////////
 
                         non_terminal_term< ParenthesisScope >( term< OpenParenthesis >, non_terminal_term< Factor >, term< CloseParenthesis > )
-                                >>= []( const auto& context, auto, auto factor, auto ) { return factor; }, 
+                                >= []( auto, auto factor, auto ) { return factor; }, 
                         non_terminal_term< Factor >( non_terminal_term< ParenthesisScope > ) 
-                                >>= []( const auto& context, auto parenthesis_scope ) { return parenthesis_scope; }, 
+                                >= []( auto parenthesis_scope ) { return parenthesis_scope; }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, non_terminal_term< ParenthesisScope > ) 
-                                >>= []( const auto& context, auto factor, auto, auto parenthesis_scope ) 
+                                >= []( auto factor, auto, auto parenthesis_scope ) 
                                     {
                                         return Warp::Utilities::allocate_node< FactorMultiply >( 
                                                 factor, 
@@ -288,7 +287,7 @@ namespace Warp::Parser
                                             );
                                     }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, non_terminal_term< ParenthesisScope > ) 
-                                >>= []( const auto& context, auto factor, auto, auto parenthesis_scope ) 
+                                >= []( auto factor, auto, auto parenthesis_scope ) 
                                     {
                                         return Warp::Utilities::allocate_node< FactorDivide >( 
                                                 factor, 
@@ -299,11 +298,11 @@ namespace Warp::Parser
                         //////////////////////////////// Arithmatic Expressions::Sums ////////////////////////////////
 
                         non_terminal_term< Factor >( non_terminal_term< Sum > ) 
-                                >>= []( const auto& context, auto sum ) {
+                                >= []( auto sum ) {
                                     return sum;
                                 }, 
                         non_terminal_term< Sum >( non_terminal_term< Factor >, term< SumAdd >, non_terminal_term< Factor > ) 
-                                >>= []( const auto& context, auto current_sum, auto, const auto& next_token ) 
+                                >= []( auto current_sum, auto, const auto& next_token ) 
                                     {
                                         return Warp::Utilities::allocate_node< SumAdd >( 
                                                 current_sum, 
@@ -311,7 +310,7 @@ namespace Warp::Parser
                                             );
                                     }, 
                         non_terminal_term< Sum >( non_terminal_term< Factor >, term< SumSubtract >, non_terminal_term< Factor > ) 
-                                >>= []( const auto& context, auto current_sum, auto, const auto& next_token )
+                                >= []( auto current_sum, auto, const auto& next_token )
                                     {
                                         return Warp::Utilities::allocate_node< SumSubtract >( 
                                                 current_sum, 
@@ -319,7 +318,7 @@ namespace Warp::Parser
                                             );
                                     }, 
                         non_terminal_term< Expression >( non_terminal_term< Factor > ) 
-                                >>= []( const auto& context, auto factor ) {
+                                >= []( auto factor ) {
                                     return factor;
                                 }, 
 
@@ -327,7 +326,7 @@ namespace Warp::Parser
 
                         // Probably shouldent actually ever need thes in the language, but keeping them at least for debugging. //
                         non_terminal_term< LogicalOperation >( term< BooleanLiteral > ) 
-                                >>= []( const auto& context, auto token ) {
+                                >= []( auto token ) {
                                     return Warp::Utilities::allocate_boolean_literal_node( token );
                                 }, 
                         
@@ -374,22 +373,22 @@ namespace Warp::Parser
 
                         // Not //
                         non_terminal_term< LogicalOperation >( term< LogicalNot >, non_terminal_term< LogicalOperation > )
-                                >>= []( const auto& context, auto, auto logical_expression ) {
+                                >= []( auto, auto logical_expression ) {
                                     return Warp::Utilities::allocate_node< LogicalNot >( logical_expression );
                                 }, 
                         // This seems to do the trick with reducing the not's just down to one or two depending on if there are an even or odd amount. //
                         non_terminal_term< LogicalOperation >( term< LogicalNot >, term< LogicalNot >, non_terminal_term< LogicalOperation > )
-                                >>= []( const auto& context, auto, auto, auto logical_expression ) {
+                                >= []( auto, auto, auto logical_expression ) {
                                     return logical_expression;
                                 }, 
                         
                         // No other logical terms here, just return what you've got. //
                         non_terminal_term< LogicalOperation >( non_terminal_term< BooleanOr > )
-                                >>= []( const auto& context, auto or_expression ) {
+                                >= []( auto or_expression ) {
                                     return or_expression;
                                 }, 
                         non_terminal_term< LogicalOperation >( non_terminal_term< BooleanAnd > )
-                                >>= []( const auto& context, auto and_expression ) {
+                                >= []( auto and_expression ) {
                                     return and_expression;
                                 },                         
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( LogicalOperation, LogicalOperation ), 
@@ -414,133 +413,144 @@ namespace Warp::Parser
                         // TODO: Add types/concepts with additional color, e.g my_parameter : natural : my_parameter < 128
 
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< Comparison > )
-                                >>= []( const auto& context, auto parameter_list, auto parameter_name, auto, auto comparison_constraint ) {
+                                >= []( auto parameter_list, auto parameter_name, auto, auto comparison_constraint ) {
                                         return add_to_parameter_list( parameter_list, parameter_name, comparison_constraint );
                                 }, 
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< LogicalOperation > )
-                                >>= []( const auto& context, auto parameter_list, auto parameter_name, auto, auto constraints ) {
+                                >= []( auto parameter_list, auto parameter_name, auto, auto constraints ) {
                                         return add_to_parameter_list( parameter_list, parameter_name, constraints );
                                 },
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< BooleanAnd > )
-                                >>= []( const auto& context, auto parameter_list, auto parameter_name, auto, auto constraints ) {
+                                >= []( auto parameter_list, auto parameter_name, auto, auto constraints ) {
                                         return add_to_parameter_list( parameter_list, parameter_name, constraints );
                                 },
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< BooleanOr > )
-                                >>= []( const auto& context, auto parameter_list, auto parameter_name, auto, auto constraints ) {
+                                >= []( auto parameter_list, auto parameter_name, auto, auto constraints ) {
                                         return add_to_parameter_list( parameter_list, parameter_name, constraints );
                                 },
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter > )
-                                >>= []( const auto& context, auto parameter_list, auto ) {
+                                >= []( auto parameter_list, auto ) {
                                     return parameter_list;
                                 }, 
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter > )
-                                >>= []( const auto& context, auto parameter_list, auto ) {
+                                >= []( auto parameter_list, auto ) {
                                     return parameter_list;
                                 }, 
                         non_terminal_term< ParameterList >( term< KeywordLet >, term< Identifier >, term< OpenParenthesis > )
-                                >>= []( const auto& context, auto let, auto function_name, auto open_parenthesis ) {
-                                    return Warp::CompilerRuntime::IntermediateFunctionAlternative{ Warp::Utilities::hash_string( function_name ) };
+                                >= []( auto let, auto function_name, auto open_parenthesis )
+                                {
+                                    return Warp::CompilerRuntime::IntermediateFunctionAlternative{ 
+                                            Warp::Utilities::hash_string( function_name ), 
+                                            std::string{ function_name }
+                                        };
                                 },
                         non_terminal_term< Arguments >( non_terminal_term< ParameterList >, term< CloseParenthesis > )
-                                >>= []( const auto& context, auto parameter_list, auto ) {
+                                >= []( auto parameter_list, auto ) {
                                     return parameter_list;
                                 }, 
                         non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, term< FunctionDefinitionOperator >, non_terminal_term< Expression > )
-                                >>= []( const auto& context, auto arguments, auto, auto expression )
+                                >= []( auto arguments, auto, auto expression )
                                 {
                                     return Warp::CompilerRuntime::FunctionAlternative{ 
                                         arguments.identifier, 
                                         expression, 
                                         Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >(), // No return constraint found. //
                                         arguments.input_constraints, 
+                                        arguments.name 
                                         // dependancies would go here //
                                     };
                                 }, 
                         non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, non_terminal_term< Comparison >, term< FunctionDefinitionOperator >, non_terminal_term< Expression > )
-                                >>= []( const auto& context, auto arguments, auto return_constraint, auto, auto expression )
+                                >= []( auto arguments, auto return_constraint, auto, auto expression )
                                 {
                                     return Warp::CompilerRuntime::FunctionAlternative{ 
                                         arguments.identifier, 
                                         expression, 
                                         return_constraint, 
                                         arguments.input_constraints, 
+                                        arguments.name 
                                         // dependancies would go here //
                                     };
                                 }, 
                         non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, non_terminal_term< LogicalOperation >, term< FunctionDefinitionOperator >, non_terminal_term< Expression > )
-                                >>= []( const auto& context, auto arguments, auto return_constraint, auto, auto expression )
+                                >= []( auto arguments, auto return_constraint, auto, auto expression )
                                 {
                                     return Warp::CompilerRuntime::FunctionAlternative{ 
                                         arguments.identifier, 
                                         expression, 
                                         return_constraint, 
                                         arguments.input_constraints, 
+                                        arguments.name 
                                         // dependancies would go here //
                                     };
                                 }, 
                         non_terminal_term< WarpFunctionAlternative >( non_terminal_term< ExpressionEater >, term< FunctionDefintionComplete > ) 
-                                >>= []( const auto& context, auto function, auto ) {
+                                >= []( auto function, auto ) {
                                         return function;
                                     }, 
                         
                         //////////////////////////////// Functions::Calls A Hard Won Battle ////////////////////////////////
 
                         non_terminal_term< Call >( term< Identifier >, term< OpenParenthesis > ) 
-                                >>= []( const auto& context, auto identifier, auto ) 
+                                >= []( auto identifier, auto ) 
                                     {
                                         return Warp::CompilerRuntime::CallType{ 
                                                 Warp::Utilities::hash_string( identifier ), 
+                                                std::string{ identifier }, 
                                                 std::vector< Warp::AbstractSyntaxTree::NodeVariantType >{}
                                             };
                                     }, 
                         non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< Factor >, term< FunctionParameterNextParameter > ) 
-                                >>= []( const auto& context,auto call, auto argument, auto ) {
+                                >= []( auto call, auto argument, auto ) {
                                         call.arguments.push_back( argument );
                                         return call;
                                     }, 
                         non_terminal_term< CallNode >( non_terminal_term< Call >, non_terminal_term< Factor >, term< CloseParenthesis > ) 
-                                >>= []( const auto& context, auto call, auto argument, auto )
+                                >= []( auto call, auto argument, auto )
                                     {
                                         call.arguments.push_back( argument );
                                         return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
                                                 call.identifier, 
+                                                call.function_name, 
                                                 call.arguments 
                                             );
                                     }, 
                         non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< CallNode >, term< FunctionParameterNextParameter > ) 
-                                >>= []( const auto& context,auto call, auto argument, auto ) {
+                                >= []( auto call, auto argument, auto ) {
                                         call.arguments.push_back( argument );
                                         return call;
                                     }, 
                         non_terminal_term< CallNode >( non_terminal_term< Call >, non_terminal_term< CallNode >, term< CloseParenthesis > ) 
-                                >>= []( const auto& context, auto call, auto argument, auto )
+                                >= []( auto call, auto argument, auto )
                                     {
                                         return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
                                                 call.identifier, 
+                                                call.function_name, 
                                                 call.arguments 
                                             );
                                     }, 
                         non_terminal_term< CallNode >( non_terminal_term< Call >, term< CloseParenthesis > ) 
-                                >>= []( const auto& context, auto call, auto )
+                                >= []( auto call, auto )
                                     {
                                         return Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >( 
                                                 call.identifier, 
+                                                call.function_name, 
                                                 call.arguments 
                                             );
                                     }, 
                         non_terminal_term< Factor >( non_terminal_term< CallNode > )
-                                >>= []( const auto& context, auto call ) {
+                                >= []( auto call ) {
                                         return call;
                                     }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, non_terminal_term< CallNode > )
-                                >>= []( const auto& context, auto factor, auto, auto call ) {
+                                >= []( auto factor, auto, auto call ) {
                                         return Warp::Utilities::allocate_node< FactorMultiply >( 
                                                 factor, 
                                                 call 
                                             );
                                     }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, non_terminal_term< CallNode > )
-                                >>= []( const auto& context, auto factor, auto, auto call ) {
+                                >= []( auto factor, auto, auto call ) {
                                         return Warp::Utilities::allocate_node< FactorMultiply >( 
                                                 factor, 
                                                 call 
@@ -552,6 +562,10 @@ namespace Warp::Parser
                 )
         );
     };
+    using DefaultParserType = typename Warp::Parser::WarpParser< 
+            Warp::Parser::DefaultTypes, 
+            Warp::Parser::NonTerminalTerms::WarpFunctionAlternative 
+        >;
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP

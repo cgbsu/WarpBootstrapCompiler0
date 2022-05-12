@@ -37,6 +37,7 @@ namespace Warp::Parser
         CompleteCall = 20, 
         Argument = 21, 
         ArgumentList = 22, 
+        Name = 23 
     };
 
     enum class StringTerms
@@ -125,6 +126,8 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( Comparison, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanAnd, Warp::AbstractSyntaxTree::NodeVariantType );
     NON_TERMINAL_TERM( BooleanOr, Warp::AbstractSyntaxTree::NodeVariantType );
+
+    NON_TERMINAL_TERM( Name, std::string );
 
     // NON_TERMINAL_TERM( Bipper, Warp::AbstractSyntaxTree::NodeVariantType );
 
