@@ -53,8 +53,7 @@ namespace Warp::Parser
                 add_alternative_to_module( new_module, new_alternative, true );
             }
             else
-                std::cerr << "Parsing failed for: \n" << code << "\n";
-            // auto function_alternative = parser.parse( code );
+                std::cerr << "Parsing failed for: \n" << code.data() << "\n";
         }
         return new_module;
     }
