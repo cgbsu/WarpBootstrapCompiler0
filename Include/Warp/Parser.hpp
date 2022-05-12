@@ -362,13 +362,10 @@ namespace Warp::Parser
                         // TODO: ADD BOOLEAN LOGICAL TESTS!!!!!!
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, BiCondition, LogicalOperation ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, Implies, LogicalOperation ), 
-
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, BiCondition, Comparison ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, Implies, Comparison ), 
-
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( Comparison, BiCondition, Comparison ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( Comparison, Implies, Comparison ), 
-
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( Comparison, BiCondition, LogicalOperation ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( Comparison, Implies, LogicalOperation ), 
 
@@ -418,6 +415,14 @@ namespace Warp::Parser
                                         return add_to_parameter_list( parameter_list, parameter_name, comparison_constraint );
                                 }, 
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< LogicalOperation > )
+                                >= []( auto parameter_list, auto parameter_name, auto, auto constraints ) {
+                                        return add_to_parameter_list( parameter_list, parameter_name, constraints );
+                                },
+                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< BooleanAnd > )
+                                >= []( auto parameter_list, auto parameter_name, auto, auto constraints ) {
+                                        return add_to_parameter_list( parameter_list, parameter_name, constraints );
+                                },
+                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< BooleanOr > )
                                 >= []( auto parameter_list, auto parameter_name, auto, auto constraints ) {
                                         return add_to_parameter_list( parameter_list, parameter_name, constraints );
                                 },

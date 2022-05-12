@@ -57,7 +57,9 @@ namespace Warp::Parser::Testing
             WarpTest{ true, "let test( a : a < 64 ) :: a * 20;" }, 
             WarpTest{ true, "let test( a : a < 64 ) :: a + 10;" }, 
             WarpTest{ true, "let test( a : a < 64 ) :: a * a;" }, 
-            WarpTest{ true, "let test( a : a < 64, b : b < 128 && b > a * a ) :: a + b * a * ( 120 + 343 + a );" } 
+            WarpTest{ true, "let test( a : a < 64, b : b < 128 && b > a * a ) :: a + b * a * ( 120 + 343 + a );" }, 
+            WarpTest{ true, "let test( a : a < 64, b : b < 128 && b > a * a && b - 123 > a * a ) :: a + b * a * ( 120 + 343 + a );" }, 
+            WarpTest{ true, "let test( a : a < 64, b : b < 128 && b > a * a && b - 123 > a * a, c : c < 23 ) :: a + b * a * ( 120 + 343 + a );" } 
         };
 
     TestSuiteType factor_calls{
