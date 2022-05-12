@@ -2,6 +2,9 @@
 
 namespace Warp::Parser::Testing
 {
+
+    // TODO: ADD BOOLEAN LOGICAL TESTS!!!!!!
+
     std::array< const char*, 4 > test_suite_names = {
             "constrained_return_calls", 
             "alternative_calls", 

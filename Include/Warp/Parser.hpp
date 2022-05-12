@@ -358,8 +358,19 @@ namespace Warp::Parser
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION_UNALIGNED( Comparison, Or, BooleanAnd ), 
                         
                         //Extended Logical (evalated last before aritmatic) //
+
+                        // TODO: ADD BOOLEAN LOGICAL TESTS!!!!!!
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, BiCondition, LogicalOperation ), 
                         WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, Implies, LogicalOperation ), 
+
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, BiCondition, Comparison ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( LogicalOperation, Implies, Comparison ), 
+
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( Comparison, BiCondition, Comparison ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( Comparison, Implies, Comparison ), 
+
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( Comparison, BiCondition, LogicalOperation ), 
+                        WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_LOGICAL_OPERATION( Comparison, Implies, LogicalOperation ), 
 
                         // Not //
                         non_terminal_term< LogicalOperation >( term< LogicalNot >, non_terminal_term< LogicalOperation > )
