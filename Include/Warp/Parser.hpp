@@ -415,12 +415,22 @@ namespace Warp::Parser
                                     return Warp::CompilerRuntime::FunctionAlternative{ 
                                         arguments.identifier, 
                                         expression, 
-                                        // Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >(), 
+                                        Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >(), // No return constraint found. //
                                         arguments.input_constraints, 
                                         // dependancies would go here //
                                     };
                                 }, 
-
+                        non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, non_terminal_term< Factor >, term< FunctionDefinitionOperator >, non_terminal_term< Expression > )
+                                >= []( auto arguments, auto return_constraint, auto, auto expression )
+                                {
+                                    return Warp::CompilerRuntime::FunctionAlternative{ 
+                                        arguments.identifier, 
+                                        expression, 
+                                        return_constraint, 
+                                        arguments.input_constraints, 
+                                        // dependancies would go here //
+                                    };
+                                }, 
                         non_terminal_term< WarpFunctionAlternative >( non_terminal_term< ExpressionEater >, term< FunctionDefintionComplete > ) 
                                 >= []( auto function, auto ) {
                                         return function;

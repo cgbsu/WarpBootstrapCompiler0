@@ -30,7 +30,8 @@ namespace Warp::Parser::Testing
     // not need to be recompiled. ////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    extern std::array< const char*, 3 > test_suite_names;
+    extern std::array< const char*, 4 > test_suite_names;
+    extern TestSuiteType function_alternative_constrained_return_parameter;
     extern TestSuiteType function_alternative_calls;
     extern TestSuiteType basic_function_alternatives;
     extern TestSuiteType factor_calls;

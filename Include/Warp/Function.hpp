@@ -25,7 +25,7 @@ namespace Warp::CompilerRuntime
         Warp::Utilities::HashedStringType identifier; // TEMPORARY
 
         Warp::AbstractSyntaxTree::NodeVariantType expression;
-        // Warp::AbstractSyntaxTree::NodeVariantType return_constraint;
+        Warp::AbstractSyntaxTree::NodeVariantType return_constraint;
         std::vector< Parameter > input_constraints;
         // std::vector< Function* > dependancies;
     };
