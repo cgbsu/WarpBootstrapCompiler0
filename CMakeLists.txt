@@ -8,5 +8,7 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
 include_directories(${CMAKE_SOURCE_DIR}/Include)
-add_executable(starter_compiler ${CMAKE_SOURCE_DIR}/Source/Main.cpp ${CMAKE_SOURCE_DIR}/Source/Parse.cpp ${CMAKE_SOURCE_DIR}/Test/ParseTests.cpp ${CMAKE_SOURCE_DIR}/Test/ParseTestData.cpp)
+FILE(GLOB SourceFiles ${CMAKE_SOURCE_DIR}/Source/*.cpp)
+FILE(GLOB TestSourceFiles ${CMAKE_SOURCE_DIR}/Test/*.cpp)
+add_executable(starter_compiler ${SourceFiles} ${TestSourceFiles})
 target_link_libraries(starter_compiler ${CONAN_LIBS})

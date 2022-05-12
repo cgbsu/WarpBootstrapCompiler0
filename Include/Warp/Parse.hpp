@@ -29,11 +29,11 @@ namespace Warp::CompilerRuntime
 
 namespace Warp::Parser
 {
-    std::string_view break_code( std::string_view source_code, const char deliminator );
+    std::string break_code( std::string source_code, const char deliminator );
 
     Warp::CompilerRuntime::Module parse( 
             const auto& parser, 
-            std::string_view module_source_code, 
+            std::string module_source_code, 
             const char deliminator = Warp::Utilities::to_char( FunctionOperators::FunctionDefintionComplete ), 
             ctpg::parse_options parser_options = ctpg::parse_options{} 
         )
@@ -46,14 +46,16 @@ namespace Warp::Parser
             ii += code.size();
             if( const auto result = parser.parse( 
                             parser_options, // ctpg::parse_options{}.set_verbose(), 
-                            ctpg::buffers::string_buffer( code.data() ), std::cerr 
+                            ctpg::buffers::string_buffer( code.c_str() ), 
+                            // code,// ), 
+                            std::cerr 
                         ); result.has_value() == true 
                     ) {
                 const auto new_alternative = result.value();
                 add_alternative_to_module( new_module, new_alternative, true );
             }
             else
-                std::cerr << "Parsing failed for: \n" << code.data() << "\n";
+                std::cerr << "Parsing failed for: \n" << code << "\n";
         }
         return new_module;
     }

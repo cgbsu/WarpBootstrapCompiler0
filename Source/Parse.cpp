@@ -11,7 +11,7 @@ namespace Warp::CompilerRuntime
         // Easy access when you know the number of arguments in constant time, alternatives[ number_of_arguments ] //
         if( function.alternatives.size() < number_of_parameters )
             function.alternatives.resize( number_of_parameters );
-        return *function.alternatives[ number_of_parameters ].alternatives.emplace_back( 
+        return *function.alternatives[ number_of_parameters - 1 ].alternatives.emplace_back( 
                 new Warp::CompilerRuntime::FunctionAlternative{ 
                         new_alternative.identifier, 
                         new_alternative.expression, 
@@ -56,10 +56,11 @@ namespace Warp::CompilerRuntime
         }
         if( add_function_from_alternative_if_function_does_not_exist == false )
         {
-            throw std::runtime_error{ "add_alternative_to_module( Module&, FunctionAlternative& ):FunctionWithAltenativeProxy"
+            std::string error = "add_alternative_to_module( Module&, FunctionAlternative& ):FunctionWithAltenativeProxy"
                     "::Error: Attempt to add function alternative to module, when function does not exist in module, and AddIfFunctionDoesNotExistParameterConstant"
-                    "is set to false." 
-                };
+                    "is set to false.";
+            std::cout << error << "\n";
+            throw std::runtime_error{ error };
         }
         else
             return add_new_function_to_module_from_alternative( to_append, new_alternative );
@@ -68,7 +69,7 @@ namespace Warp::CompilerRuntime
 
 namespace Warp::Parser
 {
-    std::string_view break_code( std::string_view source_code, const char deliminator ) {
+    std::string break_code( std::string source_code, const char deliminator ) {
         return source_code.substr( 0, source_code.find_first_of( deliminator ) + 1 );
     }
 }
