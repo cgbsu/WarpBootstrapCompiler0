@@ -1,5 +1,5 @@
 [requires]
-ctpg/1.3.6
+ctpg/1.3.7
 
 [generators]
 cmake

@@ -7,7 +7,7 @@
 #include <any>
 #include <optional>
 
-#include <ctpg.hpp>
+#include <ctpg/ctpg.hpp>
 
 // Quote from https://github.com/Neargye/magic_enum/blob/master/doc/limitations.md
 // This library uses a compiler-specific hack (based on __PRETTY_FUNCTION__ / __FUNCSIG__), which works on Clang >= 5, MSVC >= 15.3 and GCC >= 9

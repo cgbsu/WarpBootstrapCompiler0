@@ -5,7 +5,10 @@ namespace Warp::Parser::Testing
 
     constexpr static const char* help_flag = "help";
 
-    using ParserType = typename Warp::Parser::WarpParser< Warp::Parser::DefaultTypes >;
+    using ParserType = typename Warp::Parser::WarpParser< 
+            Warp::Parser::DefaultTypes, 
+            Warp::Parser::NonTerminalTerms::WarpFunctionAlternative 
+        >;
 
     struct WarpTest {
         bool expected_result;
