@@ -194,20 +194,21 @@ namespace Warp::Parser
 
                         non_terminal_term< Factor >( term< FunctionResult > ) 
                                 >= []( auto token ) {
-                                        return std::move( Warp::Utilities::allocate_node< FunctionResult >() );
+                                    return std::move( Warp::Utilities::allocate_node< FunctionResult >() );
                                 }, 
                         non_terminal_term< Factor >( term< Identifier > ) 
-                                >= []( auto token ) {
-                                        return std::move( Warp::Utilities::allocate_node< 
-                                                        Warp::AbstractSyntaxTree::NodeType::Identifier 
-                                                >( Warp::Utilities::hash_string( token ) ) );
+                                >= []( auto token ) 
+                                {
+                                    return std::move( Warp::Utilities::allocate_node< 
+                                                    Warp::AbstractSyntaxTree::NodeType::Identifier 
+                                            >( Warp::Utilities::hash_string( token ) ) );
                                 }, 
                         non_terminal_term< Factor >( term< NaturalNumber > ) 
                                 >= []( auto token )
                                 {
-                                        return std::move( Warp::Utilities::allocate_integral_literal_node< 
-                                                ResolvedType< NaturalNumber > 
-                                            >( token ) );
+                                    return std::move( Warp::Utilities::allocate_integral_literal_node< 
+                                            ResolvedType< NaturalNumber > 
+                                        >( token ) );
                                 }, 
 
                         //////////////////////////////// Arithmatic Expressions::Products ////////////////////////////////
@@ -215,41 +216,57 @@ namespace Warp::Parser
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< NaturalNumber > ) 
                                 >= []( auto current_factor, auto, const auto& next_token )
                                 {
-                                        return Warp::Utilities::allocate_node< FactorMultiply >( 
-                                                current_factor, 
-                                                Warp::Utilities::allocate_integral_literal_node< 
-                                                        ResolvedType< NaturalNumber > 
-                                                >( next_token )
+                                    return Warp::Utilities::allocate_node< FactorMultiply >( 
+                                            current_factor, 
+                                            Warp::Utilities::allocate_integral_literal_node< 
+                                                    ResolvedType< NaturalNumber > 
+                                            >( next_token )
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, term< NaturalNumber > ) 
                                 >= []( auto current_factor, auto, const auto& next_token )
                                 {
-                                        return Warp::Utilities::allocate_node< FactorDivide >( 
-                                                current_factor, 
-                                                Warp::Utilities::allocate_integral_literal_node< 
-                                                        ResolvedType< NaturalNumber > 
-                                                >( next_token )
+                                    return Warp::Utilities::allocate_node< FactorDivide >( 
+                                            current_factor, 
+                                            Warp::Utilities::allocate_integral_literal_node< 
+                                                    ResolvedType< NaturalNumber > 
+                                            >( next_token )
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< Identifier > ) 
                                 >= []( auto current_factor, auto, const auto& next_token )
                                 {
-                                        return Warp::Utilities::allocate_node< FactorMultiply >( 
-                                                current_factor, 
-                                                Warp::Utilities::allocate_node< 
-                                                        Warp::AbstractSyntaxTree::NodeType::Identifier 
-                                                >( Warp::Utilities::hash_string( next_token ) )
+                                    return Warp::Utilities::allocate_node< FactorMultiply >( 
+                                            current_factor, 
+                                            Warp::Utilities::allocate_node< 
+                                                    Warp::AbstractSyntaxTree::NodeType::Identifier 
+                                            >( Warp::Utilities::hash_string( next_token ) )
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, term< Identifier > ) 
                                 >= []( auto current_factor, auto, const auto& next_token )
                                 {
-                                        return Warp::Utilities::allocate_node< FactorDivide >( 
-                                                current_factor, 
-                                                Warp::Utilities::allocate_node< 
-                                                        Warp::AbstractSyntaxTree::NodeType::Identifier 
-                                                >( Warp::Utilities::hash_string( next_token ) )
+                                    return Warp::Utilities::allocate_node< FactorDivide >( 
+                                            current_factor, 
+                                            Warp::Utilities::allocate_node< 
+                                                    Warp::AbstractSyntaxTree::NodeType::Identifier 
+                                            >( Warp::Utilities::hash_string( next_token ) )
+                                        );
+                                }, 
+                        non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< FunctionResult > ) 
+                                >= []( auto current_factor, auto, const auto& next_token )
+                                {
+                                    return Warp::Utilities::allocate_node< FactorMultiply >( 
+                                            current_factor, 
+                                            Warp::Utilities::allocate_node< FunctionResult >()
+                                        );
+                                }, 
+                        non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, term< FunctionResult > ) 
+                                >= []( auto current_factor, auto, const auto& next_token )
+                                {
+                                    return Warp::Utilities::allocate_node< FactorDivide >( 
+                                            current_factor, 
+                                            Warp::Utilities::allocate_node< FunctionResult >()
                                         );
                                 }, 
                         
