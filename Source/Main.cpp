@@ -74,7 +74,10 @@ static TestSuiteType function_alternative_calls{
         WarpTest{ true, "let test( a : a < 64 ) :: test( a * a );" }, 
         WarpTest{ true, "let test( a : a < 64 ) :: test( a(), b( q, 4, 5646, 345345 * 445656 + 34 ), rdfg * 34534 );" }, 
         WarpTest{ true, "let test( a : a < 64 ) :: test( a, q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 );" }, 
-        WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 );" } 
+        WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 );" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4 * another_test(), 5646, 345345 * 445656 + 34, rdfg * 34534 );" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4 * another_test(), 5646, 345345 * another_test( abc, 123 ) + 34, rdfg * 34534 );" }, 
+        WarpTest{ true, "let test( a : a < 64 ) :: test( ttt(), q, 4 * another_test(), 5646, 345345 + another_test( abc, 123 ) * 34, rdfg * 34534 );" } 
     };
 
 static TestSuiteType basic_function_alternatives{

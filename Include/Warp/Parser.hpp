@@ -589,16 +589,6 @@ non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, 
                                                 //Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
                                             };
                                     }, 
-
-                        non_terminal_term< Call >( term< Identifier >, term< OpenParenthesis > ) 
-                                >= []( auto identifier, auto ) 
-                                    {
-                                        return Warp::CompilerRuntime::CallType{ 
-                                                Warp::Utilities::hash_string( identifier ), 
-                                                std::vector< Warp::AbstractSyntaxTree::NodeVariantType >{}
-                                                //Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType >{} 
-                                            };
-                                    }, 
                         non_terminal_term< Call >( non_terminal_term< Call >, non_terminal_term< Factor >, term< FunctionParameterNextParameter > ) 
                                 >= [](auto call, auto argument, auto ) {
                                         call.arguments.push_back( argument );
@@ -650,6 +640,13 @@ non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, 
                                         return call;
                                     }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, non_terminal_term< CallNode > )
+                                >= []( auto factor, auto, auto call ) {
+                                        return Warp::Utilities::allocate_node< FactorMultiply >( 
+                                                factor, 
+                                                call 
+                                            );
+                                    }, 
+                        non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, non_terminal_term< CallNode > )
                                 >= []( auto factor, auto, auto call ) {
                                         return Warp::Utilities::allocate_node< FactorMultiply >( 
                                                 factor, 
