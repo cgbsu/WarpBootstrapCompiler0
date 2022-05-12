@@ -32,11 +32,16 @@ namespace Warp::CompilerRuntime
         // std::vector< Function* > dependancies;
     };
 
+    struct FunctionAlternatives {
+        std::vector< FunctionAlternative* > alternatives;
+        size_t number_of_parameters;
+    };
+
     struct Function
     {
         Warp::Utilities::HashedStringType identifier;
         std::string name;
-        std::vector< FunctionAlternative* > variants;
+        std::vector< FunctionAlternatives > alternatives;
     };
 
     struct LogEntry

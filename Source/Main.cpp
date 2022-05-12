@@ -40,7 +40,7 @@ int main( int argc, char** args )
 
 
 std::string test { 
-    "let test( a : a < 64 ) @ < 1 :: test( 1 );"
+    "let test( a : a < 64 ) @ < 1 :: test( 12 );"
     "let test( a : a < 64 ) @ <= a :: test( a );"
     "let test( a : a < 64 ) @ * @ < a + 1 :: 20 * test( a );"
     "let test( a : a < 64 ) @ + @ < a * 34 :: 20 + test( a );"
