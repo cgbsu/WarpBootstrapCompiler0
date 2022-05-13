@@ -149,13 +149,13 @@ namespace Warp::Utilities
         return node->data_as< Warp::AbstractSyntaxTree::Taggable, true >()->tag_as< decltype( NodeTagParameterConstant ) >() == NodeTagParameterConstant;
     }
 
-    std::string to_std_string( const Warp::AbstractSyntaxTree::LiteralType& literal )
-    {
-        const auto& unicorn = to_const_reference( literal.factor );
-        return Warp::Utilities::visit< []( auto* data ) ->std::string {
-                return std::to_string( *data );
-            }, size_t, signed long long int >( unicorn );
-    }
+    // std::string to_std_string( const Warp::AbstractSyntaxTree::LiteralType& literal )
+    // {
+    //     const auto& unicorn = to_const_reference( literal.factor );
+    //     return Warp::Utilities::visit< []( auto* data ) ->std::string {
+    //             return std::to_string( *data );
+    //         }, size_t, signed long long int >( unicorn );
+    // }
 
     template< typename ParameterType >
     Warp::AbstractSyntaxTree::LiteralType make_literal( ParameterType value ) {

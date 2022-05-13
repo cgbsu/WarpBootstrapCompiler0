@@ -80,11 +80,24 @@ namespace Warp::Utilities
         return std::remove_reference_t< std::decay_t< decltype( variant ) > >::template type_index< AlternativeType > == variant.index();
     }
 
+    template< typename ResultParameterType, size_t IndexParameterConstant, auto VisitorParameterConstant, typename... ParameterTypes >
+    struct VisitIdentity
+    {
+        ResultParameterType result;
+        using PointerType = IndexToType< 
+                IndexParameterConstant, 
+                0, 
+                ParameterTypes... 
+            >::Type*;
+        constexpr VisitIdentity( const AutoVariant< ParameterTypes... >& variant, auto... additional_arguments ) noexcept 
+                : result( VisitorParameterConstant( static_cast< PointerType >( variant.get_data() ) ) ) {}
+    };
+
     template< 
             typename ReturnParameterType, 
             size_t IndexParameterConstant, 
             size_t MaximumParameterConstant, 
-            bool IndexAtMaximumParameterConstant, 
+            // bool IndexAtMaximumParameterConstant, 
             auto VisitorParameterConstant, 
             typename... ParameterTypes 
         >
@@ -92,56 +105,60 @@ namespace Warp::Utilities
     {
         ReturnParameterType result;
 
-        using NextVisitType = VisitImplementation< 
-                ReturnParameterType, 
-                IndexParameterConstant + 1, 
-                MaximumParameterConstant, 
-                ( IndexParameterConstant + 1 ) < MaximumParameterConstant, 
-                VisitorParameterConstant, 
-                ParameterTypes... 
-            >;
-            using PointerType = IndexToType< 
-                    IndexParameterConstant, 
-                    0, 
-                    ParameterTypes... 
-                >::Type*;
-        constexpr VisitImplementation( 
-                const AutoVariant< ParameterTypes... >& variant//, 
-                // auto... additional_arguments 
-            ) noexcept : result( 
-            ( IndexParameterConstant == variant.index() ) ? 
-                VisitorParameterConstant( static_cast< PointerType >( variant.get_data() ) )//, additional_arguments... ) 
-            : 
-            NextVisitType{ variant }.result ) {}//, additional_arguments... ) {}
-    };
-
-    template< 
-            typename ReturnParameterType, 
-            size_t MaximumParameterConstant, 
-            auto VisitorParameterConstant, 
-            typename... ParameterTypes 
-        >
-    struct VisitImplementation< 
-            ReturnParameterType, 
-            MaximumParameterConstant, 
-            MaximumParameterConstant, 
-            false, 
-            VisitorParameterConstant, 
-            ParameterTypes... 
-        >
-    {
-        ReturnParameterType result;
+        using NextVisitType = typename Warp::Utilities::EnableInject<
+                VisitImplementation< 
+                        ReturnParameterType, 
+                        IndexParameterConstant + 1, 
+                        MaximumParameterConstant, 
+                        // ( IndexParameterConstant + 1 ) < MaximumParameterConstant, 
+                        VisitorParameterConstant, 
+                        ParameterTypes... 
+                    >, 
+                VisitIdentity< ReturnParameterType, MaximumParameterConstant - 1, VisitorParameterConstant, ParameterTypes... >, 
+                IndexParameterConstant < MaximumParameterConstant 
+            >::Type;
         using PointerType = IndexToType< 
-                MaximumParameterConstant, 
+                IndexParameterConstant, 
                 0, 
                 ParameterTypes... 
             >::Type*;
         constexpr VisitImplementation( 
-                const AutoVariant< ParameterTypes... >& variant//, 
-                // auto... additional_arguments 
-            ) noexcept : result( VisitorParameterConstant( static_cast< PointerType >( variant.get_data() ) )//, additional_arguments... )
+                const AutoVariant< ParameterTypes... >& variant, 
+                auto... additional_arguments 
+            ) noexcept : result( 
+                    ( IndexParameterConstant == variant.index() ) 
+                            ? VisitorParameterConstant( static_cast< PointerType >( variant.get_data() ), additional_arguments... ) 
+                            : NextVisitType( variant, additional_arguments... ).result 
                 ) {}
     };
+
+    // template< 
+    //         typename ReturnParameterType, 
+    //         size_t MaximumParameterConstant, 
+    //         auto VisitorParameterConstant, 
+    //         typename... ParameterTypes 
+    //     >
+    // struct VisitImplementation< 
+    //         ReturnParameterType, 
+    //         MaximumParameterConstant, 
+    //         MaximumParameterConstant, 
+    //         false, 
+    //         VisitorParameterConstant, 
+    //         ParameterTypes... 
+    //     >
+    // {
+    //     ReturnParameterType result;
+    //     using PointerType = IndexToType< 
+    //             MaximumParameterConstant - 1, 
+    //             0, 
+    //             ParameterTypes... 
+    //         >::Type*;
+    //     constexpr VisitImplementation( 
+    //             const AutoVariant< ParameterTypes... >& variant//, 
+    //             // auto... additional_arguments 
+    //         ) noexcept : result( VisitorParameterConstant( static_cast< PointerType >( variant.get_data() ) )//, additional_arguments... )
+    //             ) {}
+    // };
 
     template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
@@ -156,8 +173,8 @@ namespace Warp::Utilities
         return VisitImplementation< 
                 ReturnType, 
                 0, 
-                sizeof...( ParameterTypes ) - 1, 
-                0 == sizeof...( ParameterTypes ) - 1, 
+                sizeof...( ParameterTypes ), 
+                // 0 == sizeof...( ParameterTypes ) - 1, 
                 VisitorParameterConstant, 
                 ParameterTypes... 
             >( variant/*, additional_arguments...*/ ).result;

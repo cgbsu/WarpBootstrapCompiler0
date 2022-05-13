@@ -70,10 +70,10 @@ int main( int argc, char** args )
         std::cout << "Results: \n";
         for( auto& mapped_pair : mapping.value() ) {
             std::cout << "\t" << mapped_pair.first 
-                    << " : " << Warp::Utilities::to_std_string( 
-                            std::get< Warp::AbstractSyntaxTree::LiteralType >( mapped_pair.second ) 
-                        ) << "\n";
-                    // "PLACEHOLDER\n";
+                    // << " : " << Warp::Utilities::to_std_string( 
+                    //         std::get< Warp::AbstractSyntaxTree::LiteralType >( mapped_pair.second ) 
+                    //     ) << "\n";
+                    << "PLACEHOLDER\n";
         }
     }
     else

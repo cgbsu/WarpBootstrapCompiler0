@@ -163,7 +163,7 @@ namespace Warp::Utilities
             auto SecondValueParameterConstant, 
             bool SentryParameterConstant 
         >
-    struct ChooseType {
+    struct ChooseValue {
         constexpr const static auto value = SecondValueParameterConstant;
     };
 
@@ -171,7 +171,7 @@ namespace Warp::Utilities
             auto FirstValueParameterConstant, 
             auto SecondValueParameterConstant 
         >
-    struct ChooseType <
+    struct ChooseValue<
                 FirstValueParameterConstant, 
                 SecondValueParameterConstant, 
                 true 
@@ -188,7 +188,7 @@ namespace Warp::Utilities
     struct FindTypeIndex 
     {
         constexpr static const bool has_type = std::is_same< QueryParameterType, CurrentParameterType >::value;
-        constexpr static const size_t type_index = ChooseType< 
+        constexpr static const size_t type_index = ChooseValue< 
                 IndexParameterConstant, 
                 FindTypeIndex< 
                         IndexParameterConstant + 1, 
@@ -273,30 +273,56 @@ namespace Warp::Utilities
     template< 
             size_t IndexParameterConstant, 
             size_t CurrentIndexParameterConstant, 
+            size_t NumberOfTypesParameterConstant, 
             typename CurrentParameterType, 
             typename... ParameterTypes 
         >
     struct IndexToTypeImplementation 
     {
-        using NextType = typename IndexToTypeImplementation< 
-                IndexParameterConstant, 
-                CurrentIndexParameterConstant + 1, 
-                ParameterTypes ...
+        using Type = typename EnableInject< 
+                CurrentParameterType, 
+                typename IndexToTypeImplementation< 
+                        IndexParameterConstant, 
+                        CurrentIndexParameterConstant + 1, 
+                        sizeof...( ParameterTypes ), 
+                        ParameterTypes ...
+                    >::Type, 
+                // ChooseValue< true, false, 
+                IndexParameterConstant == CurrentIndexParameterConstant// >::value 
             >::Type;
-        using Type = EnableInject< CurrentParameterType, NextType, IndexParameterConstant == CurrentIndexParameterConstant >::Type;
     };
+
+    // template< 
+    //         size_t IndexParameterConstant, 
+    //         size_t NumberOfTypesParameterConstant, 
+    //         typename CurrentParameterType, 
+    //         typename... ParameterTypes 
+    //     >
+    // struct IndexToTypeImplementation< 
+    //             IndexParameterConstant, 
+    //             IndexParameterConstant, 
+    //             NumberOfTypesParameterConstant, 
+    //             CurrentParameterType, 
+    //             ParameterTypes... 
+    //         > {
+    //     using Type = CurrentParameterType;
+    // };
 
     template< 
             size_t IndexParameterConstant, 
+            size_t CurrentIndexParameterConstant, 
             typename CurrentParameterType 
         >
     struct IndexToTypeImplementation< 
                 IndexParameterConstant, 
-                IndexParameterConstant, 
+                CurrentIndexParameterConstant, 
+                1, 
                 CurrentParameterType 
             > {
+        // static_assert( IndexParameterConstant == CurrentIndexParameterConstant, "Type index out of range, type not found!" );
         using Type = CurrentParameterType;
     };
+
 
     template< 
             size_t IndexParameterConstant, 
@@ -308,6 +334,7 @@ namespace Warp::Utilities
         using Type = typename IndexToTypeImplementation< 
                 IndexParameterConstant, 
                 StartIndexParameter, 
+                sizeof...( ParameterTypes ), 
                 CleanType< ParameterTypes > ...
             >::Type;
     };
