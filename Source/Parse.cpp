@@ -9,8 +9,15 @@ namespace Warp::CompilerRuntime
     {
         const auto number_of_parameters = new_alternative.input_constraints.size();
         // Easy access when you know the number of arguments in constant time, alternatives[ number_of_arguments ] //
-        if( function.alternatives.size() < number_of_parameters )
+        const size_t original_size = function.alternatives.size();
+        if( original_size < number_of_parameters )
+        {
             function.alternatives.resize( number_of_parameters );
+            for( size_t ii = original_size - 1; 
+                    ii < number_of_parameters; 
+                    function.alternatives[ ii++ ].number_of_parameters = ii + 1 
+                );
+        }
         return *function.alternatives[ number_of_parameters - 1 ].alternatives.emplace_back( 
                 new Warp::CompilerRuntime::FunctionAlternative{ 
                         new_alternative.identifier, 
