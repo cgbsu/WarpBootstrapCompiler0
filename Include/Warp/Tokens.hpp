@@ -1,4 +1,5 @@
 #include <Warp/Common.hpp>
+#include <string>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP
@@ -86,6 +87,8 @@ namespace Warp::Parser
         FunctionParameterConstaraint = colon_token, 
         FunctionResult = at_symbol 
     };
+
+    static const std::string function_result_as_string = std::to_string( static_cast< char >( Warp::Parser::FunctionOperators::FunctionResult ) );
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP

@@ -1,5 +1,6 @@
 #include <Warp/Function.hpp>
 #include <memory>
+#include <optional>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
@@ -213,11 +214,15 @@ namespace Warp::CompilerRuntime
                 auto... additional_arguments 
             )
         {
-            std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for Unconstrained! Returning 0\n";
-            return 0;
+            std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for Unconstrained! Returning true\n";
+            return true;
         }
     };
 
+    enum class ConstraintApplication {
+        Input, 
+        Output 
+    };
 
     CallFrameType map_call_frame_no_check( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
@@ -231,13 +236,31 @@ namespace Warp::CompilerRuntime
         return new_call_frame;
     }
 
+
+    CallFrameType map_call_frame_no_check( 
+            const Warp::CompilerRuntime::FunctionAlternative& alternative, 
+            std::vector< ValueType > values, 
+            ValueType result 
+        ) noexcept
+    {
+        CallFrameType new_call_frame = map_call_frame_no_check( alternative, values );
+        new_call_frame.insert( std::pair< std::string, ValueType >( Warp::Parser::function_result_as_string, result ) );
+        return new_call_frame;
+    }
+
     std::optional< CallFrameType > map_call_frame( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
-            const std::vector< ValueType >& values 
+            const std::vector< ValueType >& values, 
+            std::optional< ValueType > result = std::nullopt 
         )
     {
         if( values.size() == alternative.input_constraints.size() )
-            return std::optional{ map_call_frame_no_check( alternative, values ) };
+        {
+            if( result.has_value() == true )
+                return std::optional{ map_call_frame_no_check( alternative, values, result.value() ) };
+            else
+                return std::optional{ map_call_frame_no_check( alternative, values ) };
+        }
         else
             return std::nullopt;
     }
@@ -252,18 +275,12 @@ namespace Warp::CompilerRuntime
         return ValueType{ value };
     }
 
-    enum class ConstraintApplication {
-        Input, 
-        Output 
-    };
-
     bool satisfies_constraint( const Warp::AbstractSyntaxTree::NodeVariantType& constraint, const CallFrameType& argument_values )
     {
         // TODO: Assuming all parameters are size_t for now. //
         return abstract_syntax_tree_callback< Executor, bool, size_t >( constraint, argument_values );
     }
 
-    template< ConstraintApplication ConstraintTypeParameterConstant = ConstraintApplication::Input >
     bool satisfies_alternative_constraints( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
             const std::vector< ValueType >& values 
@@ -279,6 +296,23 @@ namespace Warp::CompilerRuntime
         }
         return false;
     }
+
+    bool satisfies_alternative_constraints( 
+            const Warp::CompilerRuntime::FunctionAlternative& alternative, 
+            const std::vector< ValueType >& values, 
+            ValueType result 
+        )
+    {
+        auto call_frame = map_call_frame( alternative, values, result );
+        if( bool satisfied = call_frame.has_value(); satisfied == true ) {
+            const auto& call_frame_result = call_frame.value();
+            return satisfied && satisfies_constraint( alternative.return_constraint, call_frame_result );
+        }
+        return false;
+    }
+
+//    template< typename ReturnParameterType <
+
 
     template< typename QueryParameterType >
     auto is_of_type( auto canidate )
