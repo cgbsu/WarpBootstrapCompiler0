@@ -17,8 +17,8 @@ namespace Warp::Utilities
 
     template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
-            const AutoVariant< ParameterTypes... >& variant//, 
-            // auto... additional_arguments 
+            const AutoVariant< ParameterTypes... >& variant, 
+            auto... additional_arguments 
         ) noexcept;
 
     template< typename... ParameterTypes >
@@ -162,14 +162,14 @@ namespace Warp::Utilities
 
     template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
-            const AutoVariant< ParameterTypes... >& variant//, 
-            // auto... additional_arguments 
+            const AutoVariant< ParameterTypes... >& variant, 
+            auto... additional_arguments 
         ) noexcept
     {
         
         using FirstAlternativeType = typename IndexToType< 0, 0, ParameterTypes... >::Type;
         FirstAlternativeType* substitute = nullptr;
-        using ReturnType = decltype( VisitorParameterConstant( substitute/*, additional_arguments...*/ ) );
+        using ReturnType = decltype( VisitorParameterConstant( substitute, additional_arguments... ) );
         return VisitImplementation< 
                 ReturnType, 
                 0, 
@@ -177,7 +177,7 @@ namespace Warp::Utilities
                 // 0 == sizeof...( ParameterTypes ) - 1, 
                 VisitorParameterConstant, 
                 ParameterTypes... 
-            >( variant/*, additional_arguments...*/ ).result;
+            >( variant, additional_arguments... ).result;
     }
 
     /*template< auto VisitorParameterConstant, typename... ParameterTypes >

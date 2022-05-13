@@ -207,14 +207,17 @@ namespace Warp::AbstractSyntaxTree
     template<>
     struct Node< NodeType::Identifier > : public BaseNode< NodeType::Identifier >
     {
-        const std::optional< Warp::Utilities::HeapStringType > string; // DO NOT CHANGE THE ORDER OF THESE MEMBERS, `value` may depend on the initialization `string` //
+        std::string string;
+        // const std::optional< Warp::Utilities::HeapStringType > string; // DO NOT CHANGE THE ORDER OF THESE MEMBERS, `value` may depend on the initialization `string` //
         const Warp::Utilities::HashedStringType value; // DO NOT CHANGE THE ORDER OF THESE MEMBERS, `value` may depend on the initialization `string` //
-        constexpr Node( Warp::Utilities::HashedStringType value ) noexcept : string( std::nullopt ), value( value ) {}
-        constexpr Node( std::string_view value ) noexcept : string( std::nullopt ), value( Warp::Utilities::hash_string( value ) ) {}        
-        constexpr Node( const auto... name_characters ) noexcept 
-                : string( Warp::Utilities::HeapStringType{ name_characters... } ), // Class members initialized in order of declaration. //
-                value( Warp::Utilities::hash_string( string->to_string_view() ) ) {} // Class members initialized in order of declaration. //
-        constexpr Node( Node< NodeType::Identifier > const& other ) noexcept : string( other.string ), value( other.value ) {}
+        // constexpr Node( Warp::Utilities::HashedStringType value ) noexcept : string( std::nullopt ), value( value ) {}
+        //constexpr 
+        Node( std::string_view value ) noexcept : string( value ), value( Warp::Utilities::hash_string( value ) ) {}        
+        // constexpr Node( const auto... name_characters ) noexcept 
+        //         : string( Warp::Utilities::HeapStringType{ name_characters... } ), // Class members initialized in order of declaration. //
+        //         value( Warp::Utilities::hash_string( string->to_string_view() ) ) {} // Class members initialized in order of declaration. //
+        //constexpr 
+        Node( Node< NodeType::Identifier > const& other ) noexcept : string( other.string ), value( other.value ) {}
         // constexpr ~Node() = default;
     };
 

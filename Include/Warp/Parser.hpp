@@ -204,7 +204,7 @@ namespace Warp::Parser
                                 {
                                     return std::move( Warp::Utilities::allocate_node< 
                                                     Warp::AbstractSyntaxTree::NodeType::Identifier 
-                                            >( Warp::Utilities::hash_string( token ) ) );
+                                            >( token ) );
                                 }, 
                         non_terminal_term< Factor >( term< NaturalNumber > ) 
                                 >= []( auto token )
@@ -243,7 +243,7 @@ namespace Warp::Parser
                                             current_factor, 
                                             Warp::Utilities::allocate_node< 
                                                     Warp::AbstractSyntaxTree::NodeType::Identifier 
-                                            >( Warp::Utilities::hash_string( next_token ) )
+                                            >( next_token )
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorDivide >, term< Identifier > ) 
@@ -253,7 +253,7 @@ namespace Warp::Parser
                                             current_factor, 
                                             Warp::Utilities::allocate_node< 
                                                     Warp::AbstractSyntaxTree::NodeType::Identifier 
-                                            >( Warp::Utilities::hash_string( next_token ) )
+                                            >( next_token )
                                         );
                                 }, 
                         non_terminal_term< Factor >( non_terminal_term< Factor >, term< FactorMultiply >, term< FunctionResult > ) 
