@@ -99,7 +99,7 @@ namespace Warp::Utilities
 
     constexpr bool is_bi_node( const Warp::AbstractSyntaxTree::NodeVariantType& from )
     {
-        return Warp::Utilities::visit< []( auto* node ) 
+        return Warp::Utilities::visit< []( auto* node, auto... ) 
                 { 
                     if constexpr( node_is_left_right( decltype( node ){} ) == true )
                         return true;
@@ -149,16 +149,20 @@ namespace Warp::Utilities
         return node->data_as< Warp::AbstractSyntaxTree::Taggable, true >()->tag_as< decltype( NodeTagParameterConstant ) >() == NodeTagParameterConstant;
     }
 
-    // std::string to_std_string( const Warp::AbstractSyntaxTree::LiteralType& literal )
-    // {
-    //     const auto& unicorn = to_const_reference( literal.factor );
-    //     return Warp::Utilities::visit< []( auto* data ) ->std::string {
-    //             return std::to_string( *data );
-    //         }, size_t, signed long long int >( unicorn );
-    // }
+    static HeapStringType to_string( const Warp::AbstractSyntaxTree::LiteralType& literal )
+    {
+        return Warp::Utilities::visit< []( auto data, auto... ) { //-> std::string {
+                return Warp::Utilities::to_string( *data );
+            } >( to_const_reference( literal.factor ) );
+    }
+
+    static std::string to_std_string( const Warp::AbstractSyntaxTree::LiteralType& literal ) {
+        return std::string{ to_string( literal ) };
+    }
+
 
     template< typename ParameterType >
-    Warp::AbstractSyntaxTree::LiteralType make_literal( ParameterType value ) {
+    static Warp::AbstractSyntaxTree::LiteralType make_literal( ParameterType value ) {
         return Warp::AbstractSyntaxTree::LiteralType{ value };
     }
 

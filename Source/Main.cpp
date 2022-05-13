@@ -58,11 +58,11 @@ int main( int argc, char** args )
     std::cout << "Mapping: the arguments of " << test_alternative.name << " to the values \n";
     for( size_t ii = 0; ii < arguments.size(); ++ii )
     {
-        std::cout << "\t[ " << ii << " ]: " << "PLACEHOLDER!!!\n";
-                // << Warp::Utilities::to_std_string( 
-                        // std::get_if< Warp::AbstractSyntaxTree::LiteralType >( &arguments[ ii ] ) 
-                    // )
-                // << "\n";
+        std::cout << "\t[ " << ii << " ]: " //<< "PLACEHOLDER!!!\n";
+                << Warp::Utilities::to_std_string( 
+                        *std::get_if< Warp::AbstractSyntaxTree::LiteralType >( &arguments[ ii ] ) 
+                    )
+                << "\n";
     }
     auto mapping = Warp::CompilerRuntime::map_call_frame( test_alternative, arguments );
     if( mapping.has_value() == true )
@@ -70,10 +70,10 @@ int main( int argc, char** args )
         std::cout << "Results: \n";
         for( auto& mapped_pair : mapping.value() ) {
             std::cout << "\t" << mapped_pair.first 
-                    // << " : " << Warp::Utilities::to_std_string( 
-                    //         std::get< Warp::AbstractSyntaxTree::LiteralType >( mapped_pair.second ) 
-                    //     ) << "\n";
-                    << "PLACEHOLDER\n";
+                    << " : " << Warp::Utilities::to_std_string( 
+                            std::get< Warp::AbstractSyntaxTree::LiteralType >( mapped_pair.second ) 
+                        ) << "\n";
+                    // << "PLACEHOLDER\n";
         }
     }
     else

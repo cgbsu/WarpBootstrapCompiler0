@@ -8,25 +8,32 @@ namespace Warp::Utilities
     template< 
             std::integral IntegralParameterType, 
             std::integral auto BaseParameterConstant = 10, 
-            IntegralParameterType StartBaseParameterConstant = 0 
+            IntegralParameterType StartBaseParameterConstant = 0, 
+            size_t RecursionMaxParameterConstant = 850 
         >
-    constexpr auto log( const IntegralParameterType number ) noexcept 
-            -> const IntegralParameterType
+    constexpr size_t log( const IntegralParameterType number ) noexcept 
+            // -> const IntegralParameterType
     {
-        const auto lowered = static_cast< const IntegralParameterType >( number / BaseParameterConstant );
-        if( lowered < BaseParameterConstant )
-            return StartBaseParameterConstant;
-        return log< 
-                IntegralParameterType, 
-                BaseParameterConstant, 
-                StartBaseParameterConstant + 1 
-            >( lowered );
+        if constexpr( RecursionMaxParameterConstant > 0 )
+        {
+            const size_t lowered = static_cast< const IntegralParameterType >( number / BaseParameterConstant );
+            if( lowered < BaseParameterConstant )
+                return StartBaseParameterConstant;
+            return log< 
+                    IntegralParameterType, 
+                    BaseParameterConstant, 
+                    StartBaseParameterConstant + 1, 
+                    RecursionMaxParameterConstant - 1 
+                >( lowered );
+        }
+        else
+            return number;
     }
 
     template< std::integral IntegralParameterType >
     constexpr const auto raise( 
             const IntegralParameterType base, 
-            const IntegralParameterType power 
+            const size_t power 
         ) noexcept 
     {
         if( power <= 0 )

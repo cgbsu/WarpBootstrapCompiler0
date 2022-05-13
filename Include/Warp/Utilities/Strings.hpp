@@ -1,4 +1,5 @@
 #include <Warp/Utilities/NotSoUniquePointer.hpp>
+#include <Warp/Utilities/Mathematical.hpp>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_NOT_SO_STRINGS_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_UTILITIES_NOT_SO_STRINGS_HPP
@@ -9,7 +10,7 @@ namespace Warp::Utilities
     struct NotSoUniquePointer< const char* >
     {
         constexpr NotSoUniquePointer() : pointer( nullptr ) {}
-        constexpr NotSoUniquePointer( auto... string ) noexcept : pointer( new char[ sizeof...( string ) ]{ string... } ) {}
+        constexpr NotSoUniquePointer( auto... string ) noexcept : pointer( new char[ sizeof...( string ) ]{ static_cast< char >( string )... } ) {}
         constexpr NotSoUniquePointer( const char* string ) noexcept : pointer( string ) {}
         constexpr NotSoUniquePointer( const NotSoUniquePointer& other ) noexcept : pointer( other.pointer ) {
             ( ( NotSoUniquePointer& ) other ).pointer = nullptr;
@@ -113,7 +114,8 @@ namespace Warp::Utilities
     template< 
             std::integral IntegralParameterType, 
             std::integral auto BaseParameterConstant = 10, 
-            char BaseStringParameterConstant = '0' 
+            char BaseStringParameterConstant = '0', 
+            size_t RecursionMaxParameterConstant = 850 
         >
     constexpr HeapStringType integral_to_string_implementation( 
             const IntegralParameterType to_stringify, 
@@ -121,34 +123,47 @@ namespace Warp::Utilities
             const auto... string_digits 
         ) noexcept 
     {
-        if( to_stringify < BaseParameterConstant )
+        if constexpr( RecursionMaxParameterConstant > 0 )
+        {
+            if( to_stringify < BaseParameterConstant )
+                return HeapStringType{ string_digits..., to_stringify + BaseStringParameterConstant, '\0' };
+
+            const size_t raised = raise( BaseParameterConstant, number_of_digits );
+            const auto high_number = BaseParameterConstant * static_cast< const IntegralParameterType >( 
+                    to_stringify / ( BaseParameterConstant * raised ) 
+                );
+            const char digit = static_cast< const IntegralParameterType >( to_stringify / raised ) - high_number;
+
+            return integral_to_string_implementation< 
+                    IntegralParameterType, 
+                    BaseParameterConstant, 
+                    BaseStringParameterConstant, 
+                    RecursionMaxParameterConstant -1 
+                >( 
+                    to_stringify - ( high_number * raised ), 
+                    number_of_digits - 1, 
+                    string_digits..., digit + BaseStringParameterConstant 
+                );
+
+        }
+        else 
             return HeapStringType{ string_digits..., to_stringify + BaseStringParameterConstant, '\0' };
-
-        const auto raised = raise( BaseParameterConstant, number_of_digits );
-        const auto high_number = BaseParameterConstant * static_cast< const IntegralParameterType >( 
-                to_stringify / ( BaseParameterConstant * raised ) 
-            );
-        const auto digit = static_cast< const IntegralParameterType >( to_stringify / raised ) - high_number;
-
-        return integral_to_string_implementation( 
-                to_stringify - ( high_number * raised ), 
-                number_of_digits - 1, 
-                string_digits..., digit + BaseStringParameterConstant 
-            );
     }
 
     template< 
             std::integral IntegralParameterType, 
             std::integral auto BaseParameterConstant = 10, 
-            char BaseStringParameterConstant = '0' 
+            char BaseStringParameterConstant = '0', 
+            size_t RecursionMaxParameterConstant = 90  
         >
     constexpr HeapStringType integral_to_string( IntegralParameterType to_stringify )
     {
-        const auto number_of_digits = log< IntegralParameterType, BaseParameterConstant >( to_stringify );
+        const auto number_of_digits = log< IntegralParameterType, BaseParameterConstant, 0, RecursionMaxParameterConstant >( to_stringify );
         return integral_to_string_implementation< 
                 IntegralParameterType, 
                 BaseParameterConstant, 
-                BaseStringParameterConstant 
+                BaseStringParameterConstant, 
+                RecursionMaxParameterConstant 
             >( to_stringify, number_of_digits );
     }
 
