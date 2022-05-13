@@ -58,7 +58,7 @@ int main( int argc, char** args )
     std::cout << "Mapping: the arguments of " << test_alternative.name << " to the values \n";
     for( size_t ii = 0; ii < arguments.size(); ++ii )
     {
-        std::cout << "\t[ " << ii << " ]: " //<< "PLACEHOLDER!!!\n";
+        std::cout << "\t[ " << ii << " ]: " 
                 << Warp::Utilities::to_std_string( 
                         *std::get_if< Warp::AbstractSyntaxTree::LiteralType >( &arguments[ ii ] ) 
                     )
@@ -67,14 +67,27 @@ int main( int argc, char** args )
     auto mapping = Warp::CompilerRuntime::map_call_frame( test_alternative, arguments );
     if( mapping.has_value() == true )
     {
+        auto mapping_result = mapping.value();
         std::cout << "Results: \n";
-        for( auto& mapped_pair : mapping.value() ) {
+        for( auto& mapped_pair : mapping_result )
+        {
             std::cout << "\t" << mapped_pair.first 
                     << " : " << Warp::Utilities::to_std_string( 
                             std::get< Warp::AbstractSyntaxTree::LiteralType >( mapped_pair.second ) 
                         ) << "\n";
-                    // << "PLACEHOLDER\n";
         }
+        std::cout << "NULL? " << ( std::get< Warp::AbstractSyntaxTree::LiteralType >( mapping_result.at( std::string{ "x" } ) ).factor.get_pointer() == nullptr ) << "\n";
+        std::cout << "Testing constraints: \n";
+        for( auto& constraint : test_alternative.input_constraints )
+        {
+
+            std::cout << "\tSatisfies Constraint? For Parameter: ";
+            std::cout << constraint.name << ": ";
+            std::cout << Warp::CompilerRuntime::satisfies_constraint( constraint.constraints, mapping_result ) 
+                    << "\n";
+            std::cout << "::\n";
+        }
+        std::cout << "Constraint Tests Complete\n";
     }
     else
     {
