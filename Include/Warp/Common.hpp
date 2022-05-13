@@ -6,6 +6,8 @@
 #include <typeinfo>
 #include <any>
 #include <optional>
+#include <variant>
+#include <memory>
 
 #include <ctpg/ctpg.hpp>
 

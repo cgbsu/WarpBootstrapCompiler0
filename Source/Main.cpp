@@ -54,6 +54,12 @@ std::string test_multi_parameter_simple_switch_code{
         "let switch_function( x : x >= 42, y : y >= 300 ) :: x + x * y;" 
     };
 
+std::string test_multi_parameter_simple_switch_return_constraint_code{ 
+        "let switch_function( x : x < 42, y : y < 300 ) :: x * x + y;"
+        "let switch_function( x : x >= 42, y : y >= 300 ) :: x + x * y;" 
+    };
+
+
 int main( int argc, char** args )
 {
     using Val = Warp::CompilerRuntime::ValueType;
@@ -61,6 +67,7 @@ int main( int argc, char** args )
     auto test_module = Warp::Parser::parse( parser, test_multi_parameter_simple_switch_code );
     auto& test_function = *test_module.functions[ 0 ];
     std::vector< Warp::CompilerRuntime::ValueType > arguments{ Val{ static_cast< size_t >( 10 ) }, Val{ static_cast< size_t >( 35 ) } };
+    std::cout << "Number of Alternataives " << test_function.alternatives.size() << "\n";
     for( auto& alternatives : test_function.alternatives )
     {
         std::cout << "For alternatives with " << alternatives.number_of_parameters << " parameters: \n";

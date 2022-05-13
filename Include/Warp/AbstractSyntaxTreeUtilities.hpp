@@ -166,6 +166,56 @@ namespace Warp::Utilities
         return Warp::AbstractSyntaxTree::LiteralType{ value };
     }
 
+    template< typename... AlternativeParameterTypes >
+    auto to_std_variant( const AutoVariant< AlternativeParameterTypes... >& variant )
+            -> std::variant< AlternativeParameterTypes... >
+    {
+        using ToVariantType = std::variant< AlternativeParameterTypes... >;
+        Warp::Utilities::visit< []( auto data ) -> ToVariantType {
+                return ToVariantType{ *data };
+            } >( variant );
+    }
+
+    template< typename... AlternativeParameterTypes >
+    auto to_std_variant( AutoVariant< AlternativeParameterTypes... >* variant )
+            -> std::variant< AlternativeParameterTypes... > {
+        return to_std_variant( *variant );
+    }
+
+    template< typename... AlternativeParameterTypes >
+    auto to_std_variant( const NotSoUniquePointer< AutoVariant< AlternativeParameterTypes... > >& variant )
+            -> std::variant< AlternativeParameterTypes... > {
+        return to_std_variant( Utilities::to_const_reference( variant ) );
+    }
+
+    template< typename... AlternativeParameterTypes >
+    auto to_std_variant( const Warp::AbstractSyntaxTree::StrongFactor< AlternativeParameterTypes... >& strong_factor )
+            -> std::variant< AlternativeParameterTypes... > {
+        return to_std_variant( Utilities::to_const_reference( strong_factor.factor ) );
+    }
+
+
+    template< typename VariantParameterType, auto OperationParameterConstant >
+    std::optional< VariantParameterType > variant_operation( 
+            const VariantParameterType& left, 
+            const VariantParameterType& right 
+        )
+    {
+        return std::visit( [ & ]( auto data )
+        {
+            auto* operhand = std::get_if< std::remove_pointer_t< decltype( data ) > >( right );
+            if( operhand != nullptr )
+            {
+                return std::optional{ 
+                        VariantParameterType{ 
+                                OperationParameterConstant( *operhand, *data ) 
+                            } 
+                    };
+            }
+            else
+                return std::nullopt;
+        }, left );
+    }
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_ABSTRACT_SYNTAX_TREE_UTILITIES_HPP

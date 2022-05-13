@@ -7,15 +7,17 @@ namespace Warp::CompilerRuntime
             const Warp::CompilerRuntime::FunctionAlternative& new_alternative 
         )
     {
+        std::cout << "Hi\n";
         const auto number_of_parameters = new_alternative.input_constraints.size();
         // Easy access when you know the number of arguments in constant time, alternatives[ number_of_arguments ] //
         const size_t original_size = function.alternatives.size();
         if( original_size < number_of_parameters )
         {
-            function.alternatives.resize( number_of_parameters );
-            for( size_t ii = original_size - 1; 
-                    ii < number_of_parameters; 
-                    function.alternatives[ ii++ ].number_of_parameters = ii + 1 
+            std::cout << "Original size too small\n";
+            function.alternatives.resize( number_of_parameters + 1 );
+            for( size_t ii = original_size; 
+                    ii < number_of_parameters + 1; 
+                    function.alternatives[ ii++ ].number_of_parameters = ii 
                 );
         }
         return *function.alternatives[ number_of_parameters - 1 ].alternatives.emplace_back( 
