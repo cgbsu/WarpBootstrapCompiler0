@@ -82,4 +82,24 @@ namespace Warp::Parser::Testing
             basic_function_alternatives, 
             factor_calls 
         };
+    
+
+    std::string bulk_parse_test { 
+        "let test( a : a < 64 ) @ < 1 :: test( 12 );"
+        "let test( a : a < 64 ) @ <= a :: test( a );"
+        "let test( a : a < 64 ) @ * @ < a + 1 :: 20 * test( a );"
+        "let test( a : a < 64 ) @ + @ < a * 34 :: 20 + test( a );"
+        "let test( a : a < 64, b : test( b ) < 34 ) @ + @ < a * a :: test( a ) * 20;"
+        "let test( a : a < 64 ) 1 < @ :: test( a ) + 10;"
+        "let test( a : a < 64, b : test( b ) < 34, c : c > 100 * a ) a * a > @ :: test( a * a );"
+        "let another_test( a : a < 64 ) @ <= a && @ < 1 :: test( a(), b( q, 4, 5646, 345345 * 445656 + 34 ), rdfg * 34534 );"
+        "let another_test( a : a < 64, c : c > 100 * a ) @ + @ < a * 34 <-> @ <= a && @ < 1 :: test( a, q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 );"
+        "let test( a : a < 64, b : test( b ) < 34 ) @ + @ < a * 34 <-> @ < a + b :: test( ttt(), q, 4, 5646, 345345 * 445656 + 34, rdfg * 34534 );"
+        "let test( a : a < 64 ) @ + @ < a * 34 || @ < a + b :: test( ttt(), q, 4 * another_test(), 5646, 345345 * 445656 + 34, rdfg * 34534 );"
+        "let test( a : a < 64 ) a + b * a * 34 = @ + @  || @ < a + b :: test( ttt(), q, 4 * another_test(), 5646, 345345 * another_test( abc, 123 ) + 34, rdfg * 34534 );"
+        "let test( a : a < 64, b : test( b ) < 34 ) @ + a >= a + b && a + b * a * 34 = @ + @ || @ < a + b :: test( ttt(), q, 4 * another_test(), 5646, 345345 + another_test( abc, 123 ) * 34, rdfg * 34534 );"
+        "let test( a : a < 64, b : test( b ) < 34, c : c > 100 * a, d : d <= c + a * 100 ) a * 42 = @ :: test( ttt(), q, 4 / another_test(), 5646, 345345 / another_test( abc, 123 ) - 34, rdfg / 34534 );"
+        "let test( a : a < 64, c : c > 100 * a ) @ < 10 && a > @ :: test( ttt(), q, 4 / another_test(), 5646, 345345 - another_test( abc, 123 ) - 34, rdfg / 34534 );" 
+    };
+
 }

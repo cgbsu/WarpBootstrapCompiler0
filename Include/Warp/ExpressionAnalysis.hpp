@@ -11,7 +11,7 @@ namespace Warp::Analysis
         ExtractNodeType( const Warp::AbstractSyntaxTree::Node< NodeTypeParameterConstant >& ) {}
     };
 
-    template< template< typename, auto > typename FeedbackParameterType, typename ReturnParameterType >
+    template< template< typename, typename auto > typename FeedbackParameterType, typename ReturnParameterType, typename InputParameterType >
     ReturnParameterType abstract_syntax_tree_callback( const Warp::AbstractSyntaxTree::NodeVariantType& variant )
     {
         const auto& node = Warp::Utilities::to_const_reference( variant );
@@ -23,46 +23,45 @@ namespace Warp::Analysis
             } >( node );
     }
 
-    template< typename, auto >
+    template< typename, typename auto >
     struct Executor{};
 
-
-    template< typename ExpressionParameterType >
-    struct Executor< ExpressionParameterType, Warp::AbstractSyntaxTree::NodeType::Literal >
+    template< typename ReturnParameterType, typename InputParameterType >
+    struct Executor< ReturnParameterType, InputParameterType, Warp::AbstractSyntaxTree::NodeType::Literal >
     {
-        static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node )
+        static ReturnParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node )
         {
-            auto value = Warp::Utilities::visit< []( auto value_pointer ) -> ExpressionParameterType {
+            auto value = Warp::Utilities::visit< []( auto value_pointer ) -> InputParameterType {
                     return *value_pointer;
                 } >( Warp::Utilities::to_const_reference( node.value.factor ) );
             return value;
         }
     };
 
-    template< typename ExpressionParameterType >
-    struct Executor< ExpressionParameterType, Warp::AbstractSyntaxTree::NodeType::BooleanLiteral >
+    template< typename ReturnParameterType, typename InputParameterType >
+    struct Executor< ReturnParameterType, InputParameterType, Warp::AbstractSyntaxTree::NodeType::BooleanLiteral >
     {
-        static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::BooleanLiteral >& node ) {
+        static ReturnParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::BooleanLiteral >& node ) {
             return node.value;
         }
     };
 
-    template< typename ExpressionParameterType >
-    struct Executor< ExpressionParameterType, Warp::AbstractSyntaxTree::NodeType::Identifier >
+    template< typename ReturnParameterType, typename InputParameterType >
+    struct Executor< ReturnParameterType, InputParameterType, Warp::AbstractSyntaxTree::NodeType::Identifier >
     {
-        static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Identifier >& node ) {
+        static ReturnParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Identifier >& node ) {
             std::cout << "Error::NotYetImplemented: Executor::compute_value_of_expression for Identifiers! Returning 0\n";
             return 0;
         }
     };
 
-    template< typename ExpressionParameterType, Warp::Parser::ExpressionOperator OperatorParameterConstant >
-    struct Executor< ExpressionParameterType, OperatorParameterConstant >
+    template< typename ReturnParameterType, typename InputParameterType, Warp::Parser::ExpressionOperator OperatorParameterConstant >
+    struct Executor< ReturnParameterType, InputParameterType, OperatorParameterConstant >
     {
-        static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node )
+        static ReturnParameterType, InputParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node )
         {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> ExpressionParameterType { 
-                    return abstract_syntax_tree_callback< Executor, ExpressionParameterType >( from ); 
+            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> InputParameterType { 
+                    return abstract_syntax_tree_callback< Executor, ReturnParameterType, InputParameterType >( from ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
             return OperationNodeType::operate( 
@@ -72,13 +71,13 @@ namespace Warp::Analysis
         }
     };
 
-    template< typename ExpressionParameterType >
-    struct Executor< ExpressionParameterType, Warp::Parser::BooleanOperator::LogicalNot >
+    template<>
+    struct Executor< bool, bool, Warp::Parser::BooleanOperator::LogicalNot >
     {
-        static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::Parser::BooleanOperator::LogicalNot >& node )
+        static ReturnParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< Warp::Parser::BooleanOperator::LogicalNot >& node )
         {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> ExpressionParameterType { 
-                    return abstract_syntax_tree_callback< Executor, ExpressionParameterType >( from ); 
+            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> InputParameterType { 
+                    return abstract_syntax_tree_callback< Executor, bool, bool >( from ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
             return OperationNodeType::operate( 
@@ -88,13 +87,13 @@ namespace Warp::Analysis
     };
 
 
-    template< typename ExpressionParameterType, Warp::Parser::BooleanOperator OperatorParameterConstant >
-    struct Executor< ExpressionParameterType, OperatorParameterConstant >
+    template< Warp::Parser::BooleanOperator OperatorParameterConstant >
+    struct Executor< bool, bool, OperatorParameterConstant >
     {
-        static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node )
+        static ReturnParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node )
         {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> ExpressionParameterType { 
-                    return abstract_syntax_tree_callback< Executor, ExpressionParameterType >( from ); 
+            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> InputParameterType { 
+                    return abstract_syntax_tree_callback< Executor, bool, bool >( from ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
             return OperationNodeType::operate( 
@@ -104,13 +103,13 @@ namespace Warp::Analysis
         }
     };
 
-    template< typename ExpressionParameterType, Warp::Parser::ComparisonOperator OperatorParameterConstant >
-    struct Executor< ExpressionParameterType, OperatorParameterConstant >
+    template< typename InputParameterType, Warp::Parser::ComparisonOperator OperatorParameterConstant >
+    struct Executor< bool, InputParameterType, OperatorParameterConstant >
     {
-        static ExpressionParameterType compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node )
+        static bool compute_value_of_expression( const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node )
         {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> ExpressionParameterType { 
-                    return abstract_syntax_tree_callback< Executor, ExpressionParameterType >( from ); 
+            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from ) -> typename  { 
+                    return abstract_syntax_tree_callback< Executor, bool, InputParameterType >( from ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
             return OperationNodeType::operate( 

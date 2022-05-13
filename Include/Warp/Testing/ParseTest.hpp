@@ -1,4 +1,6 @@
+// On purpose. //
 #include <Warp/Parser.hpp>
+#include <Warp/Parse.hpp>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_TEST_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_TEST_HPP
@@ -43,8 +45,30 @@ namespace Warp::Parser::Testing
     extern TestSuiteType basic_function_alternatives;
     extern TestSuiteType factor_calls;
     extern std::vector< TestSuiteType > test_suits;
+    extern std::string bulk_parse_test;
 
     int parse_test_main( int argc, char** args, size_t first_user_argument_index = 1 );
+
+    void test_bulk_parse( const auto& parser, 
+            std::string source_code, 
+            ctpg::parse_options parse_options = ctpg::parse_options{}, //{}.set_verbose(), 
+            char deliminator = Warp::Utilities::to_char( FunctionOperators::FunctionDefintionComplete ) 
+        )
+    {
+        // return Warp::Parser::Testing::parse_test_main( argc, args, 1 );
+        auto module = Warp::Parser::parse( parser, source_code, deliminator, parse_options );
+        for( auto function : module.functions )
+        {
+            std::cout << "For function: " << function->name << "\n";
+            for( auto& alternative : function->alternatives )
+            {
+                std::cout << "\t" << alternative.alternatives.size() 
+                        << " alternatives with " 
+                        << alternative.number_of_parameters 
+                        << " paramters\n";
+            }
+        }
+    }
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_TEST_HPP
