@@ -17,7 +17,8 @@ namespace Warp::Utilities
 
     template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
-            const AutoVariant< ParameterTypes... >& variant 
+            const AutoVariant< ParameterTypes... >& variant, 
+            auto... additional_arguments 
         ) noexcept;
 
     template< typename... ParameterTypes >
@@ -90,7 +91,8 @@ namespace Warp::Utilities
     {
         ReturnParameterType result;
         constexpr VisitImplementation( 
-                const AutoVariant< ParameterTypes... >& variant 
+                const AutoVariant< ParameterTypes... >& variant, 
+                auto... additional_arguments 
             ) noexcept : result( 
             ( IndexParameterConstant == variant.index() ) ? 
                 VisitorParameterConstant( static_cast< 
@@ -98,7 +100,7 @@ namespace Warp::Utilities
                                 IndexParameterConstant, 
                                 0, 
                                 ParameterTypes... >::Type* 
-                    >( variant.get_data() ) ) 
+                    >( variant.get_data() ), additional_arguments... ) 
             : 
             VisitImplementation< 
                     ReturnParameterType, 
@@ -106,7 +108,7 @@ namespace Warp::Utilities
                     MaximumParameterConstant, 
                     VisitorParameterConstant, 
                     ParameterTypes... 
-                >( variant ).result ) {}
+                >( variant, additional_arguments... ).result ) {}
     };
 
     template< 
@@ -125,19 +127,21 @@ namespace Warp::Utilities
     {
         ReturnParameterType result;
         constexpr VisitImplementation( 
-                const AutoVariant< ParameterTypes... >& variant 
+                const AutoVariant< ParameterTypes... >& variant, 
+                auto... additional_arguments 
             ) noexcept : result( VisitorParameterConstant( static_cast< 
                         IndexToType< 
                                 MaximumParameterConstant, 
                                 0, 
                                 ParameterTypes... >::Type* 
-                    >( variant.get_data() ) )
+                    >( variant.get_data() ), additional_arguments... )
                 ) {}
     };
 
     template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
-            const AutoVariant< ParameterTypes... >& variant 
+            const AutoVariant< ParameterTypes... >& variant, 
+            auto... additional_arguments 
         ) noexcept
     {
         
@@ -150,7 +154,7 @@ namespace Warp::Utilities
                 sizeof...( ParameterTypes ) - 1, 
                 VisitorParameterConstant, 
                 ParameterTypes... 
-            >( variant ).result;
+            >( variant, additional_arguments... ).result;
     }
 
     /*template< auto VisitorParameterConstant, typename... ParameterTypes >
