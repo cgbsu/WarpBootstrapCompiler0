@@ -49,50 +49,27 @@ std::string test_simple_switch_code{
         "let switch_function( x : x <= 42 ) :: x + x;" 
     };
 
+std::string test_multi_parameter_simple_switch_code{ 
+        "let switch_function( x : x < 42, y : y < 300 ) :: x * x + y;"
+        "let switch_function( x : x >= 42, y : y >= 300 ) :: x + x * y;" 
+    };
+
 int main( int argc, char** args )
 {
+    using Val = Warp::CompilerRuntime::ValueType;
     const auto& parser = Warp::Parser::DefaultParserType::parser;
-    auto test_module = Warp::Parser::parse( parser, test_simple_switch_code );
-    auto& test_alternative = *test_module.functions[ 0 ]->alternatives[ 0 ].alternatives[ 0 ];
-    std::vector< Warp::CompilerRuntime::ValueType > arguments{ Warp::CompilerRuntime::ValueType{ static_cast< size_t >( 10 ) } };
-    std::cout << "Mapping: the arguments of " << test_alternative.name << " to the values \n";
-    for( size_t ii = 0; ii < arguments.size(); ++ii )
+    auto test_module = Warp::Parser::parse( parser, test_multi_parameter_simple_switch_code );
+    auto& test_function = *test_module.functions[ 0 ];
+    std::vector< Warp::CompilerRuntime::ValueType > arguments{ Val{ static_cast< size_t >( 10 ) }, Val{ static_cast< size_t >( 35 ) } };
+    for( auto& alternatives : test_function.alternatives )
     {
-        std::cout << "\t[ " << ii << " ]: " 
-                << std::get< size_t >( arguments[ ii ] ) 
-                << "\n";
-    }
-    auto mapping = Warp::CompilerRuntime::map_call_frame( test_alternative, arguments );
-    if( mapping.has_value() == true )
-    {
-        auto mapping_result = mapping.value();
-        std::cout << "Results: \n";
-        for( auto& mapped_pair : mapping_result )
-        {
-            std::cout << "\t" << mapped_pair.first 
-                    << " : " 
-                    << std::get< size_t >( mapped_pair.second ) 
-                    << "\n";
+        std::cout << "For alternatives with " << alternatives.number_of_parameters << " parameters: \n";
+        size_t alternative_index = 0;
+        for( auto* alternative : alternatives.alternatives ) {
+            std::cout << "\tSatisfies Alternative [ " << alternative_index++ << " ]: "
+                    << Warp::CompilerRuntime::satisfies_alternative_constraints( *alternative, arguments ) << "\n";
         }
-        std::cout << "Testing constraints: \n";
-        for( auto& constraint : test_alternative.input_constraints )
-        {
-
-            std::cout << "\tSatisfies Constraint? For Parameter: ";
-            std::cout << constraint.name << ": ";
-            std::cout << Warp::CompilerRuntime::satisfies_constraint( constraint.constraints, mapping_result ) 
-                    << "\n";
-        }
-        std::cout << "Constraint Tests Complete\n";
     }
-    else
-    {
-        std::cout << "Failed to map arguments! Unequal amounts of arguments! " 
-                << arguments.size() << " arguments vs "
-                << test_alternative.input_constraints.size() 
-                << " parameters.\n";
-    }
-    std::cout << "Done :)\n";
     return 0;
 }
 

@@ -252,10 +252,10 @@ namespace Warp::CompilerRuntime
         return ValueType{ value };
     }
 
-    // enum class ConstraintApplication {
-    //     Input, 
-    //     Output 
-    // };
+    enum class ConstraintApplication {
+        Input, 
+        Output 
+    };
 
     bool satisfies_constraint( const Warp::AbstractSyntaxTree::NodeVariantType& constraint, const CallFrameType& argument_values )
     {
@@ -263,11 +263,22 @@ namespace Warp::CompilerRuntime
         return abstract_syntax_tree_callback< Executor, bool, size_t >( constraint, argument_values );
     }
 
-    // template< ConstraintApplication ConstraintTypeParameterConstant = Input >
-    // bool evaluate_if_fits_constraints( const Warp::CompilerRuntime::FunctionAlternative& alternative, const Warp::CompilerRuntime::CallType& call )
-    // {
-    //     for( auto& parameter : alternative.input_constraints )
-    // }
+    template< ConstraintApplication ConstraintTypeParameterConstant = ConstraintApplication::Input >
+    bool satisfies_alternative_constraints( 
+            const Warp::CompilerRuntime::FunctionAlternative& alternative, 
+            const std::vector< ValueType >& values 
+        )
+    {
+        auto call_frame = map_call_frame( alternative, values );
+        if( bool satisfied = call_frame.has_value(); satisfied == true )
+        {
+            const auto& call_frame_result = call_frame.value();
+            for( auto& parameter : alternative.input_constraints )
+                satisfied = satisfied && satisfies_constraint( parameter.constraints, call_frame_result );
+            return satisfied;
+        }
+        return false;
+    }
 
     template< typename QueryParameterType >
     auto is_of_type( auto canidate )
