@@ -1,11 +1,12 @@
 #include <Warp/Function.hpp>
+#include <memory>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
 
 namespace Warp::CompilerRuntime 
 {
-    using ValueType = std::variant< Warp::AbstractSyntaxTree::LiteralType, bool >;
+    using ValueType = std::variant< size_t, bool >;
     using CallFrameType = std::unordered_map< std::string, ValueType >;
 
     template< auto NodeTypeParameterConstant >
@@ -24,7 +25,6 @@ namespace Warp::CompilerRuntime
         const auto& node = Warp::Utilities::to_const_reference( variant );
         return Warp::Utilities::visit< []( auto raw_node_pointer, const CallFrameType& argument_stack, auto... arguments ) { 
                const decltype( *raw_node_pointer )& reference = *raw_node_pointer;
-                std::cout << "\n\nCALLBACK NULL? " << ( std::get< Warp::AbstractSyntaxTree::LiteralType >( argument_stack.at( std::string{ "x" } ) ).factor.get_pointer() == nullptr ) << "\n";
                std::cout << "Callback::NodeType: " << ( char ) decltype( ExtractNodeType( reference ) )::node_type << "\n";
                return FeedbackParameterType< 
                         ReturnParameterType, 
@@ -74,18 +74,17 @@ namespace Warp::CompilerRuntime
                     auto... additional_arguments 
                 )
         {
-            std::cout << "Why hello there, looking for literal " << node.string << "\n";
-            const auto& factor = std::get< Warp::AbstractSyntaxTree::LiteralType >( call_frame.at( node.string ) );
-            std::cout << "Got the factor\n";
-            const auto& factor_value = factor.factor;
-            std::cout << "Got FactorFactor\n";
-            std::cout << "Variant Null?: " << ( factor_value.get_pointer() == nullptr ) << "\n";
-            std::cout << "Data Null?: " << ( factor_value->get_data() == nullptr ) << "\n";
+            // std::cout << "Why hello there, looking for `Identifier` " << node.string << "\n";
+            // const auto& factor = std::get< size_t >( call_frame.at( node.string ) );
+            // std::cout << "Got the factor\n";
             // TODO: Assuming LITERALS ONLY!!!! //
-            auto value = Warp::Utilities::visit< []( auto value_pointer, auto... ) -> InputParameterType {
-                    std::cout << "Reading literal.\n";
-                    return *value_pointer;
-                } >( Warp::Utilities::to_const_reference( factor_value ) );
+            auto value = std::visit( 
+                    []( auto value_pointer ) -> InputParameterType {
+                        std::cout << "Reading literal.\n";
+                        return value_pointer;
+                    }, 
+                    call_frame.at( node.string ) 
+                ); 
             std::cout << "Type is : " << Warp::Utilities::friendly_type_name< InputParameterType >() << "\n";
             return value;
             // std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for Identifiers! Returning 0\n";
@@ -162,22 +161,12 @@ namespace Warp::CompilerRuntime
                 auto... additional_arguments 
             )
         {
-            std::cout << "Comparison Hello\n";
-
-            const auto nulll = [ & ]() {
-                return ( std::get< Warp::AbstractSyntaxTree::LiteralType >( call_frame.at( std::string{ "x" } ) ).factor.get_pointer() == nullptr );
-            };
-
-            std::cout << "\nBefore Pass? " << nulll() << "\n";
-
             const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) -> InputParameterType { 
                     return abstract_syntax_tree_callback< Executor, OutputParameterType, InputParameterType >( from, stack, arguments... ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
             const auto first = value_from( node.left, call_frame, additional_arguments... );
-            std::cout << "\nAfter First Pass? " << nulll() << "\n";
             const auto second = value_from( node.right, call_frame, additional_arguments ... );
-            std::cout << "\nAfter Second Pass? " << nulll() << "\n";
             return OperationNodeType::operate( 
                     first, 
                     second 
@@ -237,7 +226,7 @@ namespace Warp::CompilerRuntime
         const size_t amount_of_parameters = alternative.input_constraints.size();
         CallFrameType new_call_frame;
         for( size_t ii = 0; ii < amount_of_parameters; ++ii )
-            new_call_frame.insert( { alternative.input_constraints[ ii ].name, values[ ii ] } );
+            new_call_frame.insert( std::pair< std::string, ValueType >( alternative.input_constraints[ ii ].name, values[ ii ] ) );
         return new_call_frame;
     }
 
@@ -269,8 +258,6 @@ namespace Warp::CompilerRuntime
 
     bool satisfies_constraint( const Warp::AbstractSyntaxTree::NodeVariantType& constraint, const CallFrameType& argument_values )
     {
-                std::cout << "\n\nSCNULL? " << ( std::get< Warp::AbstractSyntaxTree::LiteralType >( argument_values.at( std::string{ "x" } ) ).factor.get_pointer() == nullptr ) << "\n";
-
         // TODO: Assuming all parameters are size_t for now. //
         return abstract_syntax_tree_callback< Executor, bool, size_t >( constraint, argument_values );
     }

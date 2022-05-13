@@ -54,14 +54,12 @@ int main( int argc, char** args )
     const auto& parser = Warp::Parser::DefaultParserType::parser;
     auto test_module = Warp::Parser::parse( parser, test_simple_switch_code );
     auto& test_alternative = *test_module.functions[ 0 ]->alternatives[ 0 ].alternatives[ 0 ];
-    std::vector< Warp::CompilerRuntime::ValueType > arguments{ Warp::CompilerRuntime::ValueType{ Warp::Utilities::make_literal( static_cast< size_t >( 42 ) ) } };
+    std::vector< Warp::CompilerRuntime::ValueType > arguments{ Warp::CompilerRuntime::ValueType{ static_cast< size_t >( 42 ) } };
     std::cout << "Mapping: the arguments of " << test_alternative.name << " to the values \n";
     for( size_t ii = 0; ii < arguments.size(); ++ii )
     {
         std::cout << "\t[ " << ii << " ]: " 
-                << Warp::Utilities::to_std_string( 
-                        *std::get_if< Warp::AbstractSyntaxTree::LiteralType >( &arguments[ ii ] ) 
-                    )
+                << std::get< size_t >( arguments[ ii ] ) 
                 << "\n";
     }
     auto mapping = Warp::CompilerRuntime::map_call_frame( test_alternative, arguments );
@@ -72,11 +70,10 @@ int main( int argc, char** args )
         for( auto& mapped_pair : mapping_result )
         {
             std::cout << "\t" << mapped_pair.first 
-                    << " : " << Warp::Utilities::to_std_string( 
-                            std::get< Warp::AbstractSyntaxTree::LiteralType >( mapped_pair.second ) 
-                        ) << "\n";
+                    << " : " 
+                    << std::get< size_t >( mapped_pair.second ) 
+                    << "\n";
         }
-        std::cout << "NULL? " << ( std::get< Warp::AbstractSyntaxTree::LiteralType >( mapping_result.at( std::string{ "x" } ) ).factor.get_pointer() == nullptr ) << "\n";
         std::cout << "Testing constraints: \n";
         for( auto& constraint : test_alternative.input_constraints )
         {
