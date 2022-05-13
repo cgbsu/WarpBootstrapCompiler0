@@ -45,8 +45,8 @@ std::string test_recursive_code{
     };
 
 std::string test_simple_switch_code{ 
-        "let switch_function( x : x < 10 ) :: x * x;"
-        "let switch_function( x : x <= 10 ) :: x + x;" 
+        "let switch_function( x : x < 42 ) :: x * x;"
+        "let switch_function( x : x <= 42 ) :: x + x;" 
     };
 
 int main( int argc, char** args )
@@ -54,7 +54,7 @@ int main( int argc, char** args )
     const auto& parser = Warp::Parser::DefaultParserType::parser;
     auto test_module = Warp::Parser::parse( parser, test_simple_switch_code );
     auto& test_alternative = *test_module.functions[ 0 ]->alternatives[ 0 ].alternatives[ 0 ];
-    std::vector< Warp::CompilerRuntime::ValueType > arguments{ Warp::CompilerRuntime::ValueType{ static_cast< size_t >( 42 ) } };
+    std::vector< Warp::CompilerRuntime::ValueType > arguments{ Warp::CompilerRuntime::ValueType{ static_cast< size_t >( 10 ) } };
     std::cout << "Mapping: the arguments of " << test_alternative.name << " to the values \n";
     for( size_t ii = 0; ii < arguments.size(); ++ii )
     {
@@ -82,7 +82,6 @@ int main( int argc, char** args )
             std::cout << constraint.name << ": ";
             std::cout << Warp::CompilerRuntime::satisfies_constraint( constraint.constraints, mapping_result ) 
                     << "\n";
-            std::cout << "::\n";
         }
         std::cout << "Constraint Tests Complete\n";
     }

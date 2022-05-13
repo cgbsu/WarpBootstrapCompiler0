@@ -25,7 +25,7 @@ namespace Warp::CompilerRuntime
         const auto& node = Warp::Utilities::to_const_reference( variant );
         return Warp::Utilities::visit< []( auto raw_node_pointer, const CallFrameType& argument_stack, auto... arguments ) { 
                const decltype( *raw_node_pointer )& reference = *raw_node_pointer;
-               std::cout << "Callback::NodeType: " << ( char ) decltype( ExtractNodeType( reference ) )::node_type << "\n";
+            //    std::cout << "Callback::NodeType: " << ( char ) decltype( ExtractNodeType( reference ) )::node_type << "\n";
                return FeedbackParameterType< 
                         ReturnParameterType, 
                         InputParameterType, 
@@ -80,12 +80,12 @@ namespace Warp::CompilerRuntime
             // TODO: Assuming LITERALS ONLY!!!! //
             auto value = std::visit( 
                     []( auto value_pointer ) -> InputParameterType {
-                        std::cout << "Reading literal.\n";
+                        // std::cout << "Reading literal.\n";
                         return value_pointer;
                     }, 
                     call_frame.at( node.string ) 
                 ); 
-            std::cout << "Type is : " << Warp::Utilities::friendly_type_name< InputParameterType >() << "\n";
+            // std::cout << "Type is : " << Warp::Utilities::friendly_type_name< InputParameterType >() << "\n";
             return value;
             // std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for Identifiers! Returning 0\n";
             // return 0;
@@ -162,11 +162,12 @@ namespace Warp::CompilerRuntime
             )
         {
             const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) -> InputParameterType { 
-                    return abstract_syntax_tree_callback< Executor, OutputParameterType, InputParameterType >( from, stack, arguments... ); 
+                    return abstract_syntax_tree_callback< Executor, InputParameterType, InputParameterType >( from, stack, arguments... ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
             const auto first = value_from( node.left, call_frame, additional_arguments... );
             const auto second = value_from( node.right, call_frame, additional_arguments ... );
+            // std::cout << first << " " << ( char ) OperatorParameterConstant << " " << second << "\n";
             return OperationNodeType::operate( 
                     first, 
                     second 
