@@ -150,6 +150,7 @@ namespace Warp::Parser
         {
                 parameter_list.input_constraints.push_back( Warp::CompilerRuntime::Parameter{ 
                         Warp::Utilities::hash_string( parameter_name ), 
+                        std::string{ parameter_name }, 
                         constraints 
                     } );
                 return std::move( parameter_list );

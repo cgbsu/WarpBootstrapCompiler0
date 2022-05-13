@@ -17,8 +17,8 @@ namespace Warp::Utilities
 
     template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
-            const AutoVariant< ParameterTypes... >& variant, 
-            auto... additional_arguments 
+            const AutoVariant< ParameterTypes... >& variant//, 
+            // auto... additional_arguments 
         ) noexcept;
 
     template< typename... ParameterTypes >
@@ -84,31 +84,35 @@ namespace Warp::Utilities
             typename ReturnParameterType, 
             size_t IndexParameterConstant, 
             size_t MaximumParameterConstant, 
+            bool IndexAtMaximumParameterConstant, 
             auto VisitorParameterConstant, 
             typename... ParameterTypes 
         >
     struct VisitImplementation
     {
         ReturnParameterType result;
+
+        using NextVisitType = VisitImplementation< 
+                ReturnParameterType, 
+                IndexParameterConstant + 1, 
+                MaximumParameterConstant, 
+                ( IndexParameterConstant + 1 ) < MaximumParameterConstant, 
+                VisitorParameterConstant, 
+                ParameterTypes... 
+            >;
+            using PointerType = IndexToType< 
+                    IndexParameterConstant, 
+                    0, 
+                    ParameterTypes... 
+                >::Type*;
         constexpr VisitImplementation( 
-                const AutoVariant< ParameterTypes... >& variant, 
-                auto... additional_arguments 
+                const AutoVariant< ParameterTypes... >& variant//, 
+                // auto... additional_arguments 
             ) noexcept : result( 
             ( IndexParameterConstant == variant.index() ) ? 
-                VisitorParameterConstant( static_cast< 
-                        IndexToType< 
-                                IndexParameterConstant, 
-                                0, 
-                                ParameterTypes... >::Type* 
-                    >( variant.get_data() ), additional_arguments... ) 
+                VisitorParameterConstant( static_cast< PointerType >( variant.get_data() ) )//, additional_arguments... ) 
             : 
-            VisitImplementation< 
-                    ReturnParameterType, 
-                    IndexParameterConstant + 1, 
-                    MaximumParameterConstant, 
-                    VisitorParameterConstant, 
-                    ParameterTypes... 
-                >( variant, additional_arguments... ).result ) {}
+            NextVisitType{ variant }.result ) {}//, additional_arguments... ) {}
     };
 
     template< 
@@ -121,40 +125,42 @@ namespace Warp::Utilities
             ReturnParameterType, 
             MaximumParameterConstant, 
             MaximumParameterConstant, 
+            false, 
             VisitorParameterConstant, 
             ParameterTypes... 
         >
     {
         ReturnParameterType result;
+        using PointerType = IndexToType< 
+                MaximumParameterConstant, 
+                0, 
+                ParameterTypes... 
+            >::Type*;
         constexpr VisitImplementation( 
-                const AutoVariant< ParameterTypes... >& variant, 
-                auto... additional_arguments 
-            ) noexcept : result( VisitorParameterConstant( static_cast< 
-                        IndexToType< 
-                                MaximumParameterConstant, 
-                                0, 
-                                ParameterTypes... >::Type* 
-                    >( variant.get_data() ), additional_arguments... )
+                const AutoVariant< ParameterTypes... >& variant//, 
+                // auto... additional_arguments 
+            ) noexcept : result( VisitorParameterConstant( static_cast< PointerType >( variant.get_data() ) )//, additional_arguments... )
                 ) {}
     };
 
     template< auto VisitorParameterConstant, typename... ParameterTypes >
     constexpr static auto visit( 
-            const AutoVariant< ParameterTypes... >& variant, 
-            auto... additional_arguments 
+            const AutoVariant< ParameterTypes... >& variant//, 
+            // auto... additional_arguments 
         ) noexcept
     {
         
         using FirstAlternativeType = typename IndexToType< 0, 0, ParameterTypes... >::Type;
         FirstAlternativeType* substitute = nullptr;
-        using ReturnType = decltype( VisitorParameterConstant( substitute ) );
+        using ReturnType = decltype( VisitorParameterConstant( substitute/*, additional_arguments...*/ ) );
         return VisitImplementation< 
                 ReturnType, 
                 0, 
                 sizeof...( ParameterTypes ) - 1, 
+                0 == sizeof...( ParameterTypes ) - 1, 
                 VisitorParameterConstant, 
                 ParameterTypes... 
-            >( variant, additional_arguments... ).result;
+            >( variant/*, additional_arguments...*/ ).result;
     }
 
     /*template< auto VisitorParameterConstant, typename... ParameterTypes >

@@ -49,7 +49,8 @@ namespace Warp::Parser::Testing
 
     int parse_test_main( int argc, char** args, size_t first_user_argument_index = 1 );
 
-    void test_bulk_parse( const auto& parser, 
+    Warp::CompilerRuntime::Module&& test_bulk_parse( 
+            const auto& parser, 
             std::string source_code, 
             ctpg::parse_options parse_options = ctpg::parse_options{}, //{}.set_verbose(), 
             char deliminator = Warp::Utilities::to_char( FunctionOperators::FunctionDefintionComplete ) 
@@ -68,6 +69,7 @@ namespace Warp::Parser::Testing
                         << " paramters\n";
             }
         }
+        return module;
     }
 }
 

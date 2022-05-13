@@ -9,8 +9,10 @@ namespace Warp::CompilerRuntime
     ;
     struct Function;
 
-    struct Parameter {
+    struct Parameter
+    {
         Warp::Utilities::HashedStringType identifier;
+        std::string name;
         Warp::AbstractSyntaxTree::NodeVariantType constraints;
     };
 

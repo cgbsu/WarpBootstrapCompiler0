@@ -12,10 +12,10 @@ namespace Warp::Utilities
         return node;
     }
 
-    constexpr const auto& to_const_reference( const auto* value ) {
-        const typename std::remove_pointer< decltype( value ) >::type& node = *value;
-        return node;
-    }
+    // constexpr const auto& to_const_reference( const auto* value ) {
+    //     const typename std::remove_pointer< decltype( value ) >::type& node = *value;
+    //     return node;
+    // }
     
     template< auto NodeTag >
     constexpr Warp::AbstractSyntaxTree::NodeVariantType allocate_node( auto... constructor_arguments )
@@ -109,7 +109,7 @@ namespace Warp::Utilities
 
     constexpr std::optional< LeftRight > bi_node_proxy( const Warp::AbstractSyntaxTree::NodeVariantType& from )
     {
-        return Warp::Utilities::visit< []( auto* node ) 
+        return Warp::Utilities::visit< []( auto node, auto... ) 
                 { 
                     if constexpr( node_is_left_right( decltype( node ){} ) == true )
                         return std::optional{ LeftRight( node ) };
@@ -148,6 +148,20 @@ namespace Warp::Utilities
     constexpr auto tag_is( const Warp::AbstractSyntaxTree::NodeVariantType& node ) {
         return node->data_as< Warp::AbstractSyntaxTree::Taggable, true >()->tag_as< decltype( NodeTagParameterConstant ) >() == NodeTagParameterConstant;
     }
+
+    std::string to_std_string( const Warp::AbstractSyntaxTree::LiteralType& literal )
+    {
+        const auto& unicorn = to_const_reference( literal.factor );
+        return Warp::Utilities::visit< []( auto* data ) ->std::string {
+                return std::to_string( *data );
+            }, size_t, signed long long int >( unicorn );
+    }
+
+    template< typename ParameterType >
+    Warp::AbstractSyntaxTree::LiteralType make_literal( ParameterType value ) {
+        return Warp::AbstractSyntaxTree::LiteralType{ value };
+    }
+
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_ABSTRACT_SYNTAX_TREE_UTILITIES_HPP

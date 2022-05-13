@@ -288,12 +288,11 @@ namespace Warp::Utilities
 
     template< 
             size_t IndexParameterConstant, 
-            size_t CurrentParameterConstant, 
             typename CurrentParameterType 
         >
     struct IndexToTypeImplementation< 
                 IndexParameterConstant, 
-                CurrentParameterConstant, 
+                IndexParameterConstant, 
                 CurrentParameterType 
             > {
         using Type = CurrentParameterType;
@@ -309,7 +308,7 @@ namespace Warp::Utilities
         using Type = typename IndexToTypeImplementation< 
                 IndexParameterConstant, 
                 StartIndexParameter, 
-                ParameterTypes ...
+                CleanType< ParameterTypes > ...
             >::Type;
     };
 
