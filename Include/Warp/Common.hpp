@@ -8,6 +8,7 @@
 #include <optional>
 #include <variant>
 #include <memory>
+#include <sstream>
 
 #include <ctpg/ctpg.hpp>
 

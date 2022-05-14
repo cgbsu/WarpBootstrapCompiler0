@@ -1,6 +1,5 @@
 #include <Warp/Function.hpp>
 #include <optional>
-#include <sstream>
 #include <string>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
@@ -413,6 +412,74 @@ namespace Warp::CompilerRuntime
                 } );
         }
         return result;
+    }
+
+    const Function* function_from_module( const Module& to_search, std::string name )
+    {
+        for( Function* function : to_search.functions ) {
+            if( function->name == name )
+                return function;
+        }
+        return nullptr;
+    }
+
+    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+    std::optional< ReturnParameterType > call_function_with_values(
+            std::vector< AbstractSyntaxTree::ValueType >& values, 
+            Function& function, 
+            std::optional< Module >& module, 
+            std::vector< std::string >& log 
+        )
+    {
+        if( const size_t number_of_parameters = values.size(); number_of_parameters < function.alternatives.size() )
+        {
+            std::vector< FunctionAlternative* > input_canidates;
+            std::optional< ReturnParameterType > result = std::nullopt;
+            for( FunctionAlternative* alternative : function.alternatives[ number_of_parameters ].alternatives )
+            {
+                // auto mapping = map_call_frame( alternative, values );
+                if( satisfies_alternative_constraints( *alternative, values, log, module ) == true )
+                    input_canidates.push_back( alternative );
+            }
+            for( FunctionAlternative* alternative : input_canidates )
+            {
+                auto mapping = map_call_frame( *alternative, values );
+                const AbstractSyntaxTree::NodeVariantType& expression = alternative->expression;
+                if( auto new_result = evaluate_expression( expression, mapping.value(), log, module );
+                       new_result.has_value() == true )
+                {
+                    auto mapping = map_call_frame( *alternative, values, new_result );
+                    const FunctionAlternative& alternative_ = *alternative;
+                    if( satisfies_alternative_constraints( alternative_, values, new_result.value(), log, module ) == true )
+                    {
+                        if( result != std::nullopt )
+                            result = new_result;
+                        else
+                        {
+                            debug_print( log, std::string{ 
+                                    "template< typename > call_function_with_values( "
+                                    "const std::vector< ValueType >&, const Function&, const Module&, "
+                                    "std::vector< std::string >& ):std::optional< typename >::"
+                                    "Error: Prototype quality software Function input and output constraints match multiple "
+                                    "function alternatives, function call ambigious." }
+                                );
+                            return std::nullopt;
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+        else
+        {
+            debug_print( log, std::string{ 
+                    "template< typename > call_function_with_values( "
+                    "const std::vector< ValueType >&, const Function&, const Module&, "
+                    "std::vector< std::string >& ):std::optional< typename >::"
+                    "Error: No alternative for function that has "
+                } + std::to_string( values.size() ) + std::string{ " parameters.\n" } );
+        }
+        return std::nullopt;
     }
 
     template< typename QueryParameterType >

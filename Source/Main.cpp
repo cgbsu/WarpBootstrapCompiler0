@@ -40,90 +40,34 @@ int main( int argc, char** args )
 
 #else // WARP_REPL
 
-std::string test_recursive_code{ 
-        "let raise( x : x > 1 ) :: x * raise( x - 1 );"
-        "let raise( x : x = 1 ) :: 1 * 1;" // Bug to fix in the parse, cant just return 1. //
-    };
-
-std::string test_simple_switch_code{ 
-        "let switch_function( x : x < 42 ) :: x * x;"
-        "let switch_function( x : x <= 42 ) :: x + x;" 
-    };
-
-std::string test_multi_parameter_simple_switch_code{ 
-        "let switch_function( x : x < 42, y : y < 300 ) :: x * x + y;"
-        "let switch_function( x : x >= 42, y : y >= 300 ) :: x + x * y;" 
-    };
-
-std::string test_multi_parameter_simple_switch_return_constraint_code{ 
+std::string test{ 
         "let switch_function( x : x < 42, y : y < 300 ) @ < 200 :: x * x + y;"
         "let switch_function( x : x >= 42, y : y >= 300 ) @ = 10 :: x + x * y;" 
     };
-
-
-std::string cat_log( std::vector< std::string >& log )
-{
-    std::stringstream buffer;
-    for( auto& string : log )
-        buffer << string;
-    return buffer.str();
-}
 
 int main( int argc, char** args )
 {
     using Val = Warp::AbstractSyntaxTree::ValueType;
     const auto& parser = Warp::Parser::DefaultParserType::parser;
-    auto test_module = Warp::Parser::parse( parser, test_multi_parameter_simple_switch_return_constraint_code );
-    auto& test_function = *test_module.functions[ 0 ];
+    auto test_module = Warp::Parser::parse( parser, test );
     std::vector< Warp::AbstractSyntaxTree::ValueType > arguments{ Val{ static_cast< size_t >( 10 ) }, Val{ static_cast< size_t >( 35 ) } };
-    // for( auto argument : arguments )
-    //     std::cout << "Argument: " << to_std_string( argument ) << "\n";
+    std::vector< std::string > log;
     auto module = std::optional{ test_module };
-    std::cout << "Number of Alternataives " << test_function.alternatives.size() << "\n";
-    for( auto& alternatives : test_function.alternatives )
-    {
-        std::cout << "For alternatives with " << alternatives.number_of_parameters << " parameters: \n";
-        size_t alternative_index = 0;
-        for( auto* alternative : alternatives.alternatives )
-        {
-            std::vector< std::string > log;
-            bool satisfies_input_constraint = Warp::CompilerRuntime::satisfies_alternative_constraints( 
-                    *alternative, 
-                    arguments, 
-                    log, 
-                    module 
-                );
-            std::cout << "\n\tSatisfies Alternative [ " << alternative_index++ << " ]: "
-                    << satisfies_input_constraint << "\n";
-            auto mapping = map_call_frame( *alternative, arguments );
-            auto expression_result = Warp::CompilerRuntime::evaluate_expression( 
-                    alternative->expression, 
-                    mapping.value(), 
-                    log, 
-                    module
-                );
-            std::cout << "\n\tExpression\n";
-            auto expression_result_raw = std::visit( []( auto data ){ 
-                    std::cout << "\tResult: " << data << " (returning as size_t)\n";
-                    return static_cast< size_t >( data );
-                }, expression_result.value() );
-            // std::cout << "\tResult: " << expression_result_raw << "\n";
-            const bool satisifies_return_constraint = Warp::CompilerRuntime::satisfies_alternative_constraints( 
-                    *alternative, 
-                    arguments, 
-                    Val{ static_cast< size_t >( expression_result_raw ) }, 
-                    log, 
-                    module 
-                );
-            std::cout << "\n\tSatisifies Result Constraint [ " 
-                    << alternative_index++ << " ] : "
-                    <<  satisifies_return_constraint 
-                    << "\n";
-            // std::cout << "Log: " << cat_log( log ) << "\n";
-        }
-    }
-    return 0;
+    auto result = Warp::CompilerRuntime::call_function_with_values( 
+            arguments, 
+            *test_module.functions[ 0 ], 
+            module, 
+            log 
+        );
+    auto expression_result_raw = std::visit( []( auto data ) { 
+                std::cout << "\tResult: " << data << " (returning as size_t)\n";
+                return static_cast< size_t >( data );
+            }, 
+            result.value() 
+        );
+return 0;
 }
+
 
 // int main( int argc, char** args )
 // {
