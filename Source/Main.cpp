@@ -87,21 +87,37 @@ int main( int argc, char** args )
         for( auto* alternative : alternatives.alternatives )
         {
             std::vector< std::string > log;
-            std::cout << "\tSatisfies Alternative [ " << alternative_index++ << " ]: "
-                    << Warp::CompilerRuntime::satisfies_alternative_constraints( 
-                            *alternative, 
-                            arguments, 
-                            log, 
-                            module 
-                        ) << "\n";
-            std::cout << "\tResult Constraint: " 
-                    << Warp::CompilerRuntime::satisfies_alternative_constraints( 
-                            *alternative, 
-                            arguments, 
-                            Val{ static_cast< size_t >( 100 ) }, 
-                            log, 
-                            module 
-                        ) 
+            bool satisfies_input_constraint = Warp::CompilerRuntime::satisfies_alternative_constraints( 
+                    *alternative, 
+                    arguments, 
+                    log, 
+                    module 
+                );
+            std::cout << "\n\tSatisfies Alternative [ " << alternative_index++ << " ]: "
+                    << satisfies_input_constraint << "\n";
+            auto mapping = map_call_frame( *alternative, arguments );
+            auto expression_result = Warp::CompilerRuntime::evaluate_expression( 
+                    alternative->expression, 
+                    mapping.value(), 
+                    log, 
+                    module
+                );
+            std::cout << "\n\tExpression\n";
+            auto expression_result_raw = std::visit( []( auto data ){ 
+                    std::cout << "\tResult: " << data << " (returning as size_t)\n";
+                    return static_cast< size_t >( data );
+                }, expression_result.value() );
+            // std::cout << "\tResult: " << expression_result_raw << "\n";
+            const bool satisifies_return_constraint = Warp::CompilerRuntime::satisfies_alternative_constraints( 
+                    *alternative, 
+                    arguments, 
+                    Val{ static_cast< size_t >( expression_result_raw ) }, 
+                    log, 
+                    module 
+                );
+            std::cout << "\n\tSatisifies Result Constraint [ " 
+                    << alternative_index++ << " ] : "
+                    <<  satisifies_return_constraint 
                     << "\n";
             // std::cout << "Log: " << cat_log( log ) << "\n";
         }
