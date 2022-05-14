@@ -18,7 +18,7 @@ namespace Warp::CompilerRuntime
                     function.alternatives[ ii++ ].number_of_parameters = ii 
                 );
         }
-        return *function.alternatives[ number_of_parameters - 1 ].alternatives.emplace_back( 
+        return *function.alternatives[ number_of_parameters ].alternatives.emplace_back( 
                 new Warp::CompilerRuntime::FunctionAlternative{ 
                         new_alternative.identifier, 
                         new_alternative.expression, 

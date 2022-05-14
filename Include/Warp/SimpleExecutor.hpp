@@ -155,7 +155,10 @@ namespace Warp::CompilerRuntime
                     right 
                 );
             debug_print( log, std::string{ "}:[" } );
-            debug_print( log, Utilities::to_std_string( result.value() ) );
+            if( result.has_value() == true )
+                debug_print( log, Utilities::to_std_string( result.value() ) );
+            else
+                debug_print( log, std::string{ "no-value" } );
             debug_print( log, std::string{ "] " } );
             return result;
         }
@@ -317,13 +320,15 @@ namespace Warp::CompilerRuntime
             std::optional< Module >& module 
         ) 
     {
+        std::cout << "dbg0\n";
         auto result = abstract_syntax_tree_callback< Executor, OptionalValueType >( 
                 constraint, 
                 argument_values, 
                 log, 
                 module
             );
-        if( result.has_value() != true )
+        std::cout << "dbg1\n";
+        if( result.has_value() == false )
         {
             debug_print( log, std::string{ "satisfies_constraint(const NodeVariantType&, const CallFrameType&) : "
                     "bool::Error: evaluating constraint! No value processed.\n" 
@@ -406,7 +411,8 @@ namespace Warp::CompilerRuntime
                 log, 
                 module 
             );
-        if( result.has_value() != true ) {
+        if( result.has_value() != true )
+        {
             debug_print( log, std::string{ "satisfies_constraint(const NodeVariantType&, const CallFrameType&) : "
                     "bool::Error: evaluating constraint! No value processed.\n" 
                 } );
@@ -431,29 +437,52 @@ namespace Warp::CompilerRuntime
             std::vector< std::string >& log 
         )
     {
+        std::vector< ReturnParameterType > output_canidates;
         if( const size_t number_of_parameters = values.size(); number_of_parameters < function.alternatives.size() )
         {
             std::vector< FunctionAlternative* > input_canidates;
-            std::optional< ReturnParameterType > result = std::nullopt;
-            for( FunctionAlternative* alternative : function.alternatives[ number_of_parameters ].alternatives )
+            std::cout << "Number of Parameters: " << number_of_parameters << "\n";
+            auto alternatives = function.alternatives[ number_of_parameters ];
+            std::cout << "New Number Of Parameters: " << alternatives.number_of_parameters << "\n";
+            auto actual_alternatives = alternatives.alternatives;
+            std::cout << "Number of alternatives " << actual_alternatives.size() << "\n";
+            for( FunctionAlternative* alternative : actual_alternatives )
             {
+                std::cout << "Iterating null?: " << ( alternative == nullptr ) << "\n";
                 // auto mapping = map_call_frame( alternative, values );
-                if( satisfies_alternative_constraints( *alternative, values, log, module ) == true )
+                if( satisfies_alternative_constraints( *alternative, values, log, module ) == true ) {
+                    std::cout << "\nInput constraint satisfied\n";
                     input_canidates.push_back( alternative );
+                }
+                else
+                    std::cout << "\nInput NOT constraint satisfied\n";
             }
+            std::cout << "Number of canidates: " << input_canidates.size() << "\n";
+            if( input_canidates.size() == 0 )
+                return std::nullopt;
             for( FunctionAlternative* alternative : input_canidates )
             {
                 auto mapping = map_call_frame( *alternative, values );
+                std::cout << "Has mapping: " << mapping.has_value() << "\n";
                 const AbstractSyntaxTree::NodeVariantType& expression = alternative->expression;
-                if( auto new_result = evaluate_expression( expression, mapping.value(), log, module );
+                std::cout << "Hi\n";
+                auto new_result = evaluate_expression( expression, mapping.value(), log, module );
+                std::cout << "new_result: " << new_result.has_value() << "\n";
+                if( 
                        new_result.has_value() == true )
                 {
-                    auto mapping = map_call_frame( *alternative, values, new_result );
+                    std::cout << "Has Value\n";
+                    // auto mapping = map_call_frame( *alternative, values, new_result );
                     const FunctionAlternative& alternative_ = *alternative;
                     if( satisfies_alternative_constraints( alternative_, values, new_result.value(), log, module ) == true )
                     {
-                        if( result != std::nullopt )
-                            result = new_result;
+                        std::cout << "\nOutput constraint satisfied\n";
+                        if( output_canidates.size() == 0 )
+                        {
+                            std::cout << "Setting result\n";
+                            output_canidates.push_back( new_result.value() );
+                            std::cout << "Result set\n";
+                        }
                         else
                         {
                             debug_print( log, std::string{ 
@@ -468,7 +497,9 @@ namespace Warp::CompilerRuntime
                     }
                 }
             }
-            return result;
+            if( output_canidates.size() == 1 )
+                return std::optional{ output_canidates[ 0 ] };
+            return std::nullopt;
         }
         else
         {
