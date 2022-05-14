@@ -9,6 +9,8 @@
 #include <variant>
 #include <memory>
 #include <sstream>
+#include <filesystem>
+#include <fstream>
 
 #include <ctpg/ctpg.hpp>
 

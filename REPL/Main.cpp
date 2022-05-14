@@ -1,11 +1,6 @@
 #include <Warp/Parse.hpp>
-#include <optional>
 #include <Warp/SimpleExecutor.hpp>
 #include <Warp/Testing/ParseTest.hpp>
-#include <filesystem>
-#include <fstream>
-
-std::optional< std::string > read_file( std::string_view path );
 
 std::string log_cat( std::vector< std::string >& log );
 
@@ -16,7 +11,7 @@ int main( int argc, char** args )
     {
         std::string module_path{ args[ 1 ] };
         std::cout << "Note: Attempting to load " << module_path << "... ";
-        if( auto read_result = read_file( module_path ); read_result.has_value() ) {
+        if( auto read_result = Warp::Utilities::read_file( module_path ); read_result.has_value() ) {
             module_source_code = read_result.value();
             std::cout << "Success!\n";
         }
@@ -78,30 +73,6 @@ int main( int argc, char** args )
 
     }
     return 0;
-}
-
-std::optional< std::string > read_file( std::string_view path )
-{
-    std::filesystem::path file_path{ path };
-    if( std::filesystem::exists( file_path ) == true )
-    {
-        std::ifstream file_stream;
-        file_stream.open( file_path );
-        if( file_stream.is_open() == false )
-            return std::nullopt;
-        std::stringstream media_buffer;
-        while( file_stream.good() == true && file_stream.eof() == false )
-        {
-            std::string line;
-            std::getline( file_stream, line );
-            media_buffer << line;
-        }
-        return std::optional{ media_buffer.str() };
-    }
-    else {
-        std::cerr << "Error: Failed to open " << file_path << " file does not exist!\n";
-    }
-    return std::nullopt;
 }
 
 std::string log_cat( std::vector< std::string >& log )

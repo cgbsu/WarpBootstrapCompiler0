@@ -10,5 +10,6 @@
 #include <Warp/Utilities/NotSoUniquePointer.hpp>
 #include <Warp/Utilities/Reflection.hpp>
 #include <Warp/Utilities/Strings.hpp>
+#include <Warp/Utilities/FileIO.hpp>
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_UTILITES_HPP
