@@ -45,13 +45,20 @@ std::string test{
         "let switch_function( x : x >= 42, y : y >= 300 ) @ = 10 :: x + x * y;" 
     };
 
+std::string recursion_test{ 
+        "let raise( x : x > 0 ) :: x * raise( x - 1 );"
+        "let raise( x : x = 0 ) @ = 1 :: 1 * 1;" 
+    };
+
+
 int main( int argc, char** args )
 {
+    std::string module_source_code = recursion_test;
     std::cout << "Thank me to exit \"thanks :)\", enter values then enter \"done\" when done to execute.\n";
-    std::cout << "Module source code: \n" << test << "\n";
+    std::cout << "Module source code: \n" << module_source_code << "\n";
     using Val = Warp::AbstractSyntaxTree::ValueType;
     const auto& parser = Warp::Parser::DefaultParserType::parser;
-    auto test_module = Warp::Parser::parse( parser, test );
+    auto test_module = Warp::Parser::parse( parser, module_source_code );
     std::vector< std::string > log;
     auto module = std::optional{ test_module };
     std::vector< Warp::AbstractSyntaxTree::ValueType > arguments;

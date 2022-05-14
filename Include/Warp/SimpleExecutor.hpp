@@ -50,7 +50,7 @@ namespace Warp::CompilerRuntime
             std::vector< std::string >& log 
         );
 
-    const Function* function_from_module( const Module& to_search, std::string name );
+    Function* function_from_module( const Module& to_search, std::string name );
 
     std::optional< CallFrameType > map_call_frame( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
@@ -249,34 +249,41 @@ namespace Warp::CompilerRuntime
                 auto... additional_arguments 
             )
         {
-            // const auto value_from = [ & ]( const Warp::AbstractSyntaxTree::NodeVariantType& from ) { 
-            //         return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, call_frame, log, module, additional_arguments... ); 
-            //     };
-            // const size_t number_of_parameters = node.arguments;
-            // std::vector< AbstractSyntaxTree::ValueType > values;
-            // auto mapping = map_call_frame()
-            // for( size_t ii = 0; ii < number_of_parameters; ++ii )
-            // {
-            //     values.push_back( evaluate_expression< Utilities::UnwrapOptional< OutputParameterType >::Type >( value_from( node.arguments[ ii ] ) ) );
-            // }
-            // if( module.has_value() == false ) {
-            //     debug_print( log, std::string{ "FunctionCall::Error: Evaluation does not have a module!\n" } );
-            //     return std::nullopt;
-            // }
-            // auto function = function_from_module( module.value(), node.function_name );
-            // if( function == nullptr ) {
-            //     debug_print( log, std::string{ "FunctionCall::Error: Function " } + node.function_name + std::string{ " not found in module\n" } );
-            //     return std::nullopt;
-            // }
-            // Function& non_const_function = *function;
-            // return call_function_with_values< Utilities::UnwrapOptional< OutputParameterType >::Type >(
-            //         values, 
-            //         non_const_function, 
-            //         module, 
-            //         log 
-            //     );
+            using OutputType = typename Utilities::UnwrapOptional< OutputParameterType >::Type;
+            const auto value_from = [ & ]( const Warp::AbstractSyntaxTree::NodeVariantType& from ) { 
+                    return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, call_frame, log, module, additional_arguments... ); 
+                };
+            const size_t number_of_parameters = node.arguments.size();
+            std::vector< AbstractSyntaxTree::ValueType > values;
+            for( size_t ii = 0; ii < number_of_parameters; ++ii )
+            {
+                auto argument = evaluate_expression< OutputType >( node.arguments[ ii ], call_frame, log, module );
+                // auto argument = value_from( node.arguments[ ii ] );
+                if( argument.has_value() == false ) {
+                    debug_print( log, std::string{ "FunctionCall::Error: Argument failed to be evaluated.\n" } );
+                    return std::nullopt;
+                }
+                // values.push_back( evaluate_expression< OutputType >( argument.value(), call_frame, log, module ) );
+                values.push_back( argument.value() );
+            }
+            if( module.has_value() == false ) {
+                debug_print( log, std::string{ "FunctionCall::Error: Evaluation does not have a module!\n" } );
+                return std::nullopt;
+            }
+            auto function = function_from_module( module.value(), node.function_name );
+            if( function == nullptr ) {
+                debug_print( log, std::string{ "FunctionCall::Error: Function " } + node.function_name + std::string{ " not found in module\n" } );
+                return std::nullopt;
+            }
+            Function& non_const_function = *function;
+            return call_function_with_values< OutputType >(
+                    values, 
+                    non_const_function, 
+                    module, 
+                    log 
+                );
             // std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for FunctionCall! Returning 0\n";
-            return 0;
+            // return 0;
         }
     };
 
@@ -466,7 +473,7 @@ namespace Warp::CompilerRuntime
         return result;
     }
 
-    const Function* function_from_module( const Module& to_search, std::string name )
+    Function* function_from_module( const Module& to_search, std::string name )
     {
         for( Function* function : to_search.functions ) {
             if( function->name == name )
