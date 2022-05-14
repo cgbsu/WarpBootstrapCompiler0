@@ -9,6 +9,14 @@ namespace Warp::CompilerRuntime
     using OptionalValueType = std::optional< AbstractSyntaxTree::ValueType >;
     using CallFrameType = std::unordered_map< std::string, AbstractSyntaxTree::ValueType >;
 
+    template< typename ParameterConstant >
+    concept BiNodeConcept = Warp::Utilities::IsAnyOfConcept< 
+            Warp::Utilities::CleanType< ParameterConstant >, 
+            Warp::Parser::ComparisonOperator, 
+            Warp::Parser::BooleanOperator, 
+            Warp::Parser::ExpressionOperator 
+        >;
+
     template< auto NodeTypeParameterConstant >
     struct ExtractNodeType {
         constexpr static auto node_type = NodeTypeParameterConstant;
@@ -72,7 +80,7 @@ namespace Warp::CompilerRuntime
         }
     };
 
-    template< typename ReturnParameterType, Warp::Parser::ExpressionOperator OperatorParameterConstant >
+    template< typename ReturnParameterType, BiNodeConcept auto OperatorParameterConstant >
     struct Executor< ReturnParameterType, OperatorParameterConstant >
     {
         static ReturnParameterType compute_value_of_expression( 
@@ -85,11 +93,6 @@ namespace Warp::CompilerRuntime
                     return abstract_syntax_tree_callback< Executor, ReturnParameterType >( from, stack, arguments... ); 
                 };
             using OperationNodeType = typename Warp::Utilities::CleanType< decltype( node ) >;
-            // return OperationNodeType::operate( 
-            //         value_from( node.left, call_frame, additional_arguments... ), 
-            //         value_from( node.right, call_frame, additional_arguments... ) 
-            //     );
-            // auto operation = OperationNodeType::operate< AbstractSyntaxTree::ValueType >;
             return Utilities::variant_operation< [ & ]( auto left, auto right ) { return OperationNodeType::operate( left, right ); } >( 
                     value_from( node.left, call_frame, additional_arguments... ), 
                     value_from( node.right, call_frame, additional_arguments... ) 
@@ -119,53 +122,6 @@ namespace Warp::CompilerRuntime
                 ) };
         }
     };
-
-
-    template< typename OutputParameterType, Warp::Parser::BooleanOperator OperatorParameterConstant >
-    struct Executor< OutputParameterType, OperatorParameterConstant >
-    {
-        static OutputParameterType compute_value_of_expression( 
-                const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node, 
-                const CallFrameType& call_frame, 
-                auto... additional_arguments 
-            )
-        {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) { 
-                    return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, stack, arguments... ); 
-                };
-            using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
-            return Utilities::variant_operation< 
-                    [ & ]( auto left, auto right ) { return OperationNodeType::operate( left, right ); } 
-                >( 
-                    value_from( node.left, call_frame, additional_arguments... ), 
-                    value_from( node.right, call_frame, additional_arguments... ) 
-                );
-        }
-    };
-
-    template< typename OutputParameterType, Warp::Parser::ComparisonOperator OperatorParameterConstant >
-    struct Executor< OutputParameterType, OperatorParameterConstant >
-    {
-        static OutputParameterType compute_value_of_expression( 
-                const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node, 
-                const CallFrameType& call_frame, 
-                auto... additional_arguments 
-            )
-        {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) { 
-                    return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, stack, arguments... ); 
-                };
-            using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
-            // std::cout << first << " " << ( char ) OperatorParameterConstant << " " << second << "\n";
-            return Utilities::variant_operation< 
-                    [ & ]( auto left, auto right ) { return OperationNodeType::operate( left, right ); } 
-                >( 
-                    value_from( node.left, call_frame, additional_arguments... ), 
-                    value_from( node.right, call_frame, additional_arguments... ) 
-                );
-        }
-    };
-
 
     template< typename OutputParameterType >
     struct Executor< OutputParameterType, Warp::Parser::FunctionOperators::FunctionResult >
