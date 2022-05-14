@@ -98,6 +98,9 @@ std::optional< std::string > read_file( std::string_view path )
         }
         return std::optional{ media_buffer.str() };
     }
+    else {
+        std::cerr << "Error: Failed to open " << file_path << " file does not exist!\n";
+    }
     return std::nullopt;
 }
 

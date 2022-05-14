@@ -1,0 +1,4 @@
+let factorial( n : n > 0 ) :: n * factorial( n - 1 );
+let factorial( n : n = 0 ) @ = 1 :: 1 * 1;
+let raise( base : base > 0, power : power > 0 ) :: base * raise( base, power - 1 );
+let raise( base : base > 0, power : power = 0 ) @ = 1 :: 1 * 1;
