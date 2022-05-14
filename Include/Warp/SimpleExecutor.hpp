@@ -8,6 +8,13 @@
 
 namespace Warp::CompilerRuntime 
 {
+    #define WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP_DEBUG true
+
+    void debug_print( std::string message )  {
+        if( WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP_DEBUG == true )
+            std::cout << message;
+    }
+
     using OptionalValueType = std::optional< AbstractSyntaxTree::ValueType >;
     using CallFrameType = std::unordered_map< std::string, AbstractSyntaxTree::ValueType >;
 
@@ -30,18 +37,26 @@ namespace Warp::CompilerRuntime
             const Warp::AbstractSyntaxTree::NodeVariantType& variant, 
             const CallFrameType& argument_values, 
             const std::vector< std::string >& experssion_log, 
+            std::optional< Module >& module, 
             auto... additional_arguments 
         )
     {
         const auto& node = Warp::Utilities::to_const_reference( variant );
-        return Warp::Utilities::visit< []( auto raw_node_pointer, const CallFrameType& argument_stack, std::vector< std::string >& log, auto... arguments ) { 
+        return Warp::Utilities::visit< []( 
+                    auto raw_node_pointer, 
+                    const CallFrameType& argument_stack, 
+                    std::vector< std::string >& log, 
+                    std::optional< Module >& module, 
+                    auto... arguments 
+                ) 
+            { 
                const decltype( *raw_node_pointer )& reference = *raw_node_pointer;
             //    std::cout << "Callback::NodeType: " << ( char ) decltype( ExtractNodeType( reference ) )::node_type << "\n";
                return FeedbackParameterType< 
                         ReturnParameterType, 
                         decltype( ExtractNodeType( reference ) )::node_type 
-                    >::compute_value_of_expression( reference, argument_stack, log, arguments... ); 
-            } >( node, argument_values, experssion_log, additional_arguments... );
+                    >::compute_value_of_expression( reference, argument_stack, log, module, arguments... ); 
+            } >( node, argument_values, experssion_log, module, additional_arguments... );
     }
 
     template< typename, auto >
@@ -53,14 +68,15 @@ namespace Warp::CompilerRuntime
         static ReturnParameterType compute_value_of_expression( 
                     const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node, 
                     const CallFrameType& call_frame, 
-                     std::vector< std::string >& experssion_log, 
-                   auto... additional_arguments 
+                    std::vector< std::string >& experssion_log, 
+                    std::optional< Module >& module, 
+                    auto... additional_arguments 
                 ) {
             auto value = Warp::Utilities::to_std_variant( node.value );
             std::visit( [ & ]( auto to_print ){ 
-                    experssion_log.push_back( std::string{ "literal(" } );
-                    experssion_log.push_back( std::to_string( to_print ) );
-                    experssion_log.push_back( std::string{ ")" } );
+                    debug_print( std::string{ "literal(" } );
+                    debug_print( std::to_string( to_print ) );
+                    debug_print( std::string{ ")" } );
                 }, value );
             return value;
         }
@@ -73,11 +89,12 @@ namespace Warp::CompilerRuntime
                     const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::BooleanLiteral >& node, 
                     const CallFrameType& call_frame, 
                     std::vector< std::string >& experssion_log, 
+                    std::optional< Module >& module, 
                     auto... additional_arguments 
                 ) {
-            experssion_log.push_back( std::string{ "bool(" } );
-            experssion_log.push_back( std::to_string( node.value ) );
-            experssion_log.push_back( std::string{ ")" } );
+            debug_print( std::string{ "bool(" } );
+            debug_print( std::to_string( node.value ) );
+            debug_print( std::string{ ")" } );
             return AbstractSyntaxTree::ValueType{ node.value };
         }
     };
@@ -89,13 +106,14 @@ namespace Warp::CompilerRuntime
                     const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Identifier >& node, 
                     const CallFrameType& call_frame, 
                     std::vector< std::string >& experssion_log, 
+                    std::optional< Module >& module, 
                     auto... additional_arguments 
                 ) {
 
             AbstractSyntaxTree::ValueType value = call_frame.at( node.string );
             std::visit( [ & ]( auto to_print ){ 
-                    experssion_log.push_back( std::string{ "id:" } );
-                    experssion_log.push_back( std::to_string( to_print ) );
+                    debug_print( std::string{ "id:" } );
+                    debug_print( std::to_string( to_print ) );
                 }, value );
             return value;
         }
@@ -108,6 +126,7 @@ namespace Warp::CompilerRuntime
                 const Warp::AbstractSyntaxTree::Node< OperatorParameterConstant >& node, 
                 const CallFrameType& call_frame, 
                 std::vector< std::string >& experssion_log, 
+                std::optional< Module >& module, 
                 auto... additional_arguments 
             )
         {
@@ -117,23 +136,24 @@ namespace Warp::CompilerRuntime
                                 from, 
                                 call_frame, 
                                 experssion_log, 
+                                module, 
                                 additional_arguments... 
                             ); 
                     };
-            experssion_log.push_back( std::string{ " {" } );
+            debug_print( std::string{ " {" } );
             using OperationNodeType = typename Warp::Utilities::CleanType< decltype( node ) >;
             const auto left = value_from( node.left );
-            experssion_log.push_back( std::string{ " " } );
-            experssion_log.push_back( std::to_string( static_cast< char >( OperationNodeType::operation ) ) );
-            experssion_log.push_back( std::string{ " " } );
+            debug_print( std::string{ " " } );
+            debug_print( std::to_string( static_cast< char >( OperationNodeType::operation ) ) );
+            debug_print( std::string{ " " } );
             const auto right = value_from( node.right );
             auto result = Utilities::variant_operation< [ & ]( auto left, auto right ) { return OperationNodeType::operate( left, right ); } >( 
                     left, 
                     right 
                 );
-            experssion_log.push_back( std::string{ "}:[" } );
-            experssion_log.push_back( std::to_string( std::get< bool >( result.value() ) ) );
-            experssion_log.push_back( std::string{ "] " } );
+            debug_print( std::string{ "}:[" } );
+            debug_print( std::to_string( std::get< bool >( result.value() ) ) );
+            debug_print( std::string{ "] " } );
             return result;
         }
     };
@@ -145,21 +165,22 @@ namespace Warp::CompilerRuntime
                 const Warp::AbstractSyntaxTree::Node< Warp::Parser::BooleanOperator::LogicalNot >& node, 
                 const CallFrameType& call_frame, 
                 std::vector< std::string >& expression_log, 
+                std::optional< Module >& module, 
                 auto... additional_arguments 
             )
         {
             const auto value_from = [ & ]( const Warp::AbstractSyntaxTree::NodeVariantType& from ) { 
-                    return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, call_frame, expression_log, additional_arguments... ); 
+                    return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, call_frame, expression_log, module, additional_arguments... ); 
                 };
             using OperationNodeType = Warp::Utilities::CleanType< decltype( node ) >;
-            expression_log.push_back( std::string{ " {!" } );
+            debug_print( std::string{ " {!" } );
             auto operation = value_from( node.child );
-            expression_log.push_back( std::string{ "}:[" } );
+            debug_print( std::string{ "}:[" } );
             auto result = Utilities::variant_operation< 
                     [ & ]( auto operhand ) { return OperationNodeType::operate( operhand ); } >( 
                         operation
                 );
-            expression_log.push_back( std::string{ "] " } );
+            debug_print( std::string{ "] " } );
             return std::optional{ result };
         }
     };
@@ -171,11 +192,20 @@ namespace Warp::CompilerRuntime
                 const Warp::AbstractSyntaxTree::Node< Warp::Parser::FunctionOperators::FunctionResult >& node, 
                     const CallFrameType& call_frame, 
                     std::vector< std::string >& experssion_log, 
+                    std::optional< Module >& module, 
                     auto... additional_arguments 
             )
         {
-            std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for FunctionResult! Returning 0\n";
-            return 0;
+            // std::cout << "A\n";
+            auto result = call_frame.at( Warp::Parser::function_result_as_string );
+            std::visit( [ & ]( auto to_print ){ 
+                    debug_print( Warp::Parser::function_result_as_string );
+                    debug_print( std::string{ ":" } );
+                    debug_print( std::to_string( to_print ) );
+                }, result );
+            return result;
+            // std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for FunctionResult! Returning 0\n";
+            // return 0;
         }
     };
 
@@ -186,6 +216,7 @@ namespace Warp::CompilerRuntime
                 const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >& node, 
                 const CallFrameType& call_frame, 
                 std::vector< std::string >& expression_log, 
+                std::optional< Module >& module, 
                 auto... additional_arguments 
             )
         {
@@ -202,11 +233,21 @@ namespace Warp::CompilerRuntime
                 const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >& node, 
                 const CallFrameType& call_frame, 
                 std::vector< std::string >& expression_log, 
+                std::optional< Module >& module, 
                 auto... additional_arguments 
             )
         {
-            std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for Unconstrained! Returning true\n";
-            return true;
+            // std::cout << "B\n";
+            auto result = call_frame.at( Warp::Parser::function_result_as_string );
+            std::visit( [ & ]( auto to_print ){ 
+                    debug_print( Warp::Parser::function_result_as_string );
+                    debug_print( std::string{ "::Unconstrainted (Returning True):" } );
+                    debug_print( std::to_string( to_print ) );
+                }, result );
+            return OptionalValueType{ true };
+            // return result;
+            // std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for Unconstrained! Returning true\n";
+            // return true;
         }
     };
 
@@ -266,22 +307,24 @@ namespace Warp::CompilerRuntime
         return AbstractSyntaxTree::ValueType{ value };
     }
 
-    struct NoValue {};
-
     bool satisfies_constraint( 
             const Warp::AbstractSyntaxTree::NodeVariantType& constraint, 
             const CallFrameType& argument_values, 
-            std::vector< std::string >& log 
+            std::vector< std::string >& log, 
+            std::optional< Module >& module 
         ) 
     {
-        // TODO: Assuming all parameters are size_t for now. //
         auto result = abstract_syntax_tree_callback< Executor, OptionalValueType >( 
                 constraint, 
                 argument_values, 
-                log 
+                log, 
+                module
             );
-        if( result.has_value() != true ) {
-            log.push_back( std::string{ "satisfies_constraint(const NodeVariantType&, const CallFrameType&) : bool::Error: evaluating constraint! No value processed.\n" } );
+        if( result.has_value() != true )
+        {
+            debug_print( std::string{ "satisfies_constraint(const NodeVariantType&, const CallFrameType&) : "
+                    "bool::Error: evaluating constraint! No value processed.\n" 
+                } );
             return false;
         }
         if( auto constraint_evaluation = std::get_if< bool >( &result.value() ); constraint_evaluation != nullptr )
@@ -299,8 +342,11 @@ namespace Warp::CompilerRuntime
                     conversion_result.has_value() == true 
                 )
             return std::get< bool >( conversion_result.value() );
-        else {
-            log.push_back( std::string{ "satisfies_constraint(const NodeVariantType&, const CallFrameType&) : bool::Error: evaluating constraint! Non-boolean-convertable value returned.\n" } );
+        else
+        {
+            debug_print( std::string{ "satisfies_constraint(const NodeVariantType&, const CallFrameType&) : "
+                    "bool::Error: evaluating constraint! Non-boolean-convertable value returned.\n" 
+                } );
             return false;
         }
         return false;
@@ -309,17 +355,18 @@ namespace Warp::CompilerRuntime
     bool satisfies_alternative_constraints( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
             const std::vector< AbstractSyntaxTree::ValueType >& values, 
-            std::vector< std::string >& log 
+            std::vector< std::string >& log, 
+            std::optional< Module >& module  
         )
     {
         auto call_frame = map_call_frame( alternative, values );
         if( bool satisfied = call_frame.has_value(); satisfied == true )
         {
-            log.push_back( std::to_string( satisfied ) );
+            debug_print( std::to_string( satisfied ) );
             const auto& call_frame_result = call_frame.value();
             for( auto& parameter : alternative.input_constraints ) {
-                log.push_back( std::string{ " && " } );
-                satisfied = satisfied && satisfies_constraint( parameter.constraints, call_frame_result, log );
+                debug_print( std::string{ " && " } );
+                satisfied = satisfied && satisfies_constraint( parameter.constraints, call_frame_result, log, module );
             }
             return satisfied;
         }
@@ -330,17 +377,39 @@ namespace Warp::CompilerRuntime
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
             const std::vector< AbstractSyntaxTree::ValueType >& values, 
             AbstractSyntaxTree::ValueType result, 
-            std::vector< std::string >& log 
+            std::vector< std::string >& log, 
+            std::optional< Module >& module  
         )
     {
         auto call_frame = map_call_frame( alternative, values, result );
         if( bool satisfied = call_frame.has_value(); satisfied == true ) {
             const auto& call_frame_result = call_frame.value();
-            return satisfied && satisfies_constraint( alternative.return_constraint, call_frame_result, log );
+            return satisfied && satisfies_constraint( alternative.return_constraint, call_frame_result, log, module );
         }
         return false;
     }
 
+    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+    std::optional< ReturnParameterType > evaluate_expression( 
+            const Warp::AbstractSyntaxTree::NodeVariantType& constraint, 
+            const CallFrameType& argument_values, 
+            std::vector< std::string >& log, 
+            std::optional< Module >& module 
+        )
+    {
+        auto result = abstract_syntax_tree_callback< Executor, OptionalValueType >( 
+                constraint, 
+                argument_values, 
+                log, 
+                module 
+            );
+        if( result.has_value() != true ) {
+            debug_print( std::string{ "satisfies_constraint(const NodeVariantType&, const CallFrameType&) : "
+                    "bool::Error: evaluating constraint! No value processed.\n" 
+                } );
+        }
+        return result;
+    }
 
     template< typename QueryParameterType >
     auto is_of_type( auto canidate )
