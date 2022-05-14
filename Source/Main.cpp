@@ -59,6 +59,13 @@ std::string test_multi_parameter_simple_switch_return_constraint_code{
         "let switch_function( x : x >= 42, y : y >= 300 ) :: x + x * y;" 
     };
 
+std::string cat_log( std::vector< std::string >& log )
+{
+    std::stringstream buffer;
+    for( auto& string : log )
+        buffer << string;
+    return buffer.str();
+}
 
 int main( int argc, char** args )
 {
@@ -67,14 +74,19 @@ int main( int argc, char** args )
     auto test_module = Warp::Parser::parse( parser, test_multi_parameter_simple_switch_code );
     auto& test_function = *test_module.functions[ 0 ];
     std::vector< Warp::AbstractSyntaxTree::ValueType > arguments{ Val{ static_cast< size_t >( 10 ) }, Val{ static_cast< size_t >( 35 ) } };
+    // for( auto argument : arguments )
+    //     std::cout << "Argument: " << to_std_string( argument ) << "\n";
     std::cout << "Number of Alternataives " << test_function.alternatives.size() << "\n";
     for( auto& alternatives : test_function.alternatives )
     {
         std::cout << "For alternatives with " << alternatives.number_of_parameters << " parameters: \n";
         size_t alternative_index = 0;
-        for( auto* alternative : alternatives.alternatives ) {
+        for( auto* alternative : alternatives.alternatives )
+        {
+            std::vector< std::string > log;
             std::cout << "\tSatisfies Alternative [ " << alternative_index++ << " ]: "
-                    << Warp::CompilerRuntime::satisfies_alternative_constraints( *alternative, arguments ) << "\n";
+                    << Warp::CompilerRuntime::satisfies_alternative_constraints( *alternative, arguments, log ) << "\n";
+            // std::cout << "Log: " << cat_log( log ) << "\n";
         }
     }
     return 0;

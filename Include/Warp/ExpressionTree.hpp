@@ -293,13 +293,14 @@ namespace Warp::AbstractSyntaxTree
             // constexpr auto operate( auto left_value, auto right_value ) noexcept { \
             //     return left_value OPERATOR right_value; \
             // } \
+                // std::cout << "#EVAL(Left " << left_value << " " << #OPERATOR << " " << right_value << ")::" << ( left_value OPERATOR right_value ); \
 
     #define DEFINE_BI_NODE_TEMPLATED_OPERAND( OPERATION_TYPE, VALUE, OPERATOR ) \
         template<> \
         struct Node< VALUE > : public LeftRight< VALUE > \
         { \
             using BaseType = LeftRight< VALUE >; \
-            constexpr static auto operate( auto left_value, auto right_value ) noexcept { \
+            static auto operate( auto left_value, auto right_value ) noexcept { \
                 return left_value OPERATOR right_value; \
             } \
             constexpr static OPERATION_TYPE operation = VALUE ; \

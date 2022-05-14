@@ -210,7 +210,10 @@ namespace Warp::Utilities
             {
                 return std::optional{ 
                         VariantType{ 
-                                OperationParameterConstant( std::forward< std::remove_pointer_t< decltype( operhand ) > >( *operhand ), std::forward< decltype( data ) >( data ) ) 
+                                OperationParameterConstant( 
+                                        std::forward< decltype( data ) >( data ), 
+                                        std::forward< std::remove_pointer_t< decltype( operhand ) > >( *operhand ) 
+                                    ) 
                             } 
                     };
             }
@@ -249,6 +252,10 @@ namespace Warp::Utilities
             std::optional< std::variant< AlternativeParameterTypes... > > operhand
         ) -> std::optional< std::variant< AlternativeParameterTypes... > > {
         return variant_operation< OperationParameterConstant >( operhand );
+    }
+
+    static std::string to_std_string( Warp::AbstractSyntaxTree::ValueType value ) {
+        return std::visit( []( auto data ) { return std::to_string( data ); }, value );
     }
 }
 
