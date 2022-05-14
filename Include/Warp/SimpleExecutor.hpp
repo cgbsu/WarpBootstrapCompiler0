@@ -112,7 +112,8 @@ namespace Warp::CompilerRuntime
 
             AbstractSyntaxTree::ValueType value = call_frame.at( node.string );
             std::visit( [ & ]( auto to_print ){ 
-                    debug_print( std::string{ "id:" } );
+                    debug_print( node.string );
+                    debug_print( ":" );
                     debug_print( std::to_string( to_print ) );
                 }, value );
             return value;
@@ -143,9 +144,9 @@ namespace Warp::CompilerRuntime
             debug_print( std::string{ " {" } );
             using OperationNodeType = typename Warp::Utilities::CleanType< decltype( node ) >;
             const auto left = value_from( node.left );
-            debug_print( std::string{ " " } );
-            debug_print( std::to_string( static_cast< char >( OperationNodeType::operation ) ) );
-            debug_print( std::string{ " " } );
+            std::stringstream middle;
+            middle << " " << static_cast< char >( OperationNodeType::operation ) << " ";
+            debug_print( middle.str() );
             const auto right = value_from( node.right );
             auto result = Utilities::variant_operation< [ & ]( auto left, auto right ) { return OperationNodeType::operate( left, right ); } >( 
                     left, 

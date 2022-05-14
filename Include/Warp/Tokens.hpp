@@ -88,7 +88,7 @@ namespace Warp::Parser
         FunctionResult = at_symbol 
     };
 
-    static const std::string function_result_as_string = std::to_string( static_cast< char >( Warp::Parser::FunctionOperators::FunctionResult ) );
+    static const std::string function_result_as_string = "@";
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP
