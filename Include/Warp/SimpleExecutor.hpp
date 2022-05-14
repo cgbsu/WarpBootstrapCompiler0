@@ -1,12 +1,13 @@
 #include <Warp/Function.hpp>
+#include <optional>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
 
 namespace Warp::CompilerRuntime 
 {
-    using ValueType = std::variant< size_t, bool >;
-    using CallFrameType = std::unordered_map< std::string, ValueType >;
+    using OptionalValueType = std::optional< AbstractSyntaxTree::ValueType >;
+    using CallFrameType = std::unordered_map< std::string, AbstractSyntaxTree::ValueType >;
 
     template< auto NodeTypeParameterConstant >
     struct ExtractNodeType {
@@ -39,28 +40,23 @@ namespace Warp::CompilerRuntime
     struct Executor< ReturnParameterType, Warp::AbstractSyntaxTree::NodeType::Literal >
     {
         static ReturnParameterType compute_value_of_expression( 
-                const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node, 
-                const CallFrameType& call_frame, 
-                auto... additional_arguments 
-            )
-        {
-            // return node.value;
-            auto value = Warp::Utilities::visit< []( auto value_pointer, auto... ) -> ReturnParameterType {
-                    return *value_pointer;
-                } >( Warp::Utilities::to_const_reference( node.value.factor ) );
-            return value;
+                    const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Literal >& node, 
+                    const CallFrameType& call_frame, 
+                    auto... additional_arguments 
+                ) {
+            return Warp::Utilities::to_std_variant( node.value );
         }
     };
 
-    template< typename OutputParameterType >
-    struct Executor< OutputParameterType, Warp::AbstractSyntaxTree::NodeType::BooleanLiteral >
+    template< typename ReturnParameterType >
+    struct Executor< ReturnParameterType, Warp::AbstractSyntaxTree::NodeType::BooleanLiteral >
     {
-        static bool compute_value_of_expression( 
+        static ReturnParameterType compute_value_of_expression( 
                     const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::BooleanLiteral >& node, 
                     const CallFrameType& call_frame, 
                     auto... additional_arguments 
                 ) {
-            return node.value;
+            return  AbstractSyntaxTree::ValueType{ node.value };
         }
     };
 
@@ -71,16 +67,8 @@ namespace Warp::CompilerRuntime
                     const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::Identifier >& node, 
                     const CallFrameType& call_frame, 
                     auto... additional_arguments 
-                )
-        {
-            auto value = std::visit( 
-                    []( auto value_pointer ) -> ReturnParameterType {
-                        // std::cout << "Reading literal.\n";
-                        return value_pointer;
-                    }, 
-                    call_frame.at( node.string ) 
-                ); 
-            return value;
+                ) {
+            return call_frame.at( node.string );
         }
     };
 
@@ -96,8 +84,13 @@ namespace Warp::CompilerRuntime
             const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) -> ReturnParameterType { 
                     return abstract_syntax_tree_callback< Executor, ReturnParameterType >( from, stack, arguments... ); 
                 };
-            using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
-            return OperationNodeType::operate( 
+            using OperationNodeType = typename Warp::Utilities::CleanType< decltype( node ) >;
+            // return OperationNodeType::operate( 
+            //         value_from( node.left, call_frame, additional_arguments... ), 
+            //         value_from( node.right, call_frame, additional_arguments... ) 
+            //     );
+            // auto operation = OperationNodeType::operate< AbstractSyntaxTree::ValueType >;
+            return Utilities::variant_operation< [ & ]( auto left, auto right ) { return OperationNodeType::operate( left, right ); } >( 
                     value_from( node.left, call_frame, additional_arguments... ), 
                     value_from( node.right, call_frame, additional_arguments... ) 
                 );
@@ -113,13 +106,17 @@ namespace Warp::CompilerRuntime
                 auto... additional_arguments 
             )
         {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) -> bool { 
-                    return abstract_syntax_tree_callback< Executor, bool >( from, stack, arguments... ); 
+            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) { 
+                    return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, stack, arguments... ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
-            return OperationNodeType::operate( 
-                    value_from( node.child, call_frame, additional_arguments... ) 
-                );
+            // return OperationNodeType::operate( 
+            //         value_from( node.child, call_frame, additional_arguments... ) 
+            //     );
+            return std::optional{ Utilities::variant_operation< 
+                    [ & ]( auto operhand ) { return OperationNodeType::operate( operhand ); } >( 
+                        value_from( node.child, call_frame, additional_arguments... )
+                ) };
         }
     };
 
@@ -133,11 +130,13 @@ namespace Warp::CompilerRuntime
                 auto... additional_arguments 
             )
         {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) -> bool { 
-                    return abstract_syntax_tree_callback< Executor, size_t >( from, stack, arguments... ); 
+            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) { 
+                    return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, stack, arguments... ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
-            return OperationNodeType::operate( 
+            return Utilities::variant_operation< 
+                    [ & ]( auto left, auto right ) { return OperationNodeType::operate( left, right ); } 
+                >( 
                     value_from( node.left, call_frame, additional_arguments... ), 
                     value_from( node.right, call_frame, additional_arguments... ) 
                 );
@@ -153,16 +152,16 @@ namespace Warp::CompilerRuntime
                 auto... additional_arguments 
             )
         {
-            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) -> size_t { 
-                    return abstract_syntax_tree_callback< Executor, size_t >( from, stack, arguments... ); 
+            const auto value_from = []( const Warp::AbstractSyntaxTree::NodeVariantType& from, const CallFrameType& stack, auto... arguments ) { 
+                    return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, stack, arguments... ); 
                 };
             using OperationNodeType = std::decay_t< Warp::Utilities::CleanType< decltype( node ) > >;
-            const auto first = value_from( node.left, call_frame, additional_arguments... );
-            const auto second = value_from( node.right, call_frame, additional_arguments ... );
             // std::cout << first << " " << ( char ) OperatorParameterConstant << " " << second << "\n";
-            return OperationNodeType::operate( 
-                    first, 
-                    second 
+            return Utilities::variant_operation< 
+                    [ & ]( auto left, auto right ) { return OperationNodeType::operate( left, right ); } 
+                >( 
+                    value_from( node.left, call_frame, additional_arguments... ), 
+                    value_from( node.right, call_frame, additional_arguments... ) 
                 );
         }
     };
@@ -217,32 +216,32 @@ namespace Warp::CompilerRuntime
 
     CallFrameType map_call_frame_no_check( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
-            std::vector< ValueType > values 
+            std::vector< AbstractSyntaxTree::ValueType > values 
         ) noexcept
     {
         const size_t amount_of_parameters = alternative.input_constraints.size();
         CallFrameType new_call_frame;
         for( size_t ii = 0; ii < amount_of_parameters; ++ii )
-            new_call_frame.insert( std::pair< std::string, ValueType >( alternative.input_constraints[ ii ].name, values[ ii ] ) );
+            new_call_frame.insert( std::pair< std::string, AbstractSyntaxTree::ValueType >( alternative.input_constraints[ ii ].name, values[ ii ] ) );
         return new_call_frame;
     }
 
 
     CallFrameType map_call_frame_no_check( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
-            std::vector< ValueType > values, 
-            ValueType result 
+            std::vector< AbstractSyntaxTree::ValueType > values, 
+            AbstractSyntaxTree::ValueType result 
         ) noexcept
     {
         CallFrameType new_call_frame = map_call_frame_no_check( alternative, values );
-        new_call_frame.insert( std::pair< std::string, ValueType >( Warp::Parser::function_result_as_string, result ) );
+        new_call_frame.insert( std::pair< std::string, AbstractSyntaxTree::ValueType >( Warp::Parser::function_result_as_string, result ) );
         return new_call_frame;
     }
 
     std::optional< CallFrameType > map_call_frame( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
-            const std::vector< ValueType >& values, 
-            std::optional< ValueType > result = std::nullopt 
+            const std::vector< AbstractSyntaxTree::ValueType >& values, 
+            std::optional< AbstractSyntaxTree::ValueType > result = std::nullopt 
         )
     {
         if( values.size() == alternative.input_constraints.size() )
@@ -257,23 +256,54 @@ namespace Warp::CompilerRuntime
     }
 
     template< typename ValueParameterType >
-    ValueType make_value( ValueParameterType value ) {
-        return ValueType{ Warp::Utilities::make_literal( value ) };
+    AbstractSyntaxTree::ValueType make_value( ValueParameterType value ) {
+        return AbstractSyntaxTree::ValueType{ Warp::Utilities::make_literal( value ) };
     }
 
     template<>
-    ValueType make_value( bool value ) {
-        return ValueType{ value };
+    AbstractSyntaxTree::ValueType make_value( bool value ) {
+        return AbstractSyntaxTree::ValueType{ value };
     }
 
-    bool satisfies_constraint( const Warp::AbstractSyntaxTree::NodeVariantType& constraint, const CallFrameType& argument_values ) {
+    struct NoValue {};
+
+    bool satisfies_constraint( const Warp::AbstractSyntaxTree::NodeVariantType& constraint, const CallFrameType& argument_values ) 
+    {
         // TODO: Assuming all parameters are size_t for now. //
-        return abstract_syntax_tree_callback< Executor, bool >( constraint, argument_values );
+        auto result = abstract_syntax_tree_callback< Executor, OptionalValueType >( constraint, argument_values );
+        if( result.has_value() != true )
+        {
+            std::cerr << "satisfies_constraint(const NodeVariantType&, const CallFrameType&) : bool::"
+                    << "Error: evaluating constraint! No value processed.\n";
+            return false;
+        }
+        if( auto constraint_evaluation = std::get_if< bool >( &result.value() ); constraint_evaluation != nullptr )
+            return constraint_evaluation;
+        else if( auto conversion_result = std::visit( 
+                            []( auto data ) -> std::optional< AbstractSyntaxTree::ValueType > 
+                            {
+                                using DataType = std::remove_pointer_t< decltype( data ) >;
+                                if( data == static_cast< DataType >( 1 ) || data == static_cast< DataType >( 0 ) )
+                                    return std::optional{ AbstractSyntaxTree::ValueType{ static_cast< bool >( data ) } };
+                                else
+                                    return std::nullopt;
+                            }, 
+                            result.value() );
+                    conversion_result.has_value() == true 
+                )
+            return std::get< bool >( conversion_result.value() );
+        else
+        {
+            std::cerr << "satisfies_constraint(const NodeVariantType&, const CallFrameType&) : bool::"
+                    << "Error: evaluating constraint! Non-boolean-convertable value returned.\n";
+            return false;
+        }
+        return false;
     }
 
     bool satisfies_alternative_constraints( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
-            const std::vector< ValueType >& values 
+            const std::vector< AbstractSyntaxTree::ValueType >& values 
         )
     {
         auto call_frame = map_call_frame( alternative, values );
@@ -289,8 +319,8 @@ namespace Warp::CompilerRuntime
 
     bool satisfies_alternative_constraints( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
-            const std::vector< ValueType >& values, 
-            ValueType result 
+            const std::vector< AbstractSyntaxTree::ValueType >& values, 
+            AbstractSyntaxTree::ValueType result 
         )
     {
         auto call_frame = map_call_frame( alternative, values, result );

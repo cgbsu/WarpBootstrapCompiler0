@@ -62,11 +62,11 @@ std::string test_multi_parameter_simple_switch_return_constraint_code{
 
 int main( int argc, char** args )
 {
-    using Val = Warp::CompilerRuntime::ValueType;
+    using Val = Warp::AbstractSyntaxTree::ValueType;
     const auto& parser = Warp::Parser::DefaultParserType::parser;
     auto test_module = Warp::Parser::parse( parser, test_multi_parameter_simple_switch_code );
     auto& test_function = *test_module.functions[ 0 ];
-    std::vector< Warp::CompilerRuntime::ValueType > arguments{ Val{ static_cast< size_t >( 10 ) }, Val{ static_cast< size_t >( 35 ) } };
+    std::vector< Warp::AbstractSyntaxTree::ValueType > arguments{ Val{ static_cast< size_t >( 10 ) }, Val{ static_cast< size_t >( 35 ) } };
     std::cout << "Number of Alternataives " << test_function.alternatives.size() << "\n";
     for( auto& alternatives : test_function.alternatives )
     {

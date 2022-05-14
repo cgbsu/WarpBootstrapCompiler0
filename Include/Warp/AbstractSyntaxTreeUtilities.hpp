@@ -1,4 +1,5 @@
 #include <Warp/ExpressionTree.hpp>
+#include <optional>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_ABSTRACT_SYNTAX_TREE_UTILITIES_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_ABSTRACT_SYNTAX_TREE_UTILITIES_HPP
@@ -12,10 +13,10 @@ namespace Warp::Utilities
         return node;
     }
 
-    // constexpr const auto& to_const_reference( const auto* value ) {
-    //     const typename std::remove_pointer< decltype( value ) >::type& node = *value;
-    //     return node;
-    // }
+    constexpr const auto& to_const_reference( const auto* value ) {
+        const typename std::remove_pointer< decltype( value ) >::type& node = *value;
+        return node;
+    }
     
     template< auto NodeTag >
     constexpr Warp::AbstractSyntaxTree::NodeVariantType allocate_node( auto... constructor_arguments )
@@ -149,16 +150,16 @@ namespace Warp::Utilities
         return node->data_as< Warp::AbstractSyntaxTree::Taggable, true >()->tag_as< decltype( NodeTagParameterConstant ) >() == NodeTagParameterConstant;
     }
 
-    static HeapStringType to_string( const Warp::AbstractSyntaxTree::LiteralType& literal )
-    {
-        return Warp::Utilities::visit< []( auto data, auto... ) { //-> std::string {
-                return Warp::Utilities::to_string( *data );
-            } >( to_const_reference( literal.factor ) );
-    }
+    // static HeapStringType to_string( const Warp::AbstractSyntaxTree::LiteralType& literal )
+    // {
+    //     return Warp::Utilities::visit< []( auto data, auto... ) { //-> std::string {
+    //             return Warp::Utilities::to_string( *data );
+    //         } >( to_const_reference( literal.factor ) );
+    // }
 
-    static std::string to_std_string( const Warp::AbstractSyntaxTree::LiteralType& literal ) {
-        return std::string{ to_string( literal ) };
-    }
+    // static std::string to_std_string( const Warp::AbstractSyntaxTree::LiteralType& literal ) {
+    //     return std::string{ to_string( literal ) };
+    // }
 
 
     template< typename ParameterType >
@@ -171,7 +172,7 @@ namespace Warp::Utilities
             -> std::variant< AlternativeParameterTypes... >
     {
         using ToVariantType = std::variant< AlternativeParameterTypes... >;
-        Warp::Utilities::visit< []( auto data ) -> ToVariantType {
+        return Warp::Utilities::visit< []( auto data ) -> ToVariantType {
                 return ToVariantType{ *data };
             } >( variant );
     }
@@ -195,26 +196,59 @@ namespace Warp::Utilities
     }
 
 
-    template< typename VariantParameterType, auto OperationParameterConstant >
-    std::optional< VariantParameterType > variant_operation( 
-            const VariantParameterType& left, 
-            const VariantParameterType& right 
-        )
+    template< auto OperationParameterConstant, typename... AlternativeParameterTypes >
+    auto variant_operation( 
+            std::variant< AlternativeParameterTypes... >& left, 
+            std::variant< AlternativeParameterTypes... >& right 
+        ) -> std::optional< std::variant< AlternativeParameterTypes... > >
     {
-        return std::visit( [ & ]( auto data )
+        using VariantType = std::variant< AlternativeParameterTypes... >;
+        return std::visit( [ & ]( auto data ) -> std::optional< VariantType >
         {
-            auto* operhand = std::get_if< std::remove_pointer_t< decltype( data ) > >( right );
+            auto* operhand = std::get_if< std::remove_pointer_t< decltype( data ) > >( &right );
             if( operhand != nullptr )
             {
                 return std::optional{ 
-                        VariantParameterType{ 
-                                OperationParameterConstant( *operhand, *data ) 
+                        VariantType{ 
+                                OperationParameterConstant( std::forward< std::remove_pointer_t< decltype( operhand ) > >( *operhand ), std::forward< decltype( data ) >( data ) ) 
                             } 
                     };
             }
             else
                 return std::nullopt;
         }, left );
+    }
+
+    template< auto OperationParameterConstant, typename... AlternativeParameterTypes >
+    auto variant_operation( 
+                std::optional< std::variant< AlternativeParameterTypes... > > left, 
+                std::optional< std::variant< AlternativeParameterTypes... > > right 
+            ) { //-> std::optional< std::variant< AlternativeParameterTypes... > > {
+        return variant_operation< OperationParameterConstant >( left.value(), right.value() );
+    }
+
+    template< auto OperationParameterConstant, typename... AlternativeParameterTypes >
+    auto variant_operation( 
+                std::optional< std::variant< AlternativeParameterTypes... > >& left, 
+                std::optional< std::variant< AlternativeParameterTypes... > >& right 
+            ) { //-> std::optional< std::variant< AlternativeParameterTypes... > > {
+        return variant_operation< OperationParameterConstant >( left.value(), right.value() );
+    }
+    template< auto OperationParameterConstant, typename... AlternativeParameterTypes >
+    auto variant_operation( 
+            std::variant< AlternativeParameterTypes... > operhand
+        ) -> std::optional< std::variant< AlternativeParameterTypes... > >
+    {
+        return std::visit( [ & ]( auto data ) {
+                return std::optional< std::variant< AlternativeParameterTypes... > >{ OperationParameterConstant( data ) };
+            }, operhand );
+    }
+
+    template< auto OperationParameterConstant, typename... AlternativeParameterTypes >
+    auto variant_operation( 
+            std::optional< std::variant< AlternativeParameterTypes... > > operhand
+        ) -> std::optional< std::variant< AlternativeParameterTypes... > > {
+        return variant_operation< OperationParameterConstant >( operhand );
     }
 }
 

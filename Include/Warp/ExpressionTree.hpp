@@ -120,7 +120,8 @@ namespace Warp::AbstractSyntaxTree
     using NodeVariantType = Utilities::NotSoUniquePointer< InternalNodeVariantType >;
 
 
-    using LiteralType = StrongFactor< size_t, signed long long int >;
+    using LiteralType = StrongFactor< size_t, signed long long int, double, bool >;
+    using ValueType = std::variant< size_t, signed long long int, double, bool >;
 
     struct Taggable
     {
@@ -264,7 +265,7 @@ namespace Warp::AbstractSyntaxTree
         struct Node< VALUE > : public LeftRight< VALUE > \
         { \
             using BaseType = LeftRight< VALUE >; \
-            constexpr static const auto operate( LEFT_OPERHAND_TYPE left_value, RIGHT_OPERHAND_TYPE right_value ) noexcept { \
+            constexpr static const LEFT_OPERHAND_TYPE operate( LEFT_OPERHAND_TYPE left_value, RIGHT_OPERHAND_TYPE right_value ) noexcept { \
                 return left_value OPERATOR right_value; \
             } \
             constexpr static OPERATION_TYPE operation = VALUE ; \
@@ -281,12 +282,47 @@ namespace Warp::AbstractSyntaxTree
             constexpr Node& operator=( Node< VALUE >&& other ) noexcept = default; \
         }
 
+            // template< typename OperhandParameterType > \
+            // struct Operator \
+            // { \
+            //     constexpr Operator() = default; \
+            // }; \
+            // template< typename OperhandParameterType > \
+            // constexpr static const auto operate = Operator< OperhandParameterType >{}; \
+
+            // constexpr auto operate( auto left_value, auto right_value ) noexcept { \
+            //     return left_value OPERATOR right_value; \
+            // } \
+
+    #define DEFINE_BI_NODE_TEMPLATED_OPERAND( OPERATION_TYPE, VALUE, OPERATOR ) \
+        template<> \
+        struct Node< VALUE > : public LeftRight< VALUE > \
+        { \
+            using BaseType = LeftRight< VALUE >; \
+            constexpr static auto operate( auto left_value, auto right_value ) noexcept { \
+                return left_value OPERATOR right_value; \
+            } \
+            constexpr static OPERATION_TYPE operation = VALUE ; \
+            constexpr Node( \
+                    const NodeVariantType left, \
+                    const NodeVariantType right \
+                ) noexcept : BaseType( left, right ) {} \
+            constexpr Node( Node< VALUE > const& other ) noexcept \
+                    : BaseType( other.left, other.right ) {} \
+            constexpr Node( Node< VALUE >&& other ) noexcept \
+                    : BaseType( other.left, other.right ) {} \
+            constexpr ~Node() = default; \
+            constexpr Node& operator=( Node< VALUE > const& other ) noexcept = default; \
+            constexpr Node& operator=( Node< VALUE >&& other ) noexcept = default; \
+        }
+
+
     #define DEFINE_BI_NODE_CUSTOM_OPERATION( OPERATION_TYPE, VALUE, LEFT_OPERHAND_TYPE, RIGHT_OPERHAND_TYPE, CUSTOM_OPERATION ) \
         template<> \
         struct Node< VALUE > : public LeftRight< VALUE > \
         { \
             using BaseType = LeftRight< VALUE >; \
-            constexpr static const auto operate( LEFT_OPERHAND_TYPE left_value, RIGHT_OPERHAND_TYPE right_value ) noexcept { \
+            constexpr static const LEFT_OPERHAND_TYPE operate( LEFT_OPERHAND_TYPE left_value, RIGHT_OPERHAND_TYPE right_value ) noexcept { \
                 return CUSTOM_OPERATION( left_value, right_value ); \
             } \
             constexpr static OPERATION_TYPE operation = VALUE ; \
@@ -327,10 +363,10 @@ namespace Warp::AbstractSyntaxTree
             constexpr Node& operator=( Node< TAG >&& other ) noexcept = default; \
         }
 
-    DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::FactorMultiply, auto, auto, * );
-    DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::FactorDivide, auto, auto, / );
-    DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::SumAdd, auto, auto, + );
-    DEFINE_BI_NODE( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::SumSubtract, auto, auto, - );
+    DEFINE_BI_NODE_TEMPLATED_OPERAND( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::FactorMultiply, * );
+    DEFINE_BI_NODE_TEMPLATED_OPERAND( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::FactorDivide, / );
+    DEFINE_BI_NODE_TEMPLATED_OPERAND( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::SumAdd, + );
+    DEFINE_BI_NODE_TEMPLATED_OPERAND( const Warp::Parser::ExpressionOperator, Warp::Parser::ExpressionOperator::SumSubtract, - );
 
     DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalAnd, bool, bool, && );
     DEFINE_BI_NODE( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalOr, bool, bool, || );
@@ -338,11 +374,11 @@ namespace Warp::AbstractSyntaxTree
     DEFINE_BI_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalImplies, bool, bool, Warp::Utilities::logical_implies );
     DEFINE_UNARY_NODE_CUSTOM_OPERATION( const Warp::Parser::BooleanOperator, Warp::Parser::BooleanOperator::LogicalNot, bool, ! );
 
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonEqual, auto, auto, == );
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonLessThan, auto, auto, < );
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonGreaterThan, auto, auto, > );
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo, auto, auto, <= );
-    DEFINE_BI_NODE( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo, auto, auto, >= );
+    DEFINE_BI_NODE_TEMPLATED_OPERAND( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonEqual, == );
+    DEFINE_BI_NODE_TEMPLATED_OPERAND( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonLessThan, < );
+    DEFINE_BI_NODE_TEMPLATED_OPERAND( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisonGreaterThan, > );
+    DEFINE_BI_NODE_TEMPLATED_OPERAND( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo, <= );
+    DEFINE_BI_NODE_TEMPLATED_OPERAND( const Warp::Parser::ComparisonOperator, Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo, >= );
 
     // DEFINE_TRI_NODE_CUSTOM_OPERATION( )
 }
