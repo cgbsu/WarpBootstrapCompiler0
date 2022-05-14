@@ -257,6 +257,15 @@ namespace Warp::Utilities
     static std::string to_std_string( Warp::AbstractSyntaxTree::ValueType value ) {
         return std::visit( []( auto data ) { return std::to_string( data ); }, value );
     }
+
+    template< typename ParameterType >
+    struct UnwrapOptional {
+        using Type = ParameterType;
+    };
+    template< typename ParameterType >
+    struct UnwrapOptional< std::optional< ParameterType > > {
+        using Type = ParameterType;
+    };
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_ABSTRACT_SYNTAX_TREE_UTILITIES_HPP

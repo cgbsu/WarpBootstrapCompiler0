@@ -60,7 +60,7 @@ int main( int argc, char** args )
         std::getline( std::cin, input );
         if( input == "done" )
         {
-            auto result = Warp::CompilerRuntime::call_function_with_values( 
+            auto result = Warp::CompilerRuntime::call_function_with_values< Val >( 
                     arguments, 
                     *test_module.functions[ 0 ], 
                     module, 

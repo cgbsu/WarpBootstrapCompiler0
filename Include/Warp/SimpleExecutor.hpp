@@ -34,6 +34,30 @@ namespace Warp::CompilerRuntime
         ExtractNodeType( const Warp::AbstractSyntaxTree::Node< NodeTypeParameterConstant >& ) {}
     };
 
+    template< typename ReturnParameterType >
+    std::optional< ReturnParameterType > evaluate_expression( 
+            const Warp::AbstractSyntaxTree::NodeVariantType& expression, 
+            const CallFrameType& argument_values, 
+            std::vector< std::string >& log, 
+            std::optional< Module >& module 
+        );
+
+    template< typename ReturnParameterType >
+    std::optional< ReturnParameterType > call_function_with_values(
+            std::vector< AbstractSyntaxTree::ValueType >& values, 
+            Function& function, 
+            std::optional< Module >& module, 
+            std::vector< std::string >& log 
+        );
+
+    const Function* function_from_module( const Module& to_search, std::string name );
+
+    std::optional< CallFrameType > map_call_frame( 
+            const Warp::CompilerRuntime::FunctionAlternative& alternative, 
+            const std::vector< AbstractSyntaxTree::ValueType >& values, 
+            std::optional< AbstractSyntaxTree::ValueType > result = std::nullopt 
+        );
+    
     template< template< typename, auto > typename FeedbackParameterType, typename ReturnParameterType >
     ReturnParameterType abstract_syntax_tree_callback( 
             const Warp::AbstractSyntaxTree::NodeVariantType& variant, 
@@ -225,7 +249,33 @@ namespace Warp::CompilerRuntime
                 auto... additional_arguments 
             )
         {
-            std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for FunctionCall! Returning 0\n";
+            // const auto value_from = [ & ]( const Warp::AbstractSyntaxTree::NodeVariantType& from ) { 
+            //         return abstract_syntax_tree_callback< Executor, OutputParameterType >( from, call_frame, log, module, additional_arguments... ); 
+            //     };
+            // const size_t number_of_parameters = node.arguments;
+            // std::vector< AbstractSyntaxTree::ValueType > values;
+            // auto mapping = map_call_frame()
+            // for( size_t ii = 0; ii < number_of_parameters; ++ii )
+            // {
+            //     values.push_back( evaluate_expression< Utilities::UnwrapOptional< OutputParameterType >::Type >( value_from( node.arguments[ ii ] ) ) );
+            // }
+            // if( module.has_value() == false ) {
+            //     debug_print( log, std::string{ "FunctionCall::Error: Evaluation does not have a module!\n" } );
+            //     return std::nullopt;
+            // }
+            // auto function = function_from_module( module.value(), node.function_name );
+            // if( function == nullptr ) {
+            //     debug_print( log, std::string{ "FunctionCall::Error: Function " } + node.function_name + std::string{ " not found in module\n" } );
+            //     return std::nullopt;
+            // }
+            // Function& non_const_function = *function;
+            // return call_function_with_values< Utilities::UnwrapOptional< OutputParameterType >::Type >(
+            //         values, 
+            //         non_const_function, 
+            //         module, 
+            //         log 
+            //     );
+            // std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for FunctionCall! Returning 0\n";
             return 0;
         }
     };
@@ -287,7 +337,7 @@ namespace Warp::CompilerRuntime
     std::optional< CallFrameType > map_call_frame( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
             const std::vector< AbstractSyntaxTree::ValueType >& values, 
-            std::optional< AbstractSyntaxTree::ValueType > result = std::nullopt 
+            std::optional< AbstractSyntaxTree::ValueType > result  
         )
     {
         if( values.size() == alternative.input_constraints.size() )
@@ -426,14 +476,13 @@ namespace Warp::CompilerRuntime
     }
 
     template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
-    std::optional< ReturnParameterType > call_function_with_values(
+    std::optional< std::vector< FunctionAlternative* > > select_alternative_based_on_inputs(
             std::vector< AbstractSyntaxTree::ValueType >& values, 
             Function& function, 
             std::optional< Module >& module, 
             std::vector< std::string >& log 
         )
     {
-        std::vector< ReturnParameterType > output_canidates;
         if( const size_t number_of_parameters = values.size(); number_of_parameters < function.alternatives.size() )
         {
             std::vector< FunctionAlternative* > input_canidates;
@@ -441,6 +490,10 @@ namespace Warp::CompilerRuntime
             debug_print( log, std::string{ "New Number Of Parameters: " } + std::to_string( alternatives.number_of_parameters ) + std::string{ "\n" } );
             auto actual_alternatives = alternatives.alternatives;
             debug_print( log, std::string{ "Number of alternatives " } + std::to_string( actual_alternatives.size() ) + std::string{ "\n" } );
+            if( actual_alternatives.size() <= 0 ) {
+                debug_print( log, std::string{ "No alternatives for given number of arguments, returning nullopt.\n" } );
+                return std::nullopt;
+            }
             for( FunctionAlternative* alternative : actual_alternatives )
             {
                 // auto mapping = map_call_frame( alternative, values );
@@ -454,43 +507,81 @@ namespace Warp::CompilerRuntime
             debug_print( log, std::string{ "Number of canidates: " } + std::to_string( input_canidates.size() ) + std::string{ "\n" } );
             if( input_canidates.size() == 0 )
                 return std::nullopt;
-            for( FunctionAlternative* alternative : input_canidates )
-            {
-                auto mapping = map_call_frame( *alternative, values );
-                const AbstractSyntaxTree::NodeVariantType& expression = alternative->expression;
-                auto new_result = evaluate_expression( expression, mapping.value(), log, module );
-                if( 
-                       new_result.has_value() == true )
-                {
-                    // auto mapping = map_call_frame( *alternative, values, new_result );
-                    const FunctionAlternative& alternative_ = *alternative;
-                    if( satisfies_alternative_constraints( alternative_, values, new_result.value(), log, module ) == true )
-                    {
-                        debug_print( log, std::string{ "\nOutput constraint satisfied\n" } );
-                        if( output_canidates.size() == 0 ) {
-                            debug_print( log, std::string{ "Has value" } );
-                            output_canidates.push_back( new_result.value() );
-                        }
-                        else
-                        {
-                            debug_print( log, std::string{ 
-                                    "template< typename > call_function_with_values( "
-                                    "const std::vector< ValueType >&, const Function&, const Module&, "
-                                    "std::vector< std::string >& ):std::optional< typename >::"
-                                    "Error: Prototype quality software Function input and output constraints match multiple "
-                                    "function alternatives, function call ambigious." }
-                                );
-                            return std::nullopt;
-                        }
-                    }
-                }
-            }
-            if( output_canidates.size() == 1 )
-                return std::optional{ output_canidates[ 0 ] };
-            debug_print( log, std::string{ "Non-1 constraint" } );
+            return std::optional{ input_canidates };
+        }
+        return std::nullopt;
+    }
+
+    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+    std::optional< std::vector< ReturnParameterType > > select_alternative_based_on_outputs(
+            std::vector< AbstractSyntaxTree::ValueType >& input_values, 
+            std::vector< FunctionAlternative* > canidates, 
+            std::optional< Module >& module, 
+            std::vector< std::string >& log 
+        )
+    {
+        if( canidates.size() <= 0 )
+        {
+            debug_print( log, std::string{ 
+                    "template<typename> select_alternative_based_on_outputs("
+                    "std::vector< ValueType >&, std::vector< FunctionAlternative* >, "
+                    "std::optional< Module >&, std::vector< std::string >& >:<typename>::"
+                    "Error: no canidates.\n"
+                } );
             return std::nullopt;
         }
-        else
+        std::vector< ReturnParameterType > conforment_results;
+        for( FunctionAlternative* alternative : canidates )
+        {
+            auto mapping = map_call_frame( *alternative, input_values );
+            if( mapping.has_value() == false )
+            {
+                debug_print( log, std::string{ 
+                        "template<typename> select_alternative_based_on_outputs("
+                        "std::vector< ValueType >&, std::vector< FunctionAlternative* >, "
+                        "std::optional< Module >&, std::vector< std::string >& >:<typename>::"
+                        "Error: Mapping failed!\n"
+                    } );
+            }
+            const AbstractSyntaxTree::NodeVariantType& expression = alternative->expression;
+            auto result = evaluate_expression< ReturnParameterType >( expression, mapping.value(), log, module );
+            if( result.has_value() == true )
+            {
+                // auto mapping = map_call_frame( *alternative, values, new_result );
+                const FunctionAlternative& alternative_ = *alternative;
+                if( satisfies_alternative_constraints( alternative_, input_values, result.value(), log, module ) == true ) {
+                    debug_print( log, std::string{ "\nOutput constraint satisfied\n" } );
+                    conforment_results.push_back( result.value() );
+                }
+            }
+        }
+        return conforment_results;
+    }
+
+
+                    // else
+                    // {
+                    //     debug_print( log, std::string{ 
+                    //             "template<typename> select_alternative_based_on_outputs("
+                    //             "std::vector< ValueType >&, std::vector< FunctionAlternative* >, "
+                    //             "std::optional< Module >&, std::vector< std::string >& >:<typename>::"
+                    //             "Error: Prototype quality software Function input and output constraints match multiple "
+                    //             "function alternatives, function call ambigious." }
+                    //         );
+                    //     return std::nullopt;
+                    // }
+
+
+    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+    std::optional< ReturnParameterType > call_function_with_values(
+            std::vector< AbstractSyntaxTree::ValueType >& values, 
+            Function& function, 
+            std::optional< Module >& module, 
+            std::vector< std::string >& log 
+        )
+    {
+        auto input_selection_results = select_alternative_based_on_inputs( values, function, module, log );
+        if( input_selection_results.has_value() == false )
         {
             debug_print( log, std::string{ 
                     "template< typename > call_function_with_values( "
@@ -498,7 +589,23 @@ namespace Warp::CompilerRuntime
                     "std::vector< std::string >& ):std::optional< typename >::"
                     "Error: No alternative for function that has "
                 } + std::to_string( values.size() ) + std::string{ " parameters.\n" } );
+            return std::nullopt;
         }
+        auto input_canidates = input_selection_results.value();
+        auto output_canidates_result = select_alternative_based_on_outputs( values, input_canidates, module, log );
+        if( output_canidates_result.has_value() == false )
+        {
+            debug_print( log, std::string{ 
+                    "FunctionCall::Error: No suitible alternative found for function call!\n"
+                } );
+            return std::nullopt;
+        }
+        if( output_canidates_result.value().size() == 1 )
+            return std::optional{ output_canidates_result.value()[ 0 ] };
+        debug_print( log, std::string{ 
+                "FunctionCall::Error: Prototype-quality software, mutliple "
+                "alternatives satisfy both input and output constraints.\n" 
+            } );
         return std::nullopt;
     }
 
