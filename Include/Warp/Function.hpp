@@ -5,8 +5,8 @@
 
 namespace Warp::CompilerRuntime
 {
-    using CallType = Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >
-    ;
+    using CallType = Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >;
+
     struct Function;
 
     struct Parameter
@@ -50,18 +50,27 @@ namespace Warp::CompilerRuntime
     {
         const size_t function;
         const size_t variant;
-        const std::vector< Warp::AbstractSyntaxTree::LiteralType > inputs;
-        const Warp::AbstractSyntaxTree::LiteralType output;
-    };
-    
-    struct Log {
-        std::vector< LogEntry > forward_inputs, backward_propigation;
+        const size_t number_of_parameters;
+        const std::vector< AbstractSyntaxTree::ValueType > inputs;
+        const AbstractSyntaxTree::ValueType output;
     };
 
-    struct Module {
+
+    struct Module
+    {
         std::vector< Function* > functions;
-        // std::vector< Warp::AbstractSyntaxTree::NodeVariantType > expressions, input_constraints, output_constraints;
+        // 2D vector by number of parameters, then actual entries. //
+        std::vector< std::vector< LogEntry > > forward_input_log; // TODO: backward_propigation_log //
     };
+
+    std::optional< size_t > find_function_index_in_module( const Module& module, std::string function_name );
+
+    std::optional< LogEntry > log_call( 
+            Module& module, 
+            const FunctionAlternative& caller, 
+            std::vector< AbstractSyntaxTree::ValueType >& inputs, 
+            const AbstractSyntaxTree::ValueType result 
+        );
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_FUNCTION_HPP
