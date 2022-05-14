@@ -139,4 +139,11 @@ namespace Warp::CompilerRuntime
         return AbstractSyntaxTree::ValueType{ value };
     }
 
+    void debug_print( std::vector< std::string >& log, std::string message )
+    {
+        if( WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP_DEBUG == true ) {
+            std::cout << message;
+            log.push_back( message );
+        }
+    }
 }

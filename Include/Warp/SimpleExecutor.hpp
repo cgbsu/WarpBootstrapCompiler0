@@ -1,20 +1,17 @@
 #include <Warp/Function.hpp>
+#include <optional>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
 
 namespace Warp::CompilerRuntime 
 {
-    #define WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP_DEBUG true
+    #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP_DEBUG
+        #define WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP_DEBUG false
+    #endif
 
-    static void debug_print( std::vector< std::string >& log, std::string message )
-    {
-        if( WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP_DEBUG == true ) {
-            std::cout << message;
-            log.push_back( message );
-        }
-    }
-
+    void debug_print( std::vector< std::string >& log, std::string message );
+    
     using OptionalValueType = std::optional< AbstractSyntaxTree::ValueType >;
     using CallFrameType = std::unordered_map< std::string, AbstractSyntaxTree::ValueType >;
 
@@ -31,22 +28,6 @@ namespace Warp::CompilerRuntime
         constexpr static auto node_type = NodeTypeParameterConstant;
         ExtractNodeType( const Warp::AbstractSyntaxTree::Node< NodeTypeParameterConstant >& ) {}
     };
-
-    template< typename ReturnParameterType >
-    std::optional< ReturnParameterType > evaluate_expression( 
-            const Warp::AbstractSyntaxTree::NodeVariantType& expression, 
-            const CallFrameType& argument_values, 
-            std::vector< std::string >& log, 
-            std::optional< Module >& module 
-        );
-
-    template< typename ReturnParameterType >
-    std::optional< ReturnParameterType > call_function_with_values(
-            std::vector< AbstractSyntaxTree::ValueType >& values, 
-            Function& function, 
-            std::optional< Module >& module, 
-            std::vector< std::string >& log 
-        );
 
     Function* function_from_module( const Module& to_search, std::string name );
 
@@ -83,7 +64,46 @@ namespace Warp::CompilerRuntime
             std::vector< std::string >& log, 
             std::optional< Module >& module  
         );
-    
+
+    template< typename ValueParameterType >
+    AbstractSyntaxTree::ValueType make_value( ValueParameterType value ) {
+        return AbstractSyntaxTree::ValueType{ Warp::Utilities::make_literal( value ) };
+    }
+
+    template<>
+    AbstractSyntaxTree::ValueType make_value( bool value );
+
+    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+    std::optional< ReturnParameterType > evaluate_expression( 
+            const Warp::AbstractSyntaxTree::NodeVariantType& expression, 
+            const CallFrameType& argument_values, 
+            std::vector< std::string >& log, 
+            std::optional< Module >& module 
+        );
+    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+    std::optional< std::vector< FunctionAlternative* > > select_alternative_based_on_inputs(
+            std::vector< AbstractSyntaxTree::ValueType >& values, 
+            Function& function, 
+            std::optional< Module >& module, 
+            std::vector< std::string >& log 
+        );
+
+    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+    std::optional< std::vector< std::pair< ReturnParameterType, FunctionAlternative* > > > select_alternative_based_on_outputs(
+            std::vector< AbstractSyntaxTree::ValueType >& input_values, 
+            std::vector< FunctionAlternative* > canidates, 
+            std::optional< Module >& module, 
+            std::vector< std::string >& log 
+        );
+
+    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+    std::optional< std::pair< ReturnParameterType, std::optional< LogEntry > > > call_function_with_values(
+            std::vector< AbstractSyntaxTree::ValueType >& values, 
+            Function& function, 
+            std::optional< Module >& module, 
+            std::vector< std::string >& log 
+        );
+
     template< template< typename, auto > typename FeedbackParameterType, typename ReturnParameterType >
     ReturnParameterType abstract_syntax_tree_callback( 
             const Warp::AbstractSyntaxTree::NodeVariantType& variant, 
@@ -259,8 +279,6 @@ namespace Warp::CompilerRuntime
                     debug_print( log, std::to_string( to_print ) );
                 }, result );
             return result;
-            // std::cerr << "Error::NotYetImplemented: Executor::compute_value_of_expression for FunctionResult! Returning 0\n";
-            // return 0;
         }
     };
 
@@ -284,12 +302,10 @@ namespace Warp::CompilerRuntime
             for( size_t ii = 0; ii < number_of_parameters; ++ii )
             {
                 auto argument = evaluate_expression< OutputType >( node.arguments[ ii ], call_frame, log, module );
-                // auto argument = value_from( node.arguments[ ii ] );
                 if( argument.has_value() == false ) {
                     debug_print( log, std::string{ "FunctionCall::Error: Argument failed to be evaluated.\n" } );
                     return std::nullopt;
                 }
-                // values.push_back( evaluate_expression< OutputType >( argument.value(), call_frame, log, module ) );
                 values.push_back( argument.value() );
             }
             if( module.has_value() == false ) {
@@ -302,12 +318,17 @@ namespace Warp::CompilerRuntime
                 return std::nullopt;
             }
             Function& non_const_function = *function;
-            return call_function_with_values< OutputType >(
-                    values, 
-                    non_const_function, 
-                    module, 
-                    log 
-                );
+            if( auto function_result = call_function_with_values< OutputType >(
+                        values, 
+                        non_const_function, 
+                        module, 
+                        log 
+                    ); function_result.has_value() == true )
+                return function_result.value().first;
+            else {
+                debug_print( log, std::string{ "FunctionCall::Error: Function " } + node.function_name + std::string{ " failed to return a value!\n" } );
+                return std::nullopt;
+            }
         }
     };
 
@@ -333,20 +354,7 @@ namespace Warp::CompilerRuntime
         }
     };
 
-    enum class ConstraintApplication {
-        Input, 
-        Output 
-    };
-
-    template< typename ValueParameterType >
-    AbstractSyntaxTree::ValueType make_value( ValueParameterType value ) {
-        return AbstractSyntaxTree::ValueType{ Warp::Utilities::make_literal( value ) };
-    }
-
-    template<>
-    AbstractSyntaxTree::ValueType make_value( bool value );
-
-    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+        template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
     std::optional< ReturnParameterType > evaluate_expression( 
             const Warp::AbstractSyntaxTree::NodeVariantType& expression, 
             const CallFrameType& argument_values, 
@@ -407,7 +415,7 @@ namespace Warp::CompilerRuntime
     }
 
     template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
-    std::optional< std::vector< ReturnParameterType > > select_alternative_based_on_outputs(
+    std::optional< std::vector< std::pair< ReturnParameterType, FunctionAlternative* > > > select_alternative_based_on_outputs(
             std::vector< AbstractSyntaxTree::ValueType >& input_values, 
             std::vector< FunctionAlternative* > canidates, 
             std::optional< Module >& module, 
@@ -424,7 +432,7 @@ namespace Warp::CompilerRuntime
                 } );
             return std::nullopt;
         }
-        std::vector< ReturnParameterType > conforment_results;
+        std::vector< std::pair< ReturnParameterType, FunctionAlternative* > > conforment_results;
         for( FunctionAlternative* alternative : canidates )
         {
             auto mapping = map_call_frame( *alternative, input_values );
@@ -441,19 +449,18 @@ namespace Warp::CompilerRuntime
             auto result = evaluate_expression< ReturnParameterType >( expression, mapping.value(), log, module );
             if( result.has_value() == true )
             {
-                // auto mapping = map_call_frame( *alternative, values, new_result );
                 const FunctionAlternative& alternative_ = *alternative;
                 if( satisfies_alternative_constraints( alternative_, input_values, result.value(), log, module ) == true ) {
                     debug_print( log, std::string{ "\nOutput constraint satisfied\n" } );
-                    conforment_results.push_back( result.value() );
+                    conforment_results.push_back( std::pair{ result.value(), alternative } );
                 }
             }
         }
         return conforment_results;
     }
 
-    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
-    std::optional< ReturnParameterType > call_function_with_values(
+    template< typename ReturnParameterType >
+    std::optional< std::pair< ReturnParameterType, std::optional< LogEntry > > > call_function_with_values(
             std::vector< AbstractSyntaxTree::ValueType >& values, 
             Function& function, 
             std::optional< Module >& module, 
@@ -473,6 +480,7 @@ namespace Warp::CompilerRuntime
         }
         auto input_canidates = input_selection_results.value();
         auto output_canidates_result = select_alternative_based_on_outputs( values, input_canidates, module, log );
+        
         if( output_canidates_result.has_value() == false )
         {
             debug_print( log, std::string{ 
@@ -481,13 +489,29 @@ namespace Warp::CompilerRuntime
             return std::nullopt;
         }
         if( output_canidates_result.value().size() == 1 )
-            return std::optional{ output_canidates_result.value()[ 0 ] };
+        {
+            auto final_result = output_canidates_result.value()[ 0 ];
+            if( module.has_value() )
+            {
+                return std::optional{ std::pair{ 
+                        final_result.first, 
+                        log_call( module.value(), *final_result.second, values, final_result.first ) 
+                    } };
+            }
+            else {
+                return std::optional{ std::pair{ 
+                        final_result.first, 
+                        std::nullopt 
+                    } };               
+            }
+        }
         debug_print( log, std::string{ 
                 "FunctionCall::Error: Prototype-quality software, mutliple "
                 "alternatives satisfy both input and output constraints.\n" 
             } );
         return std::nullopt;
     }
+
 
     template< typename QueryParameterType >
     auto is_of_type( auto canidate )
