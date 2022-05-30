@@ -2,32 +2,31 @@
 
 namespace Warp::CompilerRuntime
 {
-    std::optional< size_t > find_function_index_in_module( const Module& module, std::string function_name )
+    std::optional< size_t > Module::find_function_index_in_module( std::string function_name )
     {
-        const size_t number_of_functions = module.functions.size();
+        const size_t number_of_functions = functions.size();
         for( size_t ii = 0; ii < number_of_functions; ++ii )
         {
-            if( module.functions[ ii ]->name == function_name )
+            if( functions[ ii ]->name == function_name )
                 return ii;
         }
         return std::nullopt;
     }
 
-    std::optional< LogEntry > log_call( 
-            Module& module, 
+    std::optional< LogEntry > Module::log_call( 
             const FunctionAlternative& caller, 
             std::vector< AbstractSyntaxTree::ValueType >& inputs, 
             const AbstractSyntaxTree::ValueType result 
         )
     {
         const size_t number_of_parameters = inputs.size();
-        if( module.forward_input_log.size() <= number_of_parameters )
-            module.forward_input_log.resize( number_of_parameters + 1 );
-        const auto function_search_result = find_function_index_in_module( module, caller.name );
+        if( forward_input_log.size() <= number_of_parameters )
+            forward_input_log.resize( number_of_parameters + 1 );
+        const auto function_search_result = find_function_index_in_module( caller.name );
         if( function_search_result.has_value() == false )
             return std::nullopt;
         const size_t function_index = function_search_result.value();
-        auto alternatives = module.functions[ function_index ]->alternatives[ number_of_parameters ].alternatives;
+        auto alternatives = functions[ function_index ]->alternatives[ number_of_parameters ].alternatives;
         const FunctionAlternative* caller_pointer = std::addressof( caller );
         if( alternatives.size() <= 0 )
             return std::nullopt;
@@ -44,7 +43,8 @@ namespace Warp::CompilerRuntime
                 inputs, 
                 result 
             };
-        module.forward_input_log[ number_of_parameters ].push_back( new_call_log_entry );
+        forward_input_log[ number_of_parameters ].push_back( new_call_log_entry );
         return new_call_log_entry;
     }
 }
+

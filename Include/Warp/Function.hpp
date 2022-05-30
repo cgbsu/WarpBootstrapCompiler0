@@ -55,22 +55,19 @@ namespace Warp::CompilerRuntime
         const AbstractSyntaxTree::ValueType output;
     };
 
-
     struct Module
     {
         std::vector< Function* > functions;
         // 2D vector by number of parameters, then actual entries. //
         std::vector< std::vector< LogEntry > > forward_input_log; // TODO: backward_propigation_log //
-    };
-
-    std::optional< size_t > find_function_index_in_module( const Module& module, std::string function_name );
-
-    std::optional< LogEntry > log_call( 
-            Module& module, 
-            const FunctionAlternative& caller, 
-            std::vector< AbstractSyntaxTree::ValueType >& inputs, 
-            const AbstractSyntaxTree::ValueType result 
-        );
+		std::optional< size_t > find_function_index_in_module( std::string function_name );
+		std::optional< LogEntry > log_call( 
+    	        const FunctionAlternative& caller, 
+    	        std::vector< AbstractSyntaxTree::ValueType >& inputs, 
+    	        const AbstractSyntaxTree::ValueType result 
+    	    );
+	};
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_FUNCTION_HPP
+

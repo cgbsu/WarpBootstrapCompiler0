@@ -62,30 +62,50 @@ namespace Warp::AbstractSyntaxTree
     template< auto >
     struct Node {};
 
+	template<>
     struct Node< Warp::Parser::ExpressionOperator::FactorMultiply >;
+	template<>
     struct Node< Warp::Parser::ExpressionOperator::FactorDivide >;
+	template<>
     struct Node< Warp::Parser::ExpressionOperator::SumAdd >;
+	template<>
     struct Node< Warp::Parser::ExpressionOperator::SumSubtract >;
     
+	template<>
     struct Node< NodeType::Literal >;
+	template<>
     struct Node< NodeType::BooleanLiteral >;
+	template<>
     struct Node< NodeType::Identifier >;
     
+	template<>
     struct Node< Warp::Parser::BooleanOperator::LogicalNot >;
+	template<>
     struct Node< Warp::Parser::BooleanOperator::LogicalAnd >;
+	template<>
     struct Node< Warp::Parser::BooleanOperator::LogicalOr >;
+	template<>
     struct Node< Warp::Parser::BooleanOperator::LogicalBiCondition >;
+	template<>
     struct Node< Warp::Parser::BooleanOperator::LogicalImplies >;
     
+	template<>
     struct Node< Warp::Parser::ComparisonOperator::ComparisonEqual >;
+	template<>
     struct Node< Warp::Parser::ComparisonOperator::ComparisonLessThan >;
+	template<>
     struct Node< Warp::Parser::ComparisonOperator::ComparisonGreaterThan >;
+	template<>
     struct Node< Warp::Parser::ComparisonOperator::ComparisionLessThanOrEqualTo >;
+	template<>
     struct Node< Warp::Parser::ComparisonOperator::ComparisionGreaterThanOrEqualTo >;
 
+	template<>
     struct Node< Warp::Parser::FunctionOperators::FunctionResult >;
+	template<>
     struct Node< NodeType::FunctionCall >;
 
+	template<>
     struct Node< NodeType::Unconstrained >;
 
     // It would be nice if I did not have to forward declare all of these 🤔 <-- also thats teh first time I have used an unicode emojii in C++ 😊 //

@@ -327,7 +327,7 @@ namespace Warp::Parser
         }; \
         template< auto OffsetParameterConstant > \
         constexpr const static auto add_priorities = Warp::Utilities::EnableOperation< \
-                []( size_t left, size_t right ) { return left + right; },  \
+                []( auto left, auto right ) { return left + right; },  \
                 PriorityParameterConstant,  \
                 OffsetParameterConstant,  \
                 std::is_same< \
@@ -396,7 +396,88 @@ namespace Warp::Parser
 
     template< auto... TermParameterConstants >
     using EasySafeTermsType = SafeTermsType< 0, TermParameterConstants... >;
-}
 
+	namespace DefaultTerms
+	{
+        using enum Parser::ExpressionOperator;
+        using enum Parser::ScopeOperators;
+        using enum Parser::RegexLiteralTerms;
+        using enum Parser::StringTerms;
+        using enum Parser::NonTerminalTerms;
+        using enum Parser::BooleanOperator;
+        using enum Parser::ComparisonOperator;
+        using enum Parser::FunctionOperators;
+
+
+	    using TermsType = EasySafeTermsType< 
+	        // >::AddOnePriority< 
+	            SumAdd, 
+	            SumSubtract 
+	        >::AddOnePriority< 
+	                FactorMultiply, 
+	                FactorDivide 
+	            >::AddOnePriority< 
+	                    BiCondition, 
+	                    Implies 
+	                >::AddOnePriority< 
+	                        Or 
+	                    >::AddOnePriority< 
+	                            And 
+	                        >::AddOnePriority<  
+	                                LogicalNot 
+	                            >::AddOnePriority< 
+	                                    ComparisonEqual, 
+	                                    ComparisonLessThan, 
+	                                    ComparisonGreaterThan, 
+	                                    GreaterThanOrEqualTo, 
+	                                    LessThanOrEqualTo 
+	                                >::AddOnePriority< 
+	                                        OpenParenthesis, 
+	                                        CloseParenthesis 
+	                                    >::AddOnePriority< 
+	                                            FunctionParameterConstaraint 
+	                                        >::AddOnePriority< 
+	                                                FunctionParameterNextParameter, 
+	                                                                hash_symbol
+	                                            >::AddOnePriority<
+	                                                    Identifier 
+	                                                >::AddOnePriority< 
+	                                                        FunctionDefintionComplete 
+	                                                    >::AddOnePriority< 
+	                                                            KeywordLet 
+	                                                        >::NoPriority< 
+	                                                                BooleanLiteral, 
+	                                                                NaturalNumber, 
+	                                                                FunctionDefinitionOperator, 
+	                                                                FunctionResult//, 
+	                                                                >; // I feel like Im writing python here 0.0 //
+	
+	    using NonTerminalTermsType = SafeTermsType< 
+	            TermBuilderType::NoPriority, 
+	            // Non Terminal Terms Begin Here, they have no //
+	            // "priority" with respect to other operators  //
+	            Factor, 
+	            Sum, 
+	            ParenthesisScope, 
+	            LogicalOperation, 
+	            BooleanAnd, 
+	            BooleanOr, 
+	            Comparison, 
+	            Call, 
+	            CallNode, 
+	            CallArguments, 
+	            CallEater, 
+	            ParameterList, 
+	            WarpFunctionAlternative, 
+	            WarpFunction, 
+	            WarpModule, 
+	            Arguments, 
+	            Expression, 
+	            ExpressionEater, 
+	            Argument, 
+	            ArgumentList 
+	        >;
+	}	
+}
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP
 

@@ -354,7 +354,7 @@ namespace Warp::CompilerRuntime
         }
     };
 
-        template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
+    template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
     std::optional< ReturnParameterType > evaluate_expression( 
             const Warp::AbstractSyntaxTree::NodeVariantType& expression, 
             const CallFrameType& argument_values, 
@@ -491,11 +491,11 @@ namespace Warp::CompilerRuntime
         if( output_canidates_result.value().size() == 1 )
         {
             auto final_result = output_canidates_result.value()[ 0 ];
-            if( module.has_value() )
+            if( module.has_value() == true )
             {
                 return std::optional{ std::pair{ 
                         final_result.first, 
-                        log_call( module.value(), *final_result.second, values, final_result.first ) 
+                        module->log_call( *final_result.second, values, final_result.first ) 
                     } };
             }
             else {
@@ -526,3 +526,4 @@ namespace Warp::CompilerRuntime
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_SIMPLE_EXECUTOR_HPP
+	   //

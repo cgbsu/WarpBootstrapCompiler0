@@ -28,8 +28,8 @@ namespace Warp::Utilities
 
 
         constexpr LightTuple( 
-                std::remove_reference< const Type >::type* data, 
-                std::remove_reference< const ParameterTypes >::type*... other_datas 
+                typename std::remove_reference< const Type >::type* data, 
+                typename std::remove_reference< const ParameterTypes >::type*... other_datas 
             ) noexcept : BaseType( other_datas... ), data( data ) {}
 
         constexpr LightTuple( 
@@ -38,11 +38,11 @@ namespace Warp::Utilities
             ) noexcept : BaseType( other ), data( data ) {}
 
         constexpr LightTuple( 
-                    std::remove_reference< const Type >::type* data
+                    typename std::remove_reference< const Type >::type* data
             ) noexcept : BaseType( data ), data( data ) {}
 
         constexpr LightTuple( 
-                    std::remove_reference< Type >::type* data
+                    typename std::remove_reference< Type >::type* data
             ) noexcept : BaseType( data ), data( data ) {}
 
         template< typename AnyParameterType >
@@ -67,15 +67,15 @@ namespace Warp::Utilities
     struct LightTuple< CurrentParameterType >
     {
         using Type = CurrentParameterType;
-        std::remove_reference< const Type >::type* data;
+        typename std::remove_reference< const Type >::type* data;
         using ThisType = LightTuple< Type >;
 
         constexpr LightTuple( 
-                std::remove_reference< Type >::type* data 
+                typename std::remove_reference< Type >::type* data 
             ) noexcept : data( data ) {}
 
         constexpr LightTuple( 
-                std::remove_reference< const Type >::type* data 
+                typename std::remove_reference< const Type >::type* data 
             ) noexcept : data( data ) {}
         
     constexpr LightTuple( 
@@ -99,7 +99,7 @@ namespace Warp::Utilities
             typename... ParameterTypes 
         >
     constexpr auto tuple_element_type( const LightTuple< ParameterTypes... > tuple ) 
-            noexcept -> IndexToType< TargetParameterConstant, 0, ParameterTypes... >::Type {
+            noexcept -> typename IndexToType< TargetParameterConstant, 0, ParameterTypes... >::Type {
         return nullptr;
     }
 
@@ -109,8 +109,8 @@ namespace Warp::Utilities
         >
     constexpr auto remove_element( 
                 const LightTuple< TupleTypes... >& tuple 
-            ) noexcept -> const LightTuple< TupleTypes... >::BaseType& {
-        static_cast< const decltype( tuple )::BaseType& >( tuple );
+            ) noexcept -> const typename LightTuple< TupleTypes... >::BaseType& {
+        static_cast< const typename decltype( tuple )::BaseType& >( tuple );
     }
     template< 
             auto OperationParameterConstant,
@@ -126,23 +126,23 @@ namespace Warp::Utilities
             using InjectionType = typename TupleFromOperation< 
                             OperationParameterConstant, 
                             TupleParameterTypes... 
-                    >::ReturnTuple< 
+                    >::template ReturnTuple< 
                             CleanType< NewTupleParameterTypes >..., 
                             CleanType< decltype( 
                                     OperationParameterConstant( new CurrentParameterType{} ) 
                                 ) >
                         >;
-            using ReturnTupleType = InjectionType::ReturnTupleType;
+            using ReturnTupleType = typename InjectionType::ReturnTupleType;
             template< template< auto, typename... > typename RecievingTemplateParameterTemplate >
-            using InjectTypes = typename InjectionType::InjectTypes< 
+            using InjectTypes = typename InjectionType::template InjectTypes< 
                     RecievingTemplateParameterTemplate 
                 >;
         };
         template< template< auto, typename... > typename RecievingTemplateParameterTemplate >
-        using InjectTupleTypes = typename ReturnTuple<>::InjectTypes< 
+        using InjectTupleTypes = typename ReturnTuple<>::template InjectTypes< 
                 RecievingTemplateParameterTemplate 
             >;
-        using ReturnType = ReturnTuple<>::ReturnTupleType;
+        using ReturnType = typename ReturnTuple<>::ReturnTupleType;
     };
 
     template< 
@@ -186,7 +186,7 @@ namespace Warp::Utilities
                 TupleParameterTypes... 
             >;
         using NextApplyType = Apply< OperationParameterConstant, TupleParameterTypes... >;
-        using NextTupleType = NextTupleMakerType::ReturnType;
+        using NextTupleType = typename NextTupleMakerType::ReturnType;
         const NextTupleType result;
         constexpr Apply( const TupleType& tuple ) noexcept : result( 
                 LightTuple( OperationParameterConstant( tuple.data ), 

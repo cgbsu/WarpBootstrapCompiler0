@@ -37,7 +37,6 @@ namespace Warp::Parser
                                 right \
                             ) ); \
                     } 
-
     
     #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP_REDUCE_MIDDLE_OF_PARENTHESIS_TO( TO, MIDDLE ) \
         non_terminal_term< TO >( term< OpenParenthesis >, non_terminal_term< MIDDLE >, term< CloseParenthesis > ) \
@@ -48,93 +47,29 @@ namespace Warp::Parser
 
     template< 
             template< auto > typename TypeResolverParameterType = DefaultTypes, 
-            auto ReduceTo = Warp::Parser::NonTerminalTerms::WarpFunctionAlternative 
+            auto ReduceTo = Warp::Parser::NonTerminalTerms::WarpFunctionAlternative, 
+			typename TermsParameterType = Parser::DefaultTerms::TermsType, 
+			typename NonTerminalTermsParameterType = DefaultTerms::NonTerminalTermsType 
         >
     struct WarpParser
     {
-        using enum ExpressionOperator;
-        using enum ScopeOperators;
-        using enum RegexLiteralTerms;
-        using enum StringTerms;
-        using enum NonTerminalTerms;
-        using enum BooleanOperator;
-        using enum ComparisonOperator;
-        using enum FunctionOperators;
-
-        using TermsType = EasySafeTermsType< 
-            // >::AddOnePriority< 
-                SumAdd, 
-                SumSubtract 
-            >::AddOnePriority< 
-                    FactorMultiply, 
-                    FactorDivide 
-                >::AddOnePriority< 
-                        BiCondition, 
-                        Implies 
-                    >::AddOnePriority< 
-                            Or 
-                        >::AddOnePriority< 
-                                And 
-                            >::AddOnePriority<  
-                                    LogicalNot 
-                                >::AddOnePriority< 
-                                        ComparisonEqual, 
-                                        ComparisonLessThan, 
-                                        ComparisonGreaterThan, 
-                                        GreaterThanOrEqualTo, 
-                                        LessThanOrEqualTo 
-                                    >::AddOnePriority< 
-                                            OpenParenthesis, 
-                                            CloseParenthesis 
-                                        >::AddOnePriority< 
-                                                FunctionParameterConstaraint 
-                                            >::AddOnePriority< 
-                                                    FunctionParameterNextParameter, 
-                                                                    hash_symbol
-                                                >::AddOnePriority<
-                                                        Identifier 
-                                                    >::AddOnePriority< 
-                                                            FunctionDefintionComplete 
-                                                        >::AddOnePriority< 
-                                                                KeywordLet 
-                                                            >::NoPriority< 
-                                                                    BooleanLiteral, 
-                                                                    NaturalNumber, 
-                                                                    FunctionDefinitionOperator, 
-                                                                    FunctionResult//, 
-                                                                    >; // I feel like Im writing python here 0.0 //
-
-        using NonTerminalTermsType = SafeTermsType< 
-                TermBuilderType::NoPriority, 
-                // Non Terminal Terms Begin Here, they have no //
-                // "priority" with respect to other operators  //
-                Factor, 
-                Sum, 
-                ParenthesisScope, 
-                LogicalOperation, 
-                BooleanAnd, 
-                BooleanOr, 
-                Comparison, 
-                Call, 
-                CallNode, 
-                CallArguments, 
-                CallEater, 
-                ParameterList, 
-                WarpFunctionAlternative, 
-                WarpFunction, 
-                WarpModule, 
-                Arguments, 
-                Expression, 
-                ExpressionEater, 
-                Argument, 
-                ArgumentList 
-            >;
+		using TermsType = TermsParameterType;
+		using NonTerminalTermsType = NonTerminalTermsParameterType;
+		
+        using enum Parser::ExpressionOperator;
+        using enum Parser::ScopeOperators;
+        using enum Parser::RegexLiteralTerms;
+        using enum Parser::StringTerms;
+        using enum Parser::NonTerminalTerms;
+        using enum Parser::BooleanOperator;
+        using enum Parser::ComparisonOperator;
+        using enum Parser::FunctionOperators;
 
         template< auto ParameterConstant >
-        constexpr const static auto term = TermsType::get_term< ParameterConstant >();
+        constexpr const static auto term = TermsType::template get_term< ParameterConstant >();
 
         template< auto ParameterConstant >
-        constexpr const static auto non_terminal_term = NonTerminalTermsType::get_term< ParameterConstant >();
+        constexpr const static auto non_terminal_term = NonTerminalTermsType::template get_term< ParameterConstant >();
 
         constexpr static const auto terms = TermsType::to_tuple();
         constexpr static const auto non_terminal_terms = NonTerminalTermsType::to_tuple();
@@ -411,7 +346,8 @@ namespace Warp::Parser
 
                         //////////////////////////////// Functions::Parameters ////////////////////////////////
 
-                        // TODO: Add types/concepts with additional color, e.g my_parameter : natural : my_parameter < 128
+                        // TODO: Add types/concepts with additional colon, e.g my_parameter : natural : my_parameter < 128
+						// TODO: Update now considering this exceot with the syntax identifier< concepts/types | concepts/types > : constraints //
 
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< Comparison > )
                                 >= []( auto parameter_list, auto parameter_name, auto, auto comparison_constraint ) {
@@ -570,3 +506,4 @@ namespace Warp::Parser
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP
+
