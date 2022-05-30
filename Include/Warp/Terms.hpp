@@ -51,7 +51,8 @@ namespace Warp::Parser
         GreaterThanOrEqualTo = 6, 
         LessThanOrEqualTo = 7, 
         FunctionDefinitionOperator = 8, 
-        KeywordLet = 9 
+        KeywordLet = 9, 
+        KeywordRuntime = 10 
     };
 
     #define LITERAL_REGEX_TERM( TYPE, REGEX ) \
@@ -156,6 +157,7 @@ namespace Warp::Parser
     STRING_TERM( LessThanOrEqualTo, "<=" );
     STRING_TERM( FunctionDefinitionOperator, "::" );
     STRING_TERM( KeywordLet, "let" );
+    STRING_TERM( KeywordRuntime, "runtime" );
 
     // There are better ways to do this than using the types of the enums, but this is quick. //
 
@@ -317,25 +319,25 @@ namespace Warp::Parser
         struct Next \
         { \
             template< auto... NextTermsParameterConstant > \
-            using TermsType = TermBuilder<  \
+            using TermsType = TermBuilder< \
                     ThisType,  \
                     NextPriorityParameterConstant,  \
                     NextTermsParameterConstant...  \
                 >; \
         }; \
         template< auto OffsetParameterConstant > \
-        constexpr const static auto add_priorities = Warp::Utilities::EnableOperation<  \
-                []( auto left, auto right ) { return left + right; },  \
+        constexpr const static auto add_priorities = Warp::Utilities::EnableOperation< \
+                []( size_t left, size_t right ) { return left + right; },  \
                 PriorityParameterConstant,  \
                 OffsetParameterConstant,  \
-                std::is_same<  \
+                std::is_same< \
                         TermBuilderType,  \
                         decltype( OffsetParameterConstant )  \
-                    >::value,  \
+                    >::value, \
                 OffsetParameterConstant  \
             >::value; \
         template< auto OffsetParameterConstant, auto... NextTermsParameterConstants > \
-        using AddToPriority = typename ThisType::Next<  \
+        using AddToPriority = typename ThisType::Next< \
                     add_priorities< OffsetParameterConstant > \
                 >::TermsType<  \
                     NextTermsParameterConstants...  \
@@ -343,9 +345,9 @@ namespace Warp::Parser
         template< auto... NextTermsParameterConstants > \
         using AddOnePriority = AddToPriority< 1, NextTermsParameterConstants... >; \
         template< auto... NextTermsParameterConstants > \
-        using NoPriority = typename ThisType::Next<  \
-                TermBuilderType::NoPriority  \
-            >::TermsType<  \
+        using NoPriority = typename ThisType::Next< \
+                TermBuilderType::NoPriority \
+            >::TermsType< \
                     NextTermsParameterConstants...  \
                 >; \
         constexpr static auto to_tuple() \
@@ -397,3 +399,4 @@ namespace Warp::Parser
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TERMS_HPP
+
