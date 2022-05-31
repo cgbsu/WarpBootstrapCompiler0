@@ -52,9 +52,33 @@ namespace Warp::Parser
         >
     struct ParserBase
     {
+		
+        using enum Parser::ExpressionOperator;
+        using enum Parser::ScopeOperators;
+        using enum Parser::RegexLiteralTerms;
+        using enum Parser::StringTerms;
+        using enum Parser::NonTerminalTerms;
+        using enum Parser::BooleanOperator;
+        using enum Parser::ComparisonOperator;
+        using enum Parser::FunctionOperators;
+
+	};
+
+    template< 
+            template< auto > typename TypeResolverParameterType = DefaultTypes, 
+            auto ReduceToParameterConstant = Warp::Parser::NonTerminalTerms::WarpFunctionAlternative, 
+			typename TermsParameterType = Parser::DefaultTerms::TermsType, 
+			typename NonTerminalTermsParameterType = DefaultTerms::NonTerminalTermsType 
+        >
+    struct WarpParser : public ParserBase< 
+			TypeResolverParameterType, 
+			TermsParameterType, 
+			NonTerminalTermsParameterType 
+		>
+	{
 		using TermsType = TermsParameterType;
 		using NonTerminalTermsType = NonTerminalTermsParameterType;
-		
+
         using enum Parser::ExpressionOperator;
         using enum Parser::ScopeOperators;
         using enum Parser::RegexLiteralTerms;
@@ -72,40 +96,6 @@ namespace Warp::Parser
 
         constexpr static const auto terms = TermsType::to_tuple();
         constexpr static const auto non_terminal_terms = NonTerminalTermsType::to_tuple();
-	};
-
-    template< 
-            template< auto > typename TypeResolverParameterType = DefaultTypes, 
-            auto ReduceToParameterConstant = Warp::Parser::NonTerminalTerms::WarpFunctionAlternative, 
-			typename TermsParameterType = Parser::DefaultTerms::TermsType, 
-			typename NonTerminalTermsParameterType = DefaultTerms::NonTerminalTermsType 
-        >
-    struct WarpParser : public ParserBase< 
-			TypeResolverParameterType, 
-			TermsParameterType, 
-			NonTerminalTermsParameterType 
-		>
-	{
-        using enum Parser::ExpressionOperator;
-        using enum Parser::ScopeOperators;
-        using enum Parser::RegexLiteralTerms;
-        using enum Parser::StringTerms;
-        using enum Parser::NonTerminalTerms;
-        using enum Parser::BooleanOperator;
-        using enum Parser::ComparisonOperator;
-        using enum Parser::FunctionOperators;
-
-		using BaseType = ParserBase< 
-				TypeResolverParameterType, 
-				TermsParameterType, 
-				NonTerminalTermsParameterType 
-			>;
-		constexpr const static auto ReduceTo = ReduceToParameterConstant;
-
-		constexpr const static auto term = BaseType::term;
-		constexpr const static auto non_terminal_term = BaseType::non_terminal_term;
-		// constexpr const static auto terms = BaseType::terms;
-		// constexpr const static auto non_terminal_terms = BaseType::non_terminal_terms;
 		
         template< auto ParameterConstant >
         using ResolvedType = typename TypeResolverParameterType< ParameterConstant >::Type;
@@ -149,9 +139,9 @@ namespace Warp::Parser
         // constexpr static auto factorsubsume_function_alternative_expression( auto function, auto factor )
         
         constexpr static const auto parser = ctpg::parser( 
-                non_terminal_term< ReduceTo >, 
-                BaseType::terms, 
-                BaseType::non_terminal_terms, 
+                non_terminal_term< ReduceToParameterConstant >, 
+                terms, 
+                non_terminal_terms, 
                 ctpg::rules( 
 
                         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,7 +170,7 @@ namespace Warp::Parser
                                     return std::move( Warp::Utilities::allocate_integral_literal_node< 
                                             ResolvedType< NaturalNumber > 
                                         >( token ) );
-                                }/*, 
+                                }, 
 
                         //////////////////////////////// Arithmatic Expressions::Products ////////////////////////////////
 
@@ -528,7 +518,6 @@ namespace Warp::Parser
                                     }
 
                         //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
-*/
                 )
         );
     };
