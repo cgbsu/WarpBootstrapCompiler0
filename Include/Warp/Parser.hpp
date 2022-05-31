@@ -374,6 +374,15 @@ namespace Warp::Parser
 													Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >() 
 												);
                                 }, 
+                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier > )
+                                >= []( auto parameter_list, auto parameter_name )
+								{
+                                    return add_to_parameter_list( 
+												parameter_list, 
+												parameter_name, 
+												Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >() 
+											);
+                                }, 
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter > )
                                 >= []( auto parameter_list, auto ) {
                                     return parameter_list;
@@ -390,19 +399,6 @@ namespace Warp::Parser
                                             std::string{ function_name }
                                         };
                                 },
-                        /*non_terminal_term< Arguments >( term< KeywordLet >, term< Identifier >, term< OpenParenthesis >, term< Identifier >, term< CloseParenthesis > )
-                                >= []( auto, auto function_name, auto, auto parameter_name, auto )
-								{
-                                    auto alternative = Warp::CompilerRuntime::IntermediateFunctionAlternative{ 
-                                            Warp::Utilities::hash_string( function_name ), 
-                                            std::string{ function_name }
-                                        };
-                                    return add_to_parameter_list( 
-												alternative, 
-												parameter_name, 
-												Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >() 
-											);
-                                }, */
                         non_terminal_term< Arguments >( non_terminal_term< ParameterList >, term< CloseParenthesis > )
                                 >= []( auto parameter_list, auto ) {
                                     return parameter_list;
