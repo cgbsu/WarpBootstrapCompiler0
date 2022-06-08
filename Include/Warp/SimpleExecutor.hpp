@@ -180,8 +180,8 @@ namespace Warp::CompilerRuntime
                     std::vector< std::string >& log, 
                     std::optional< Module >& module, 
                     auto... additional_arguments 
-                ) {
-
+                )
+		{
             AbstractSyntaxTree::ValueType value = call_frame.at( node.string );
             std::visit( [ & ]( auto to_print ){ 
                     debug_print( log, node.string );
@@ -344,12 +344,12 @@ namespace Warp::CompilerRuntime
                 auto... additional_arguments 
             )
         {
-            auto result = call_frame.at( Warp::Parser::function_result_as_string );
+            /*auto result = call_frame.at( Warp::Parser::function_result_as_string );
             std::visit( [ & ]( auto to_print ){ 
                     debug_print( log, Warp::Parser::function_result_as_string );
                     debug_print( log, std::string{ "::Unconstrainted (Returning True):" } );
                     debug_print( log, std::to_string( to_print ) );
-                }, result );
+                }, result );*/
             return OptionalValueType{ true };
         }
     };

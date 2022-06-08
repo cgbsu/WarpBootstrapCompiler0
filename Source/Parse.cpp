@@ -80,3 +80,4 @@ namespace Warp::Parser
         return source_code.substr( 0, source_code.find_first_of( deliminator ) + 1 );
     }
 }
+

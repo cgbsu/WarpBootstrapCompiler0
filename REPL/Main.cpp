@@ -53,7 +53,7 @@ int main( int argc, char** args )
                 parse_result.has_value() == true )
         {
             auto parse_pointer = parse_result.value();
-            auto alternative = add_alternative_to_module( 
+            auto alternative = Warp::CompilerRuntime::add_alternative_to_module( 
                     main_module, 
                     parse_pointer, 
                     true 

@@ -87,6 +87,7 @@ namespace Warp::Parser
         using enum Parser::BooleanOperator;
         using enum Parser::ComparisonOperator;
         using enum Parser::FunctionOperators;
+		using enum Parser::MetaOperators;
 
         template< auto ParameterConstant >
         constexpr const static auto term = TermsType::template get_term< ParameterConstant >();
@@ -387,7 +388,25 @@ namespace Warp::Parser
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterConstaraint >, non_terminal_term< BooleanOr > )
                                 >= []( auto parameter_list, auto parameter_name, auto, auto constraints ) {
                                         return add_to_parameter_list( parameter_list, parameter_name, constraints );
-                                },
+                                }, 
+                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier >, term< FunctionParameterNextParameter > )
+                                >= []( auto parameter_list, auto parameter_name, auto )
+								{
+                                        return add_to_parameter_list( 
+													parameter_list, 
+													parameter_name, 
+													Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >() 
+												);
+                                }, 
+                        non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< Identifier > )
+                                >= []( auto parameter_list, auto parameter_name )
+								{
+                                    return add_to_parameter_list( 
+												parameter_list, 
+												parameter_name, 
+												Warp::Utilities::allocate_node< Warp::AbstractSyntaxTree::NodeType::Unconstrained >() 
+											);
+                                }, 
                         non_terminal_term< ParameterList >( non_terminal_term< ParameterList >, term< FunctionParameterNextParameter > )
                                 >= []( auto parameter_list, auto ) {
                                     return parameter_list;
@@ -515,9 +534,8 @@ namespace Warp::Parser
                                                 factor, 
                                                 call 
                                             );
-                                    }
+                                    }//, 
 
-                        //////////////////////////////// Functions (The final boss) ////////////////////////////////                        
                 )
         );
     };
