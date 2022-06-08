@@ -407,6 +407,7 @@ namespace Warp::Parser
         using enum Parser::BooleanOperator;
         using enum Parser::ComparisonOperator;
         using enum Parser::FunctionOperators;
+		using enum Parser::MetaOperators;
 
 
 	    using TermsType = EasySafeTermsType< 
@@ -435,22 +436,24 @@ namespace Warp::Parser
 	                                        OpenParenthesis, 
 	                                        CloseParenthesis 
 	                                    >::AddOnePriority< 
-	                                            FunctionParameterConstaraint 
+	                                            FunctionParameterConstaraint, 
+												AccessOperator 
 	                                        >::AddOnePriority< 
 	                                                FunctionParameterNextParameter, 
-	                                                                hash_symbol
 	                                            >::AddOnePriority<
 	                                                    Identifier 
 	                                                >::AddOnePriority< 
 	                                                        FunctionDefintionComplete 
 	                                                    >::AddOnePriority< 
 	                                                            KeywordLet 
+															>::AddOnePriority< 
+																	MetaOperator 
 	                                                        >::NoPriority< 
-	                                                                BooleanLiteral, 
-	                                                                NaturalNumber, 
-	                                                                FunctionDefinitionOperator, 
-	                                                                FunctionResult//, 
-	                                                                >; // I feel like Im writing python here 0.0 //
+																		BooleanLiteral, 
+	                                                                	NaturalNumber, 
+	                                                                	FunctionDefinitionOperator, 
+	                                                                	FunctionResult//, 
+	                                                               	>; // I feel like Im writing python here 0.0 //
 	
 	    using NonTerminalTermsType = SafeTermsType< 
 	            TermBuilderType::NoPriority, 

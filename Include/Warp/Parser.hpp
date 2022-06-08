@@ -64,6 +64,7 @@ namespace Warp::Parser
         using enum Parser::BooleanOperator;
         using enum Parser::ComparisonOperator;
         using enum Parser::FunctionOperators;
+		using enum Parser::MetaOperators;
 
         template< auto ParameterConstant >
         constexpr const static auto term = TermsType::template get_term< ParameterConstant >();
@@ -510,10 +511,14 @@ namespace Warp::Parser
                                                 factor, 
                                                 call 
                                             );
-                                    }
+                                    }//, 
 
-                        ////////////////////////////////  ////////////////////////////////                        
+                        //////////////////////////////// Meta ////////////////////////////////
 
+					//	non_terminal_term< MetaOperator >( term< Identifier > ) 
+					//			>= []( auto identifier ) {
+					//					return meta;
+					//			}
                 )
         );
     };

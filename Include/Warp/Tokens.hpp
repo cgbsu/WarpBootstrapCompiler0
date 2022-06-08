@@ -18,6 +18,7 @@ namespace Warp::Parser
     constexpr static const char comma_token = ',';
     constexpr static const char at_symbol = '@';
     constexpr static const char hash_symbol = '#';
+	constexpr static const char dot_symbol = '.';
 
     constexpr static const char open_parenthesis_token = '(';
     constexpr static const char close_parenthesis_token = ')';
@@ -89,6 +90,12 @@ namespace Warp::Parser
     };
 
     static const std::string function_result_as_string = "@";
+
+	enum class MetaOperators {
+		MetaOperator = hash_symbol, 
+		AccessOperator = dot_symbol 
+	};
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_TOKENS_HPP
+
