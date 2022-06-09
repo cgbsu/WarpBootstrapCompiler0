@@ -418,6 +418,7 @@ namespace Warp::Parser
 	                FactorMultiply, 
 	                FactorDivide 
 	            >::AddOnePriority< 
+				'$', 
 	                    BiCondition, 
 	                    Implies 
 	                >::AddOnePriority< 

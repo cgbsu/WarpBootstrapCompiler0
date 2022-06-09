@@ -84,6 +84,21 @@ namespace Warp::Parser
                     function.input_constraints 
                 };
         }
+		
+
+		// Could the problem be static linkage ? Perhapse if I moved some of this outside the class it would work? //
+		consteval const static auto make_my_rules() {
+			return ctpg::rules( 
+					non_terminal_term< Factor >( term< '$' > ) 
+						>= []( auto ) {
+							return std::move( Utilities::allocate_integral_literal_node< ResolvedType< NaturalNumber > >( std::string{ "42" } ) );
+						}, 
+					non_terminal_term< Factor >( term< '$' >, term< '$' > ) 
+						>= []( auto, auto ) {
+							return std::move( Utilities::allocate_integral_literal_node< ResolvedType< NaturalNumber > >( std::string{ "64" } ) );
+						} 
+				);
+		}
 
         // template< auto NodeTagParameterConstant >
         // constexpr static auto factorsubsume_function_alternative_expression( auto function, auto factor )
@@ -92,7 +107,9 @@ namespace Warp::Parser
                 non_terminal_term< ReduceTo >, 
                 terms, 
                 non_terminal_terms, 
-                ctpg::rules( 
+				make_my_rules() 
+			);
+                /*std::tuple_cat( ctpg::rules( 
 
                         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         // CTPG Makes it very hard to seperate all these out (see: https://github.com/peter-winter/ctpg/issues/46 ) //
@@ -110,7 +127,10 @@ namespace Warp::Parser
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_COMPARISON_EXPRESSIONS, 
                         WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_PARAMETERS, 
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_DEFEINITIONS,  
-						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_CALLS 
+						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_CALLS,  
+					), 
+					make_my_rules() 
+				) );*/
 
                         //////////////////////////////// Meta ////////////////////////////////
 
@@ -118,8 +138,6 @@ namespace Warp::Parser
 					//			>= []( auto identifier ) {
 					//					return meta;
 					//			}
-                )
-        );
     };
     using DefaultParserType = typename Warp::Parser::WarpParser< 
             Warp::Parser::DefaultTypes, 
