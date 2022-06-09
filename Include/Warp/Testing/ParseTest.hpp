@@ -1,5 +1,5 @@
 // On purpose. //
-#include <Warp/Parser.hpp>
+#include <Warp/Parsing/Parser.hpp>
 #include <Warp/Parse.hpp>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_TEST_HPP

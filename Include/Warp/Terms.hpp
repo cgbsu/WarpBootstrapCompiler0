@@ -421,6 +421,7 @@ namespace Warp::Parser
 	                FactorMultiply, 
 	                FactorDivide 
 	            >::AddOnePriority< 
+				'$', 
 	                    BiCondition, 
 	                    Implies 
 	                >::AddOnePriority< 
@@ -442,7 +443,7 @@ namespace Warp::Parser
 	                                            FunctionParameterConstaraint, 
 												AccessOperator 
 	                                        >::AddOnePriority< 
-	                                                FunctionParameterNextParameter, 
+	                                                FunctionParameterNextParameter 
 	                                            >::AddOnePriority<
 	                                                    Identifier 
 	                                                >::AddOnePriority< 

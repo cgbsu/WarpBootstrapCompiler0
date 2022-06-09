@@ -1,4 +1,4 @@
-#include <Warp/Parser.hpp>
+#include <Warp/Parsing/Parser.hpp>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_HPP
