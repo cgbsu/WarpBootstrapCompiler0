@@ -108,8 +108,8 @@ namespace Warp::AbstractSyntaxTree
 	template<>
     struct Node< NodeType::Unconstrained >;
 
-	template<>
-	struct Node< Warp::Parser::MetaOperators::MetaOperator >;
+	//template<>
+	//struct Node< Warp::Parser::MetaOperators::MetaOperator >;
 
     // It would be nice if I did not have to forward declare all of these 🤔 <-- also thats teh first time I have used an unicode emojii in C++ 😊 //
     using InternalNodeVariantType = Utilities::AutoVariant< 
@@ -137,9 +137,9 @@ namespace Warp::AbstractSyntaxTree
 
             Node< Warp::Parser::FunctionOperators::FunctionResult >, 
             Node< NodeType::FunctionCall >, 
-            Node< NodeType::Unconstrained >
+            Node< NodeType::Unconstrained >//, 
 
-			Node< Warp::Parser::MetaOperators::MetaOperator >;
+			//Node< Warp::Parser::MetaOperators::MetaOperator >
 
         >;
 

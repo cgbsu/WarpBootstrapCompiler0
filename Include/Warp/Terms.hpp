@@ -227,7 +227,7 @@ namespace Warp::Parser
     // NO PRIORITY //
 
     enum class TermBuilderType {
-        NoPriority
+        NoPriority = -1
     };
 
     template< 
@@ -334,11 +334,14 @@ namespace Warp::Parser
                         TermBuilderType,  \
                         decltype( OffsetParameterConstant )  \
                     >::value, \
-                OffsetParameterConstant  \
+                OffsetParameterConstant \
             >::value; \
-        template< auto OffsetParameterConstant, auto... NextTermsParameterConstants > \
-        using AddToPriority = typename ThisType::Next< \
+        template< auto OffsetParameterConstant > \
+        using AddToPriorityNext = typename ThisType::Next< \
                     add_priorities< OffsetParameterConstant > \
+			>; \
+        template< auto OffsetParameterConstant, auto... NextTermsParameterConstants > \
+        using AddToPriority = typename AddToPriorityNext< OffsetParameterConstant \
                 >::TermsType<  \
                     NextTermsParameterConstants...  \
                 >; \

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.12)
 project(StarterCompiler)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 add_compile_options(-fconstexpr-ops-limit=3355443299)#-g  -ggdb) #-fsanitize=leak) #-fsanitize=address)
 #add_compile_options(-fdiagnostics-format=json -fdiagnostics-show-template-tree  -fdiagnostics-column-origin=1 -fdiagnostics-parseable-fixits -fdiagnostics-path-format=inline-events -fdiagnostics-show-path-depths)
