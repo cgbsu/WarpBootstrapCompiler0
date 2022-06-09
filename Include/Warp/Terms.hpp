@@ -439,7 +439,7 @@ namespace Warp::Parser
 	                                            FunctionParameterConstaraint, 
 												AccessOperator 
 	                                        >::AddOnePriority< 
-	                                                FunctionParameterNextParameter, 
+	                                                FunctionParameterNextParameter 
 	                                            >::AddOnePriority<
 	                                                    Identifier 
 	                                                >::AddOnePriority< 
