@@ -1,4 +1,4 @@
-#include <Warp/Terms.hpp>
+#include <Warp/Parsing/Terms.hpp>
 #include <ctpg/ctpg.hpp>
 #include <Warp/Parsing/Literals.hpp>
 #include <Warp/Parsing/Arithmatic.hpp>
