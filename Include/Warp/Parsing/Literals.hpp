@@ -5,55 +5,84 @@
 
 namespace Warp::Parser
 {
-	// For the reason this file exists see: https://github.com/peter-winter/ctpg/issues/46 //
-	
-	
-	template< auto TypeParameterConstant >
+	template< 
+			auto TypeParameterConstant, 
+			typename ParserParameterType 
+		>
 	struct LiteralGenerator {
 		LiteralGenerator() = delete;
 	};
 	
-	template<>
-	struct LiteralGenerator< FunctionResult >
+	template< typename ParserParameterType >
+	struct LiteralGenerator< 
+			FunctionOperators::FunctionResult, 
+			ParserParameterType 
+		> 
 	{
 		static constexpr auto generate_literal( auto token ) {
-			return std::move( Warp::Utilities::allocate_node< FunctionResult >() );
+			return std::move( Warp::Utilities::allocate_node< 
+					FunctionOperators::FunctionResult
+					//NonTerminalTerms::WarpFunctionAlternative 
+				>() );
 		}
 	};
 	
-	template<>
-	struct LiteralGenerator< Warp::AbstractSyntaxTree::NodeType::Identifier >
+	template< typename ParserParameterType >
+	struct LiteralGenerator< 
+			RegexLiteralTerms::Identifier, 
+			ParserParameterType 
+		> 
 	{
 		static constexpr auto generate_literal( auto token )
 		{
 			return std::move( Warp::Utilities::allocate_node< 
-			                Warp::AbstractSyntaxTree::NodeType::Identifier 
-			        >( token ) );
+			        Warp::AbstractSyntaxTree::NodeType::Identifier 
+			    >( token ) );
 		}
 	};
 	
-	template<>
-	struct LiteralGenerator< Warp::Parser::RegexLiteralTerms::NaturalNumber > 
+	template< typename ParserParameterType >
+	struct LiteralGenerator< 
+			RegexLiteralTerms::NaturalNumber, 
+			ParserParameterType 
+		> 
 	{
 		static constexpr auto generate_literal( auto token )
 		{
 		    return std::move( Warp::Utilities::allocate_integral_literal_node< 
-					ResolvedType< NaturalNumber > 
+					typename ParserParameterType::ResolvedType< RegexLiteralTerms::NaturalNumber >
 				>( token ) );
 		}
 	};
 
+	template< typename ParserParameterType >
+	struct LiteralGenerator< 
+			RegexLiteralTerms::BooleanLiteral, 
+			ParserParameterType 
+		> 
+	{
+		static constexpr auto generate_literal( auto token ) {
+		    return Warp::Utilities::allocate_boolean_literal_node( token );
+		}
+	};
+
 	template< 
-			typename TermsParameterType, 
-			typename NonTerminalParameterTypes, 
+			typename ParserParameterType, 
 			auto ProductionTypeParameterConstant, 
-			auto... TokenTypeParameterConstants 
+			auto TokenTypeParameterConstants 
 		>
-	consteval auto make_literal_rule()
+	constexpr auto make_literal_rule()
 	{ 
-		return TermsParameterType< ProductionTypeParameterConstant >( NonTerminalParameterTypes< TokenTypeParameterConstants >... ) 
-				>= []( auto... tokens ) {
-					return LiteralGenerator< ProductionTypeParameterConstant >( tokens... );
+		using ParserType = ParserParameterType;
+		return ParserType::template non_terminal_term< ProductionTypeParameterConstant >( 
+						ParserType::template term< TokenTypeParameterConstants > ) 
+				>= []( auto tokens ) 
+				{
+					//constexpr const auto token = Warp::Utilities::TakeFirst< TokenTypeParameterConstants... >::first;
+					return LiteralGenerator< 
+							TokenTypeParameterConstants, 
+							ParserType
+						>{}.generate_literal( tokens );
 				};
 	}
 		/*non_terminal_term< Factor >( term< FunctionResult > ) \

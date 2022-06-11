@@ -27,6 +27,12 @@ namespace Warp::Parser
     {
 		using TermsType = TermsParameterType;
 		using NonTerminalTermsType = NonTerminalTermsParameterType;
+		using ThisType = WarpParser< 
+				TypeResolverParameterType, 
+				ReduceTo, 
+				TermsParameterType, 
+				NonTerminalTermsParameterType 
+			>;
 		
         using enum Parser::ExpressionOperator;
         using enum Parser::ScopeOperators;
@@ -39,10 +45,12 @@ namespace Warp::Parser
 		using enum Parser::MetaOperators;
 
         template< auto ParameterConstant >
-        constexpr const static auto term = TermsType::template get_term< ParameterConstant >();
+        constexpr const static auto term 
+				= TermsType::template get_term< ParameterConstant >();
 
         template< auto ParameterConstant >
-        constexpr const static auto non_terminal_term = NonTerminalTermsType::template get_term< ParameterConstant >();
+        constexpr const static auto non_terminal_term 
+				= NonTerminalTermsType::template get_term< ParameterConstant >();
 
         constexpr static const auto terms = TermsType::to_tuple();
         constexpr static const auto non_terminal_terms = NonTerminalTermsType::to_tuple();
@@ -84,22 +92,12 @@ namespace Warp::Parser
                     function.input_constraints 
                 };
         }
+
+		constexpr const static auto nn = make_literal_rule< ThisType, Factor, NaturalNumber >();
+		constexpr const static auto iii = make_literal_rule< ThisType, Factor, Identifier >();
+		constexpr const static auto bb = make_literal_rule< ThisType, Factor, BooleanLiteral >();
+		constexpr const static auto rr = make_literal_rule< ThisType, Factor, FunctionResult >();
 		
-
-		// Could the problem be static linkage ? Perhapse if I moved some of this outside the class it would work? //
-		consteval const static auto make_my_rules() {
-			return ctpg::rules( 
-					non_terminal_term< Factor >( term< '$' > ) 
-						>= []( auto ) {
-							return std::move( Utilities::allocate_integral_literal_node< ResolvedType< NaturalNumber > >( std::string{ "42" } ) );
-						}, 
-					non_terminal_term< Factor >( term< '$' >, term< '$' > ) 
-						>= []( auto, auto ) {
-							return std::move( Utilities::allocate_integral_literal_node< ResolvedType< NaturalNumber > >( std::string{ "64" } ) );
-						} 
-				);
-		}
-
         // template< auto NodeTagParameterConstant >
         // constexpr static auto factorsubsume_function_alternative_expression( auto function, auto factor )
         
@@ -107,9 +105,7 @@ namespace Warp::Parser
                 non_terminal_term< ReduceTo >, 
                 terms, 
                 non_terminal_terms, 
-				make_my_rules() 
-			);
-                /*std::tuple_cat( ctpg::rules( 
+                ctpg::rules( 
 
                         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
                         // CTPG Makes it very hard to seperate all these out (see: https://github.com/peter-winter/ctpg/issues/46 ) //
@@ -117,8 +113,9 @@ namespace Warp::Parser
                         // yet figured out how to generate rules externally and automatically, so please excuese the macros and //////
                         // crummy code overall here, I will just have to document it a bit. //////////////////////////////////////////
                         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+						nn, iii, bb, rr, 
 
-						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_LITERALS,  
+						// WARP_BOOTSTRAP_COMPILER_PARSER_RULES_LITERALS,  
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_CONSUME_VALUES,  
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_PRODUCTS,  
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_PARENTHESIS,  
@@ -127,17 +124,8 @@ namespace Warp::Parser
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_COMPARISON_EXPRESSIONS, 
                         WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_PARAMETERS, 
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_DEFEINITIONS,  
-						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_CALLS,  
-					), 
-					make_my_rules() 
-				) );*/
-
-                        //////////////////////////////// Meta ////////////////////////////////
-
-					//	non_terminal_term< MetaOperator >( term< Identifier > ) 
-					//			>= []( auto identifier ) {
-					//					return meta;
-					//			}
+						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_CALLS  
+				) );
     };
     using DefaultParserType = typename Warp::Parser::WarpParser< 
             Warp::Parser::DefaultTypes, 

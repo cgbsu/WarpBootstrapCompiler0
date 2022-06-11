@@ -9,8 +9,13 @@ namespace Warp::Utilities
     template< auto FirstConstantParameter, auto... SeriesConstantParameters >
     struct TakeOneFromTemplateSeries {
         constexpr static auto first = FirstConstantParameter;
-        using NextType = TakeOneFromTemplateSeries< SeriesConstantParameters... >;
+		using NextType = TakeOneFromTemplateSeries< SeriesConstantParameters... >;
     };
+
+    template< auto FirstConstantParameter, auto... SeriesConstantParameters >
+    struct TakeFirst {
+        constexpr static auto first = FirstConstantParameter;
+	};
 
     template< auto... ElementParameterConstants >
     struct RawTemplateArray

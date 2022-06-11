@@ -360,14 +360,17 @@ namespace Warp::Parser
         template< auto TermParameterConstant > \
         constexpr static auto get_term() \
         { \
+			using HasConstantType = \
+					Warp::Utilities::template HasConstant< \
+        		           TermParameterConstant, \
+        		           TermParameterConstants... \
+        		       >; \
+            constexpr const auto has_constant = HasConstantType::value; \
             return TermGetter< \
                     PREVIOUS_TYPE, \
                     PriorityParameterConstant, \
                     TermParameterConstant, \
-                    Warp::Utilities::HasConstant< \
-                            TermParameterConstant, \
-                            TermParameterConstants... \
-                        >::value \
+					has_constant \
                 >::term; \
         } 
 
