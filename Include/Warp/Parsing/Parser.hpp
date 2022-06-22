@@ -93,10 +93,6 @@ namespace Warp::Parser
                 };
         }
 
-		constexpr const static auto nn = make_literal_rule< ThisType, Factor, NaturalNumber >();
-		constexpr const static auto iii = make_literal_rule< ThisType, Factor, Identifier >();
-		constexpr const static auto bb = make_literal_rule< ThisType, Factor, BooleanLiteral >();
-		constexpr const static auto rr = make_literal_rule< ThisType, Factor, FunctionResult >();
 		
         // template< auto NodeTagParameterConstant >
         // constexpr static auto factorsubsume_function_alternative_expression( auto function, auto factor )
@@ -113,7 +109,10 @@ namespace Warp::Parser
                         // yet figured out how to generate rules externally and automatically, so please excuese the macros and //////
                         // crummy code overall here, I will just have to document it a bit. //////////////////////////////////////////
                         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-						nn, iii, bb, rr, 
+						make_literal_rule< ThisType, Factor, NaturalNumber >(), 
+						make_literal_rule< ThisType, Factor, Identifier >(), 
+						make_literal_rule< ThisType, Factor, BooleanLiteral >(), 
+						make_literal_rule< ThisType, Factor, FunctionResult >(), 
 
 						// WARP_BOOTSTRAP_COMPILER_PARSER_RULES_LITERALS,  
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_CONSUME_VALUES,  
