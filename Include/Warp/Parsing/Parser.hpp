@@ -113,8 +113,6 @@ namespace Warp::Parser
 						make_literal_rule< ThisType, Factor, Identifier >(), 
 						make_literal_rule< ThisType, Factor, BooleanLiteral >(), 
 						make_literal_rule< ThisType, Factor, FunctionResult >(), 
-
-						// WARP_BOOTSTRAP_COMPILER_PARSER_RULES_LITERALS,  
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_CONSUME_VALUES,  
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_PRODUCTS,  
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_PARENTHESIS,  

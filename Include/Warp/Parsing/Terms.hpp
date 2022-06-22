@@ -50,9 +50,11 @@ namespace Warp::Parser
         Implies = 5, 
         GreaterThanOrEqualTo = 6, 
         LessThanOrEqualTo = 7, 
-        FunctionDefinitionOperator = 8, 
+        ScopeResolutionOperator = 8, 
         KeywordLet = 9, 
-        KeywordRuntime = 10 
+        KeywordRuntime = 10, 
+		KeywordModule = 11, 
+		KeywordImport = 12 
     };
 
     #define LITERAL_REGEX_TERM( TYPE, REGEX ) \
@@ -99,22 +101,6 @@ namespace Warp::Parser
         Warp::CompilerRuntime::CallType call;
     };
 
-    struct ProtoCall
-    {
-        Warp::Utilities::HashedStringType identifier;
-        Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType > arguments;
-        ExpressionOperator expression_type;
-        Warp::AbstractSyntaxTree::NodeVariantType left_factor;
-        constexpr ProtoCall( 
-                Warp::Utilities::HashedStringType identifier, 
-                Warp::Utilities::VectorType< Warp::AbstractSyntaxTree::NodeVariantType > arguments, 
-                Warp::AbstractSyntaxTree::NodeVariantType left_factor = Warp::AbstractSyntaxTree::NodeVariantType{}, 
-                ExpressionOperator expression_type = ExpressionOperator::FactorMultiply 
-            ) noexcept : 
-                identifier( identifier ), arguments( arguments ), left_factor( left_factor ), expression_type( expression_type ) {}
-
-    };
-
     // For testing regexes for this program and many others, and for learning, thank you too https://regexr.com/ //
     LITERAL_REGEX_TERM( NaturalNumber, "[0-9][0-9]*" );
     LITERAL_REGEX_TERM( Identifier, "[a-zA-Z\\_][a-zA-Z0-9\\_]*" );
@@ -130,10 +116,6 @@ namespace Warp::Parser
 
     NON_TERMINAL_TERM( Name, std::string );
 
-    // NON_TERMINAL_TERM( Bipper, Warp::AbstractSyntaxTree::NodeVariantType );
-
-    // NON_TERMINAL_TERM( Call, Warp::AbstractSyntaxTree::NodeVariantType ); 
-    // NON_TERMINAL_TERM( Call, ProtoCall );
     NON_TERMINAL_TERM( Call, Warp::CompilerRuntime::CallType );
     NON_TERMINAL_TERM( CallArguments, Warp::CompilerRuntime::CallType );
     // NON_TERMINAL_TERM( CompleteCall, Warp::CompilerRuntime::CallType );
@@ -144,7 +126,6 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( ParameterList, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( Arguments, Warp::CompilerRuntime::IntermediateFunctionAlternative );
     NON_TERMINAL_TERM( ExpressionEater, Warp::CompilerRuntime::FunctionAlternative );
-    // NON_TERMINAL_TERM( SumExpressionEater, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( CallEater, CallEaterCarrier );
     NON_TERMINAL_TERM( WarpFunctionAlternative, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( WarpFunction, Warp::CompilerRuntime::Function );
@@ -155,9 +136,11 @@ namespace Warp::Parser
     STRING_TERM( Implies, "->" );
     STRING_TERM( GreaterThanOrEqualTo, ">=" );
     STRING_TERM( LessThanOrEqualTo, "<=" );
-    STRING_TERM( FunctionDefinitionOperator, "::" );
+    STRING_TERM( ScopeResolutionOperator, "::" );
     STRING_TERM( KeywordLet, "let" );
     STRING_TERM( KeywordRuntime, "runtime" );
+    STRING_TERM( KeywordModule, "module" );
+    STRING_TERM( KeywordImport, "import" );
 
     // There are better ways to do this than using the types of the enums, but this is quick. //
 
@@ -456,9 +439,9 @@ namespace Warp::Parser
 															>::AddOnePriority< 
 																	MetaOperator 
 	                                                        >::NoPriority< 
+																		ScopeResolutionOperator, 
 																		BooleanLiteral, 
 	                                                                	NaturalNumber, 
-	                                                                	FunctionDefinitionOperator, 
 	                                                                	FunctionResult//, 
 	                                                               	>; // I feel like Im writing python here 0.0 //
 	

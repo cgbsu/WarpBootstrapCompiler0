@@ -63,7 +63,7 @@
 	        }
 
 #define WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_DEFEINITIONS \
-	non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, term< FunctionDefinitionOperator >, non_terminal_term< Expression > ) \
+	non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, term< ScopeResolutionOperator >, non_terminal_term< Expression > ) \
 	        >= []( auto arguments, auto, auto expression ) \
 	        { \
 	            return Warp::CompilerRuntime::FunctionAlternative{  \
@@ -75,7 +75,7 @@
 	                /* dependancies would go here */ \
 	            }; \
 	        },  \
-	non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, non_terminal_term< Comparison >, term< FunctionDefinitionOperator >, non_terminal_term< Expression > ) \
+	non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, non_terminal_term< Comparison >, term< ScopeResolutionOperator >, non_terminal_term< Expression > ) \
 	        >= []( auto arguments, auto return_constraint, auto, auto expression ) \
 	        { \
 	            return Warp::CompilerRuntime::FunctionAlternative{  \
@@ -87,7 +87,7 @@
 	                /* dependancies would go here */ \
 	            }; \
 	        },  \
-	non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, non_terminal_term< LogicalOperation >, term< FunctionDefinitionOperator >, non_terminal_term< Expression > ) \
+	non_terminal_term< ExpressionEater >( non_terminal_term< Arguments >, non_terminal_term< LogicalOperation >, term< ScopeResolutionOperator >, non_terminal_term< Expression > ) \
 	        >= []( auto arguments, auto return_constraint, auto, auto expression ) \
 	        { \
 	            return Warp::CompilerRuntime::FunctionAlternative{  \
