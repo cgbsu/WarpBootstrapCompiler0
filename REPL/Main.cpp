@@ -26,6 +26,10 @@ int main( int argc, char** args )
             Warp::Parser::DefaultTypes, 
             Warp::Parser::NonTerminalTerms::Factor 
         >::parser;
+    //const auto& module_declaration_parser = Warp::Parser::WarpParser< 
+	//		Warp::Parser::DefaultTypes, 
+	//		Warp::Parser::NonTerminalTerms::ModuleDeclaration 
+	//	>::parser;
     std::vector< std::string > log;
     auto main_module = Warp::Parser::parse( parser, module_source_code );
     for( std::string input; input != "thanks :)"; )
@@ -60,6 +64,11 @@ int main( int argc, char** args )
                 );
             std::cout << "Added alternative to module.\n";
         }
+        //else if( auto parse_result = module_declaration_parser.parse( ctpg::buffers::string_buffer( input.c_str() ), parse_error_stream ); 
+        //        parse_result.has_value() == true )
+		//{
+        //    auto module_declaration_pointer = parse_result.value();
+		//}
         else if( input == exit ) {
             std::cout << "Have a nice day :)\n";
             break;

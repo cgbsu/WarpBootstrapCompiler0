@@ -2,6 +2,7 @@
 
 namespace Warp::CompilerRuntime
 {
+	Module::Module( std::filesystem::path full_path ) : name( full_path.stem() ), full_path( full_path ) {}
     std::optional< size_t > Module::find_function_index_in_module( std::string function_name )
     {
         const size_t number_of_functions = functions.size();

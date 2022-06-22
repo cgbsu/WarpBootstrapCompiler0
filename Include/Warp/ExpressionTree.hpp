@@ -16,7 +16,8 @@ namespace Warp::AbstractSyntaxTree
         Identifier = 'I', 
         BooleanLiteral = 'b', 
         Unconstrained = 'U', 
-        FunctionCall = 'c' 
+        FunctionCall = 'c', 
+		ModuleDeclaration = 'M'
     };
 
     template< typename... ArithmaticParameterTypes >
@@ -108,6 +109,9 @@ namespace Warp::AbstractSyntaxTree
 	template<>
     struct Node< NodeType::Unconstrained >;
 
+	template<>
+    struct Node< NodeType::ModuleDeclaration >;
+
 	//template<>
 	//struct Node< Warp::Parser::MetaOperators::MetaOperator >;
 
@@ -137,7 +141,9 @@ namespace Warp::AbstractSyntaxTree
 
             Node< Warp::Parser::FunctionOperators::FunctionResult >, 
             Node< NodeType::FunctionCall >, 
-            Node< NodeType::Unconstrained >//, 
+            Node< NodeType::Unconstrained >, 
+
+			Node< NodeType::ModuleDeclaration > 
 
 			//Node< Warp::Parser::MetaOperators::MetaOperator >
 
@@ -235,17 +241,11 @@ namespace Warp::AbstractSyntaxTree
     struct Node< NodeType::Identifier > : public BaseNode< NodeType::Identifier >
     {
         std::string string;
-        // const std::optional< Warp::Utilities::HeapStringType > string; // DO NOT CHANGE THE ORDER OF THESE MEMBERS, `value` may depend on the initialization `string` //
-        const Warp::Utilities::HashedStringType value; // DO NOT CHANGE THE ORDER OF THESE MEMBERS, `value` may depend on the initialization `string` //
-        // constexpr Node( Warp::Utilities::HashedStringType value ) noexcept : string( std::nullopt ), value( value ) {}
-        //constexpr 
-        Node( std::string_view value ) noexcept : string( value ), value( Warp::Utilities::hash_string( value ) ) {}        
-        // constexpr Node( const auto... name_characters ) noexcept 
-        //         : string( Warp::Utilities::HeapStringType{ name_characters... } ), // Class members initialized in order of declaration. //
-        //         value( Warp::Utilities::hash_string( string->to_string_view() ) ) {} // Class members initialized in order of declaration. //
-        //constexpr 
-        Node( Node< NodeType::Identifier > const& other ) noexcept : string( other.string ), value( other.value ) {}
-        // constexpr ~Node() = default;
+        const Warp::Utilities::HashedStringType value;
+        Node( std::string_view value ) noexcept 
+				: string( value ), value( Warp::Utilities::hash_string( value ) ) {}        
+        Node( Node< NodeType::Identifier > const& other ) noexcept 
+				: string( other.string ), value( other.value ) {}
     };
 
     template<>
@@ -254,16 +254,31 @@ namespace Warp::AbstractSyntaxTree
         Warp::Utilities::HashedStringType identifier;
         std::string function_name;
         std::vector< NodeVariantType > arguments;
-        // Warp::Utilities::VectorType< NodeVariantType > arguments;
         Node( 
                 Warp::Utilities::HashedStringType identifier, 
                 std::string function_name, 
                 std::vector< NodeVariantType > arguments 
-                // Warp::Utilities::VectorType< NodeVariantType >&& arguments 
-            ) noexcept : 
-                identifier( identifier ), function_name( function_name ), arguments( arguments ) {}
+            ) noexcept 
+				: identifier( identifier ), 
+				function_name( function_name ), 
+				arguments( arguments ) {}
         ~Node() = default;
     };
+
+	template<>
+	struct Node< NodeType::ModuleDeclaration > 
+			: public BaseNode< NodeType::ModuleDeclaration > 
+	{
+		std::vector< std::string > namespaces;
+		Node() = default;
+		Node( std::string_view base_name ) : namespaces( std::vector{ std::string{ base_name } } ) {};
+		Node( std::vector< std::string > namespaces ) : namespaces( namespaces ) {}
+		Node( const Node& node ) = default;
+		Node( Node&& node ) = default;
+
+		Node& operator=( const Node& node ) = default;
+		Node& operator=( Node&& node ) = default;
+	};
 
 
     #define DEFINE_UNARY_NODE_CUSTOM_OPERATION( OPERATION_TYPE, VALUE, OPERHAND_TYPE, CUSTOM_OPERATION ) \

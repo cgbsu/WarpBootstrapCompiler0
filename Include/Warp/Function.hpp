@@ -57,9 +57,12 @@ namespace Warp::CompilerRuntime
 
     struct Module
     {
+		std::string name;
+		std::filesystem::path full_path;
         std::vector< Function* > functions;
         // 2D vector by number of parameters, then actual entries. //
         std::vector< std::vector< LogEntry > > forward_input_log; // TODO: backward_propigation_log //
+		Module( std::filesystem::path full_path ); 
 		std::optional< size_t > find_function_index_in_module( std::string function_name );
 		std::optional< LogEntry > log_call( 
     	        const FunctionAlternative& caller, 
@@ -67,6 +70,14 @@ namespace Warp::CompilerRuntime
     	        const AbstractSyntaxTree::ValueType result 
     	    );
 	};
+
+	/*struct ModuleTree
+	{
+		std::optional< std::unique_ptr< Module > > add_sub_module( std::unique_ptr< Module >  module );
+		protected: 
+			std::unordered_map< std::string, ModuleTree > branches;
+			std::vector< std::unique_ptr< Module > > stems;
+	};*/
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_FUNCTION_HPP

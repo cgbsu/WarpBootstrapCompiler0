@@ -4,6 +4,7 @@
 #include <Warp/Parsing/Arithmatic.hpp>
 #include <Warp/Parsing/BooleanExpression.hpp>
 #include <Warp/Parsing/Functions.hpp>
+#include <Warp/Parsing/Modules.hpp>
 
 #ifndef WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP
 #define WARP_BOOTSTRAP_COMPILER_HEADER_PARSER_HPP
@@ -94,8 +95,6 @@ namespace Warp::Parser
         }
 
 		
-        // template< auto NodeTagParameterConstant >
-        // constexpr static auto factorsubsume_function_alternative_expression( auto function, auto factor )
         
         constexpr static const auto parser = ctpg::parser( 
                 non_terminal_term< ReduceTo >, 
@@ -121,8 +120,11 @@ namespace Warp::Parser
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_COMPARISON_EXPRESSIONS, 
                         WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_PARAMETERS, 
 						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_DEFEINITIONS,  
-						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_CALLS  
-				) );
+						WARP_BOOTSTRAP_COMPILER_PARSER_RULES_FUNCTION_CALLS,  
+						module_declare_rule< ThisType >(), 
+						module_declaration_rule< ThisType >() 
+					) 
+			);
     };
     using DefaultParserType = typename Warp::Parser::WarpParser< 
             Warp::Parser::DefaultTypes, 

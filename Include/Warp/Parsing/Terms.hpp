@@ -37,7 +37,9 @@ namespace Warp::Parser
         CompleteCall = 20, 
         Argument = 21, 
         ArgumentList = 22, 
-        Name = 23 
+        Name = 23, 
+		ModuleDeclaration = 24, 
+		ModuleNameDeclaration = 25 
     };
 
     enum class StringTerms
@@ -130,6 +132,8 @@ namespace Warp::Parser
     NON_TERMINAL_TERM( WarpFunctionAlternative, Warp::CompilerRuntime::FunctionAlternative );
     NON_TERMINAL_TERM( WarpFunction, Warp::CompilerRuntime::Function );
     NON_TERMINAL_TERM( WarpModule, Warp::CompilerRuntime::Module );
+    NON_TERMINAL_TERM( ModuleNameDeclaration, Warp::AbstractSyntaxTree::NodeVariantType );
+    NON_TERMINAL_TERM( ModuleDeclaration, Warp::AbstractSyntaxTree::NodeVariantType );
     STRING_TERM( And, "&&" );
     STRING_TERM( Or, "||" );
     STRING_TERM( BiCondition, "<->" );
@@ -407,7 +411,6 @@ namespace Warp::Parser
 	                FactorMultiply, 
 	                FactorDivide 
 	            >::AddOnePriority< 
-				'$', 
 	                    BiCondition, 
 	                    Implies 
 	                >::AddOnePriority< 
@@ -439,6 +442,8 @@ namespace Warp::Parser
 															>::AddOnePriority< 
 																	MetaOperator 
 	                                                        >::NoPriority< 
+																		KeywordImport, 
+																		KeywordModule, 
 																		ScopeResolutionOperator, 
 																		BooleanLiteral, 
 	                                                                	NaturalNumber, 
@@ -468,7 +473,9 @@ namespace Warp::Parser
 	            Expression, 
 	            ExpressionEater, 
 	            Argument, 
-	            ArgumentList 
+	            ArgumentList, 
+				ModuleDeclaration, 
+				ModuleNameDeclaration 
 	        >;
 	}	
 }

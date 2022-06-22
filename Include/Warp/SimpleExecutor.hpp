@@ -29,7 +29,7 @@ namespace Warp::CompilerRuntime
         ExtractNodeType( const Warp::AbstractSyntaxTree::Node< NodeTypeParameterConstant >& ) {}
     };
 
-    Function* function_from_module( const Module& to_search, std::string name );
+	Function* function_from_module( const Module& to_search, std::string name );
 
     CallFrameType map_call_frame_no_check( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
@@ -353,6 +353,21 @@ namespace Warp::CompilerRuntime
             return OptionalValueType{ true };
         }
     };
+
+    template< typename OutputParameterType >
+    struct Executor< OutputParameterType, Warp::AbstractSyntaxTree::NodeType::ModuleDeclaration >
+    {
+        static OutputParameterType compute_value_of_expression( 
+                const Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::ModuleDeclaration >& node, 
+                const CallFrameType& call_frame, 
+                std::vector< std::string >& log, 
+                std::optional< Module >& module, 
+                auto... additional_arguments 
+            )
+		{
+            return OptionalValueType{ false };
+		}
+	};
 
     template< typename ReturnParameterType = AbstractSyntaxTree::ValueType >
     std::optional< ReturnParameterType > evaluate_expression( 

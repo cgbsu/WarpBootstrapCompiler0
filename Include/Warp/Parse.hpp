@@ -31,14 +31,17 @@ namespace Warp::Parser
 {
     std::string break_code( std::string source_code, const char deliminator );
 
+	const static std::filesystem::path default_module_path = std::filesystem::path( "main" );
+
     Warp::CompilerRuntime::Module parse( 
             const auto& parser, 
             std::string module_source_code, 
+			std::filesystem::path module_name = default_module_path, 
             const char deliminator = Warp::Utilities::to_char( FunctionOperators::FunctionDefintionComplete ), 
-            ctpg::parse_options parser_options = ctpg::parse_options{} 
+            ctpg::parse_options parser_options = ctpg::parse_options{}
         )
     {
-        Warp::CompilerRuntime::Module new_module;
+        Warp::CompilerRuntime::Module new_module( module_name );
         const size_t code_length = module_source_code.size();
         for( size_t ii = 0; ii < code_length; )
         {
