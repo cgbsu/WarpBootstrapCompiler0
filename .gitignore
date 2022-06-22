@@ -1,2 +1,4 @@
 build/
 dev_env_controller/
+.codium/
+/Source/build/
