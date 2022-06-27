@@ -4,9 +4,9 @@ namespace Warp::CompilerRuntime
 {
     Function* function_from_module( const Module& to_search, std::string name )
     {
-        for( Function* function : to_search.functions ) {
+        for( auto& function : to_search.functions ) {
             if( function->name == name )
-                return function;
+                return function.get();
         }
         return nullptr;
     }

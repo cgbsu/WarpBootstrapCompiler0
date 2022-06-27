@@ -51,13 +51,13 @@ namespace Warp::CompilerRuntime
         )
     {
         bool found_function = false;
-        for( Function* function : to_append.functions )
+        for( auto& function : to_append.functions )
         {
             if( function->name == new_alternative.name )
             {
                 return FunctionWithAltenativeProxy{ 
-                        *function, 
-                        add_new_alternative_to_function( *function, new_alternative ) 
+                        *function.get(), 
+                        add_new_alternative_to_function( *function.get(), new_alternative ) 
                     };
             }
         }

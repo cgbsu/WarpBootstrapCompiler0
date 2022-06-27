@@ -59,7 +59,7 @@ namespace Warp::CompilerRuntime
     {
 		std::string name;
 		std::filesystem::path full_path;
-        std::vector< Function* > functions;
+        std::vector< std::unique_ptr< Function > > functions;
         // 2D vector by number of parameters, then actual entries. //
         std::vector< std::vector< LogEntry > > forward_input_log; // TODO: backward_propigation_log //
 		Module( std::filesystem::path full_path ); 
