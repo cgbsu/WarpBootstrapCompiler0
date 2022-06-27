@@ -29,7 +29,7 @@ namespace Warp::CompilerRuntime
         ExtractNodeType( const Warp::AbstractSyntaxTree::Node< NodeTypeParameterConstant >& ) {}
     };
 
-	Function* function_from_module( const Module& to_search, std::string name );
+    Function* function_from_module( const Module& to_search, std::string name );
 
     CallFrameType map_call_frame_no_check( 
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
