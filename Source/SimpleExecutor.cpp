@@ -56,14 +56,14 @@ namespace Warp::CompilerRuntime
             const Warp::AbstractSyntaxTree::NodeVariantType& constraint, 
             const CallFrameType& argument_values, 
             std::vector< std::string >& log, 
-            std::optional< Module >& module 
+            std::vector< Module* >& modules 
         ) 
     {
         auto result = abstract_syntax_tree_callback< Executor, OptionalValueType >( 
                 constraint, 
                 argument_values, 
                 log, 
-                module
+                modules
             );
         if( result.has_value() == false )
         {
@@ -101,7 +101,7 @@ namespace Warp::CompilerRuntime
             const Warp::CompilerRuntime::FunctionAlternative& alternative, 
             const std::vector< AbstractSyntaxTree::ValueType >& values, 
             std::vector< std::string >& log, 
-            std::optional< Module >& module  
+            std::vector< Module* >& modules  
         )
     {
         auto call_frame = map_call_frame( alternative, values );
@@ -109,9 +109,15 @@ namespace Warp::CompilerRuntime
         {
             debug_print( log, std::to_string( satisfied ) );
             const auto& call_frame_result = call_frame.value();
-            for( auto& parameter : alternative.input_constraints ) {
+            for( auto& parameter : alternative.input_constraints )
+			{
                 debug_print( log, std::string{ " && " } );
-                satisfied = satisfied && satisfies_constraint( parameter.constraints, call_frame_result, log, module );
+                satisfied = satisfied && satisfies_constraint( 
+						parameter.constraints, 
+						call_frame_result, 
+						log, 
+						modules 
+					);
             }
             return satisfied;
         }
@@ -123,13 +129,19 @@ namespace Warp::CompilerRuntime
             const std::vector< AbstractSyntaxTree::ValueType >& values, 
             AbstractSyntaxTree::ValueType result, 
             std::vector< std::string >& log, 
-            std::optional< Module >& module  
+            std::vector< Module* >& modules  
         )
     {
         auto call_frame = map_call_frame( alternative, values, result );
-        if( bool satisfied = call_frame.has_value(); satisfied == true ) {
+        if( bool satisfied = call_frame.has_value(); satisfied == true )
+		{
             const auto& call_frame_result = call_frame.value();
-            return satisfied && satisfies_constraint( alternative.return_constraint, call_frame_result, log, module );
+            return satisfied && satisfies_constraint( 
+					alternative.return_constraint, 
+					call_frame_result, 
+					log, 
+					modules 
+				);
         }
         return false;
     }

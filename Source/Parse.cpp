@@ -12,11 +12,15 @@ namespace Warp::CompilerRuntime
         const size_t original_size = function.alternatives.size();
         if( original_size < number_of_parameters )
         {
-            function.alternatives.resize( number_of_parameters + 1 );
             for( size_t ii = original_size; 
-                    ii < number_of_parameters + 1; 
-                    function.alternatives[ ii++ ].number_of_parameters = ii 
-                );
+					ii < number_of_parameters + 1;
+					function.alternatives.emplace_back( function, ii++ )
+				);
+            //function.alternatives.resize( number_of_parameters + 1 );
+            //for( size_t ii = original_size; 
+            //        ii < number_of_parameters + 1; 
+            //        function.alternatives[ ii++ ].number_of_parameters = ii 
+            //    );
         }
         return *function.alternatives[ number_of_parameters ].alternatives.emplace_back( 
                 new Warp::CompilerRuntime::FunctionAlternative{ 
@@ -24,7 +28,8 @@ namespace Warp::CompilerRuntime
                         new_alternative.expression, 
                         new_alternative.return_constraint, 
                         new_alternative.input_constraints, 
-                        new_alternative.name 
+                        new_alternative.name, 
+						function.alternatives[ number_of_parameters ] 
                     }
             );
     }
@@ -37,8 +42,9 @@ namespace Warp::CompilerRuntime
         Warp::CompilerRuntime::Function& new_function = *to_append.functions.emplace_back( 
                 new Warp::CompilerRuntime::Function{ 
                         new_alternative.identifier, 
-                        new_alternative.name//, 
-                        // std::vector< FunctionAlternatives >{} 
+                        new_alternative.name, 
+						to_append
+                        //std::vector< FunctionAlternatives >{} 
                     } 
             );
         return FunctionWithAltenativeProxy{ new_function, add_new_alternative_to_function( new_function, new_alternative ) };

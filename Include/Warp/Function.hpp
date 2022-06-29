@@ -5,7 +5,9 @@
 
 namespace Warp::CompilerRuntime
 {
-    using CallType = Warp::AbstractSyntaxTree::Node< Warp::AbstractSyntaxTree::NodeType::FunctionCall >;
+    using CallType = Warp::AbstractSyntaxTree::Node< 
+			Warp::AbstractSyntaxTree::NodeType::FunctionCall 
+		>;
 
     struct Function;
 
@@ -23,6 +25,9 @@ namespace Warp::CompilerRuntime
         std::vector< Parameter > input_constraints;
     };
 
+    struct FunctionAlternatives;
+	struct Module;
+
     struct FunctionAlternative
     {
         // Function* function; // TEMPORARY
@@ -31,18 +36,28 @@ namespace Warp::CompilerRuntime
         Warp::AbstractSyntaxTree::NodeVariantType return_constraint;
         std::vector< Parameter > input_constraints;
         std::string name;
+		const FunctionAlternatives& alternatives;
         // std::vector< Function* > dependancies;
     };
 
-    struct FunctionAlternatives {
+    struct FunctionAlternatives
+	{
+		const Function& function;
+        const size_t number_of_parameters;
         std::vector< FunctionAlternative* > alternatives;
-        size_t number_of_parameters;
+		FunctionAlternatives() = delete;
+		FunctionAlternatives( 
+				const Function& function, 
+				size_t number_of_parameters 
+			) : function( function ), 
+				number_of_parameters( number_of_parameters ) {}
     };
 
     struct Function
     {
         Warp::Utilities::HashedStringType identifier;
         std::string name;
+		const Module& module;
         std::vector< FunctionAlternatives > alternatives;
     };
 

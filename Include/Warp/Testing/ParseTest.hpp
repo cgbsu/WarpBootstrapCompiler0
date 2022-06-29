@@ -8,26 +8,26 @@
 namespace Warp::Parser::Testing
 {
 
-    constexpr static const char* help_flag = "help";
+    //constexpr static const char* help_flag = "help";
 
-    using ParserType = Warp::Parser::DefaultParserType;
+    //using ParserType = Warp::Parser::DefaultParserType;
 
     struct WarpTest {
         bool expected_result;
         std::string code;
     };
 
-    template< typename ParserParameterType = ParserType >
-    bool test_parse( const WarpTest& test, const ParserParameterType& parser, bool display_result = true )
-    {
-        const bool result = parser.parse( 
-                // ctpg::parse_options{}.set_verbose(), 
-                ctpg::buffers::string_buffer( test.code.c_str() ), std::cerr 
-            ).has_value() == test.expected_result;
-        if( display_result == true )
-            std::cout << ( ( result == true ) ? "Pass: ": "Fail: " ) << test.code << "\n";
-        return result;
-    }
+    //template< typename ParserParameterType = ParserType >
+    //bool test_parse( const WarpTest& test, const ParserParameterType& parser, bool display_result = true )
+    //{
+    //    const bool result = parser.parse( 
+    //            // ctpg::parse_options{}.set_verbose(), 
+    //            ctpg::buffers::string_buffer( test.code.c_str() ), std::cerr 
+    //        ).has_value() == test.expected_result;
+    //    if( display_result == true )
+    //        std::cout << ( ( result == true ) ? "Pass: ": "Fail: " ) << test.code << "\n";
+    //    return result;
+    //}
 
     using TestSuiteType = std::vector< WarpTest >;
 
@@ -47,30 +47,30 @@ namespace Warp::Parser::Testing
     extern std::vector< TestSuiteType > test_suits;
     extern std::string bulk_parse_test;
 
-    int parse_test_main( int argc, char** args, size_t first_user_argument_index = 1 );
+    //int parse_test_main( int argc, char** args, size_t first_user_argument_index = 1 );
 
-    Warp::CompilerRuntime::Module&& test_bulk_parse( 
-            const auto& parser, 
-            std::string source_code, 
-            ctpg::parse_options parse_options = ctpg::parse_options{}, //{}.set_verbose(), 
-            char deliminator = Warp::Utilities::to_char( FunctionOperators::FunctionDefintionComplete ) 
-        )
-    {
-        // return Warp::Parser::Testing::parse_test_main( argc, args, 1 );
-        auto module = Warp::Parser::parse( parser, source_code, deliminator, parse_options );
-        for( auto function : module.functions )
-        {
-            std::cout << "For function: " << function->name << "\n";
-            for( auto& alternative : function->alternatives )
-            {
-                std::cout << "\t" << alternative.alternatives.size() 
-                        << " alternatives with " 
-                        << alternative.number_of_parameters 
-                        << " paramters\n";
-            }
-        }
-        return module;
-    }
+    //Warp::CompilerRuntime::Module&& test_bulk_parse( 
+    //        const auto& parser, 
+    //        std::string source_code, 
+    //        ctpg::parse_options parse_options = ctpg::parse_options{}, //{}.set_verbose(), 
+    //        char deliminator = Warp::Utilities::to_char( FunctionOperators::FunctionDefintionComplete ) 
+    //    )
+    //{
+    //    // return Warp::Parser::Testing::parse_test_main( argc, args, 1 );
+    //    auto module = Warp::Parser::parse( parser, source_code, deliminator, parse_options );
+    //    for( auto function : module.functions )
+    //    {
+    //        std::cout << "For function: " << function->name << "\n";
+    //        for( auto& alternative : function->alternatives )
+    //        {
+    //            std::cout << "\t" << alternative.alternatives.size() 
+    //                    << " alternatives with " 
+    //                    << alternative.number_of_parameters 
+    //                    << " paramters\n";
+    //        }
+    //    }
+    //    return module;
+    //}
 }
 
 #endif // WARP_BOOTSTRAP_COMPILER_HEADER_PARSE_TEST_HPP
