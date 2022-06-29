@@ -280,7 +280,8 @@ namespace Warp::CompilerRuntime
     struct Executor< OutputParameterType, Warp::Parser::FunctionOperators::FunctionResult >
     {
         static OutputParameterType compute_value_of_expression( 
-                const Warp::AbstractSyntaxTree::Node< Warp::Parser::FunctionOperators::FunctionResult >& node, 
+                const Warp::AbstractSyntaxTree::Node< 
+						Warp::Parser::FunctionOperators::FunctionResult >& node, 
                     const CallFrameType& call_frame, 
                     std::vector< std::string >& log, 
                     std::vector< Module* >& modules, 
@@ -318,7 +319,7 @@ namespace Warp::CompilerRuntime
 							Executor, 
 							OutputParameterType 
 						>( from, call_frame, log, modules, additional_arguments... ); 
-               };
+            };
             const size_t number_of_parameters = node.arguments.size();
             std::vector< AbstractSyntaxTree::ValueType > values;
             for( size_t ii = 0; ii < number_of_parameters; ++ii )
