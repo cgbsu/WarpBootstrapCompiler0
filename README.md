@@ -12,7 +12,7 @@ Warp has no if, while, or for loop (or any loops at all!). Instead of using cont
 
 For example: 
 
-```Warp
+```Rust
 let factorial( n : n > 0 ) :: n * factorial( n - 1 );
 let factorial( n : n = 0 ) @ = 1 :: 1 * 1;
 ```
@@ -23,7 +23,7 @@ and `<->` (bi-conditional), and your other familiar comparision operators `<` (l
 
 Thats pretty much it! The langauge is very simple, that is intentional, here is another example (included in Warp/Math.warp)
 
-```Warp
+```Rust
 let raise( base : base > 0, power : power > 0 ) :: base * raise( base, power - 1 );
 let raise( base : base > 0, power : power = 0 ) @ = 1 :: 1 * 1;
 ```
