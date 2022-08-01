@@ -32,4 +32,4 @@ This will raise a number to a certain power.
 
 # This Repo
 
-Warp is moving fast, this repo is already out of date, there is a WarpBootstrapCompiler1 re-write going on [here](https://github.com/cgbsu/WarpBootstrapCompiler1)
+Warp is moving fast :rocket:, this repo is already out of date, there is a WarpBootstrapCompiler1 re-write going on [here](https://github.com/cgbsu/WarpBootstrapCompiler1)
