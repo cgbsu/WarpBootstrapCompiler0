@@ -1,4 +1,4 @@
-# WarpBootstrapCompiler0
+# WarpBootstrapCompiler0 🚀 👽
 
 Warp is a branchless functional programming language that is mean to be evaluated at compile time, anything that can/will be executed at run time must explicitly be marked as such
 
